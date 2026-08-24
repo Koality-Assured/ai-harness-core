@@ -1,0 +1,8 @@
+id: python-class-defs
+language: python
+severity: hint
+message: Python class definition under scripts/
+rule:
+  kind: class_definition
+files:
+  - "scripts/**/*.py"

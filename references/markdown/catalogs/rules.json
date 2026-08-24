@@ -1,0 +1,267 @@
+[
+  {
+    "id": "MD001",
+    "alias": "heading-increment",
+    "summary": "Heading levels should only increment by one level at a time"
+  },
+  {
+    "id": "MD003",
+    "alias": "heading-style",
+    "summary": "Heading style"
+  },
+  {
+    "id": "MD004",
+    "alias": "ul-style",
+    "summary": "Unordered list style"
+  },
+  {
+    "id": "MD005",
+    "alias": "list-indent",
+    "summary": "Inconsistent indentation for list items at the same level"
+  },
+  {
+    "id": "MD007",
+    "alias": "ul-indent",
+    "summary": "Unordered list indentation"
+  },
+  {
+    "id": "MD009",
+    "alias": "no-trailing-spaces",
+    "summary": "Trailing spaces"
+  },
+  {
+    "id": "MD010",
+    "alias": "no-hard-tabs",
+    "summary": "Hard tabs"
+  },
+  {
+    "id": "MD011",
+    "alias": "no-reversed-links",
+    "summary": "Reversed link syntax"
+  },
+  {
+    "id": "MD012",
+    "alias": "no-multiple-blanks",
+    "summary": "Multiple consecutive blank lines"
+  },
+  {
+    "id": "MD013",
+    "alias": "line-length",
+    "summary": "Line length"
+  },
+  {
+    "id": "MD014",
+    "alias": "commands-show-output",
+    "summary": "Dollar signs used before commands without showing output"
+  },
+  {
+    "id": "MD018",
+    "alias": "no-missing-space-atx",
+    "summary": "No space after hash on atx style heading"
+  },
+  {
+    "id": "MD019",
+    "alias": "no-multiple-space-atx",
+    "summary": "Multiple spaces after hash on atx style heading"
+  },
+  {
+    "id": "MD020",
+    "alias": "no-missing-space-closed-atx",
+    "summary": "No space inside hashes on closed atx style heading"
+  },
+  {
+    "id": "MD021",
+    "alias": "no-multiple-space-closed-atx",
+    "summary": "Multiple spaces inside hashes on closed atx style heading"
+  },
+  {
+    "id": "MD022",
+    "alias": "blanks-around-headings",
+    "summary": "Headings should be surrounded by blank lines"
+  },
+  {
+    "id": "MD023",
+    "alias": "heading-start-left",
+    "summary": "Headings must start at the beginning of the line"
+  },
+  {
+    "id": "MD024",
+    "alias": "no-duplicate-heading",
+    "summary": "Multiple headings with the same content"
+  },
+  {
+    "id": "MD025",
+    "alias": "single-title/single-h1",
+    "summary": "Multiple top-level headings in the same document"
+  },
+  {
+    "id": "MD026",
+    "alias": "no-trailing-punctuation",
+    "summary": "Trailing punctuation in heading"
+  },
+  {
+    "id": "MD027",
+    "alias": "no-multiple-space-blockquote",
+    "summary": "Multiple spaces after blockquote symbol"
+  },
+  {
+    "id": "MD028",
+    "alias": "no-blanks-blockquote",
+    "summary": "Blank line inside blockquote"
+  },
+  {
+    "id": "MD029",
+    "alias": "ol-prefix",
+    "summary": "Ordered list item prefix"
+  },
+  {
+    "id": "MD030",
+    "alias": "list-marker-space",
+    "summary": "Spaces after list markers"
+  },
+  {
+    "id": "MD031",
+    "alias": "blanks-around-fences",
+    "summary": "Fenced code blocks should be surrounded by blank lines"
+  },
+  {
+    "id": "MD032",
+    "alias": "blanks-around-lists",
+    "summary": "Lists should be surrounded by blank lines"
+  },
+  {
+    "id": "MD033",
+    "alias": "no-inline-html",
+    "summary": "Inline HTML"
+  },
+  {
+    "id": "MD034",
+    "alias": "no-bare-urls",
+    "summary": "Bare URL used"
+  },
+  {
+    "id": "MD035",
+    "alias": "hr-style",
+    "summary": "Horizontal rule style"
+  },
+  {
+    "id": "MD036",
+    "alias": "no-emphasis-as-heading",
+    "summary": "Emphasis used instead of a heading"
+  },
+  {
+    "id": "MD037",
+    "alias": "no-space-in-emphasis",
+    "summary": "Spaces inside emphasis markers"
+  },
+  {
+    "id": "MD038",
+    "alias": "no-space-in-code",
+    "summary": "Spaces inside code span elements"
+  },
+  {
+    "id": "MD039",
+    "alias": "no-space-in-links",
+    "summary": "Spaces inside link text"
+  },
+  {
+    "id": "MD040",
+    "alias": "fenced-code-language",
+    "summary": "Fenced code blocks should have a language specified"
+  },
+  {
+    "id": "MD041",
+    "alias": "first-line-heading/first-line-h1",
+    "summary": "First line in a file should be a top-level heading"
+  },
+  {
+    "id": "MD042",
+    "alias": "no-empty-links",
+    "summary": "No empty links"
+  },
+  {
+    "id": "MD043",
+    "alias": "required-headings",
+    "summary": "Required heading structure"
+  },
+  {
+    "id": "MD044",
+    "alias": "proper-names",
+    "summary": "Proper names should have the correct capitalization"
+  },
+  {
+    "id": "MD045",
+    "alias": "no-alt-text",
+    "summary": "Images should have alternate text (alt text)"
+  },
+  {
+    "id": "MD046",
+    "alias": "code-block-style",
+    "summary": "Code block style"
+  },
+  {
+    "id": "MD047",
+    "alias": "single-trailing-newline",
+    "summary": "Files should end with a single newline character"
+  },
+  {
+    "id": "MD048",
+    "alias": "code-fence-style",
+    "summary": "Code fence style"
+  },
+  {
+    "id": "MD049",
+    "alias": "emphasis-style",
+    "summary": "Emphasis style"
+  },
+  {
+    "id": "MD050",
+    "alias": "strong-style",
+    "summary": "Strong style"
+  },
+  {
+    "id": "MD051",
+    "alias": "link-fragments",
+    "summary": "Link fragments should be valid"
+  },
+  {
+    "id": "MD052",
+    "alias": "reference-links-images",
+    "summary": "Reference links and images should use a label that is defined"
+  },
+  {
+    "id": "MD053",
+    "alias": "link-image-reference-definitions",
+    "summary": "Link and image reference definitions should be needed"
+  },
+  {
+    "id": "MD054",
+    "alias": "link-image-style",
+    "summary": "Link and image style"
+  },
+  {
+    "id": "MD055",
+    "alias": "table-pipe-style",
+    "summary": "Table pipe style"
+  },
+  {
+    "id": "MD056",
+    "alias": "table-column-count",
+    "summary": "Table column count"
+  },
+  {
+    "id": "MD058",
+    "alias": "blanks-around-tables",
+    "summary": "Tables should be surrounded by blank lines"
+  },
+  {
+    "id": "MD059",
+    "alias": "descriptive-link-text",
+    "summary": "Link text should be descriptive"
+  },
+  {
+    "id": "MD060",
+    "alias": "table-column-style",
+    "summary": "Table column style"
+  }
+]

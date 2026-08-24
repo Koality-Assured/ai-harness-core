@@ -1,0 +1,47 @@
+// Repo markdownlint-cli2 config for ai-router.
+// Advisory: references/markdown/markdownlint-config.md (front matter, severity, extends).
+// Rule catalog: references/markdown/markdownlint-rules.md — paraphrase here; do not paste all rules.
+//
+// Waivers & Pruned Rules (keep structural defaults MD001, MD025, MD041):
+// - Cosmetic whitespace/blank-line rules pruned: MD009, MD010, MD012, MD031, MD032, MD033, MD036.
+// - MD013: wiki uses nested headings, tables, long AGENTS.md rows; length is not a quality signal.
+// - MD041/MD025 front_matter_title "": YAML --- front matter is common; avoid title-vs-H1 false positives.
+// - noInlineConfig: references that document <!-- markdownlint-* --> must not re-enable rules mid-file.
+// - references/** MD034: capture pages cite upstream URLs (auto-fix wraps in <> when applied).
+{
+  "config": {
+    "default": true,
+    "MD009": false,
+    "MD010": false,
+    "MD012": false,
+    "MD013": false,
+    "MD031": false,
+    "MD032": false,
+    "MD033": false,
+    "MD036": false,
+    "MD041": {
+      "front_matter_title": ""
+    },
+    "MD025": {
+      "front_matter_title": ""
+    }
+  },
+  "noInlineConfig": true,
+  "ignores": [
+    "scratch/**",
+    "[REDACTED_WORKTREE_PATH]**",
+    "change-history/**",
+    "node_modules/**",
+    ".git/**",
+    "results/**"
+  ],
+  "overrides": [
+    {
+      "filter": ["references/**/*.md"],
+      "config": {
+        "MD034": false
+      },
+      "combine": "merge"
+    }
+  ]
+}

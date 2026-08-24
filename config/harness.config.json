@@ -1,29 +1,55 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
   "paths": {
-    "skills_dir": "ai-tooling/skills",
-    "agents_dir": "ai-tooling/agents",
-    "a2a_dir": "ai-tooling/a2a",
-    "worktrees_dir": "scratch/worktrees",
-    "memory_dir": "scratch/memory",
-    "docs_dir": "docs",
-    "routing_dir": "routing"
+    "skills": "ai-tooling/skills",
+    "agents": "ai-tooling/agents",
+    "memory": "scratch/memory",
+    "worktrees": "scratch/worktrees",
+    "docs": "docs",
+    "routing": "routing"
   },
   "adapters": {
     "qmd": {
-      "enabled": true,
-      "collections_root": ".qmd"
+      "command": "qmd",
+      "default_min_score": 0.5,
+      "default_limit": 5,
+      "collections": [
+        "routing",
+        "docs",
+        "projects",
+        "references",
+        "research",
+        "supporting",
+        "ai-tooling",
+        "scripts",
+        "actionable",
+        "results"
+      ],
+      "timeout_sec": 60
     },
     "ast_grep": {
-      "enabled": true,
-      "binary_path": "sg"
+      "command": "ast-grep",
+      "timeout_sec": 60,
+      "default_languages": [
+        "python",
+        "typescript",
+        "javascript",
+        "json",
+        "yaml",
+        "markdown"
+      ]
     },
     "headroom": {
-      "enabled": true,
-      "proxy_url": "http://127.0.0.1:8787"
+      "base_url": "http://127.0.0.1:8787",
+      "port": 8787,
+      "timeout_sec": 15,
+      "enabled": true
     },
     "git": {
-      "max_worktrees": 12,
-      "worktree_prefix": "sw-"
+      "command": "git",
+      "timeout_sec": 30,
+      "branch_prefix": "agent"
     }
   },
   "cache": {
@@ -33,15 +59,19 @@
       "min_tokens_threshold": 1024
     },
     "openai": {
-      "min_prefix_tokens": 1024,
-      "alignment_block_size": 128
+      "min_tokens_prefix": 1024,
+      "prefix_alignment_tokens": 128
     },
     "gemini": {
-      "context_cache_threshold": 32768
+      "min_tokens_threshold": 32768,
+      "default_ttl_seconds": 3600,
+      "mode": "context_cache"
     }
   },
   "a2a": {
-    "max_exchanges": 8,
-    "require_result_envelope": true
+    "default_budget": 8,
+    "max_budget": 24,
+    "require_clean_state": true,
+    "disallow_destructive": true
   }
 }

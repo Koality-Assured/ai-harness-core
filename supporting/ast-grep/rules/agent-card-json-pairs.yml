@@ -1,0 +1,8 @@
+id: agent-card-json-pairs
+language: json
+severity: hint
+message: JSON pair in an A2A agent card
+rule:
+  kind: pair
+files:
+  - "ai-tooling/a2a/agent-cards/**/*.json"
