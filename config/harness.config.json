@@ -1,0 +1,47 @@
+{
+  "paths": {
+    "skills_dir": "ai-tooling/skills",
+    "agents_dir": "ai-tooling/agents",
+    "a2a_dir": "ai-tooling/a2a",
+    "worktrees_dir": "scratch/worktrees",
+    "memory_dir": "scratch/memory",
+    "docs_dir": "docs",
+    "routing_dir": "routing"
+  },
+  "adapters": {
+    "qmd": {
+      "enabled": true,
+      "collections_root": ".qmd"
+    },
+    "ast_grep": {
+      "enabled": true,
+      "binary_path": "sg"
+    },
+    "headroom": {
+      "enabled": true,
+      "proxy_url": "http://127.0.0.1:8787"
+    },
+    "git": {
+      "max_worktrees": 12,
+      "worktree_prefix": "sw-"
+    }
+  },
+  "cache": {
+    "anthropic": {
+      "max_breakpoints": 4,
+      "ttl_seconds": 300,
+      "min_tokens_threshold": 1024
+    },
+    "openai": {
+      "min_prefix_tokens": 1024,
+      "alignment_block_size": 128
+    },
+    "gemini": {
+      "context_cache_threshold": 32768
+    }
+  },
+  "a2a": {
+    "max_exchanges": 8,
+    "require_result_envelope": true
+  }
+}
