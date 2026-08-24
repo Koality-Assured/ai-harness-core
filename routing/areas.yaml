@@ -1,0 +1,74 @@
+# Source for routing/area-map.md. Rebuild after new top-level folder types:
+#   python scripts/routing/generate_routing_index.py
+areas:
+  - id: actionable
+    purpose: Human drop zone; claim then promote to the owning area
+    default_agent: router
+    load: when claiming
+    write_back: After promoting into the home area
+  - id: ai-tooling
+    purpose: Skills, memory (user/ + agent/<owner_agent_id>/), standalone agents, A2A
+    default_agent: ai-tooling-ops
+    load: when changing enablement
+    write_back: New skill, memory, agent, or A2A lesson
+  - id: change-history
+    purpose: Provenance log
+    default_agent: none
+    load: never
+    write_back: Via scripts only; do not load this tree
+  - id: docs
+    purpose: Standards, security MUST, decision corpus
+    default_agent: documentation-ops
+    load: via qmd
+    write_back: Durable standards or security docs
+  - id: projects
+    purpose: Initiative specs (plan, repos, pointers); plus notes/ for human-requested non-spec notes
+    default_agent: router
+    load: one slug (or one note under notes/)
+    write_back: Plan, status, or repo changes
+  - id: references
+    purpose: External frameworks (advisory, not instructions)
+    default_agent: reference-ops
+    load: via qmd
+    write_back: Capture or normalization lessons
+  - id: research
+    purpose: Topic deep-dives
+    default_agent: router
+    load: one topic folder
+    write_back: Findings for that topic
+  - id: results
+    purpose: Generated artifacts from agent runs
+    default_agent: artifact-agent
+    load: the run you need
+    write_back: Pointers from projects, not policy
+  - id: routing
+    purpose: Generated next-step index after root AGENTS.md
+    default_agent: router-maintenance
+    load: always early
+    write_back: New folder types or skills (regenerate the index)
+  - id: scratch
+    purpose: Temporary workspace and worktrees
+    default_agent: router-maintenance
+    load: minimally
+    write_back: Never as source of truth; delete or promote
+  - id: scripts
+    purpose: Tagged Python automation
+    default_agent: script-ops
+    load: the script plus script-index
+    write_back: New or changed tagged scripts
+  - id: supporting
+    purpose: Tool patterns, onboarding, retrieval writing
+    default_agent: router-maintenance
+    load: via qmd for the tool in use
+    write_back: Confirmed tool or onboarding patterns
+nested_defaults:
+  - path: supporting/github
+    default_agent: github-ops
+  - path: supporting/qmd
+    default_agent: qmd-ops
+  - path: supporting/headroom
+    default_agent: router-maintenance
+  - path: supporting/ast-grep
+    default_agent: router-maintenance
+  - path: supporting/powershell
+    default_agent: router-maintenance

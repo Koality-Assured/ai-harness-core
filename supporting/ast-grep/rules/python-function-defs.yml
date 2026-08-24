@@ -1,0 +1,8 @@
+id: python-function-defs
+language: python
+severity: hint
+message: Python function definition under scripts/
+rule:
+  kind: function_definition
+files:
+  - "scripts/**/*.py"
