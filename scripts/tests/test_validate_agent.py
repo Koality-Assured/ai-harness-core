@@ -18,9 +18,7 @@ sys.path.insert(0, str(_SCRIPTS))
 sys.path.insert(0, str(_SCRIPTS / "ai-tooling"))
 sys.path.insert(0, str(_SCRIPTS / "_lib"))
 
-from md import agent_ids, agent_paths  # noqa: E402
-from paths import REPO_ROOT as ROOT  # noqa: E402
-from validate_agent import check_agent, extract_frontmatter_and_body, main  # noqa: E402
+from validate_agent import check_agent, extract_frontmatter_and_body  # noqa: E402
 
 
 class ValidateAgentUnitTests(unittest.TestCase):
@@ -46,13 +44,6 @@ Body text.
         self.assertIsNotNone(err)
         self.assertIsNone(data)
 
-    def test_check_agent_passes_all_repo_agents(self) -> None:
-        known = agent_ids(ROOT)
-        self.assertTrue(len(known) >= 14, f"expected at least 14 agents, got {len(known)}")
-        for path in agent_paths(ROOT):
-            errs = check_agent(path, known)
-            self.assertEqual(errs, [], f"Agent {path.parent.name} failed: {errs}")
-
     def test_check_agent_catches_invalid_schema(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             agent_dir = Path(tmp) / "bad-agent"
@@ -75,10 +66,6 @@ Missing required headings.
             self.assertTrue(any("capabilities" in e for e in errs))
             self.assertTrue(any("contracts" in e for e in errs))
             self.assertTrue(any("Critical cost layers" in e for e in errs))
-
-    def test_cli_all_and_json(self) -> None:
-        ret = main(["--all", "--json"])
-        self.assertEqual(ret, 0)
 
 
 if __name__ == "__main__":

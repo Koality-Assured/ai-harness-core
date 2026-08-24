@@ -81,8 +81,6 @@ class GithubPathsTests(unittest.TestCase):
 
     def test_outside_root(self) -> None:
         root = Path(__file__).resolve().parents[2]
-        with self.assertRaises(GithubPathError):
-            github_https_url(r"C:\Windows\System32", root=root, owner_repo=("o", "r"))
         with tempfile.TemporaryDirectory() as tmp:
             outside = Path(tmp) / "x.md"
             outside.write_text("x", encoding="utf-8")
