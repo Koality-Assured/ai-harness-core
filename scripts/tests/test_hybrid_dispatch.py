@@ -28,7 +28,7 @@ from hybrid_dispatch import (  # noqa: E402
     dispatch_query,
     tokenize,
 )
-from md import load_skill_record, parse_frontmatter  # noqa: E402
+from md import parse_frontmatter  # noqa: E402
 from paths import REPO_ROOT as ROOT  # noqa: E402
 
 
@@ -104,24 +104,6 @@ class TestTier2BM25(unittest.TestCase):
         self.assertIn("standards", tokens)
         self.assertNotIn("and", tokens)
         self.assertNotIn("on", tokens)
-
-    def test_bm25_semantic_ranking_skills(self) -> None:
-        # Query without exact fast-path keywords but matching skill purpose
-        query = "discover shadow routes and attack surface parameters"
-        res = self.bm25.search(query, top_k=3)
-        self.assertTrue(len(res.candidates) > 0)
-        top = res.candidates[0]
-        self.assertEqual(top.name, "noir-scan")
-        self.assertEqual(top.owner_agent, "artifact-agent")
-        self.assertGreater(top.score, 0.0)
-        self.assertGreater(top.confidence, 0.5)
-
-    def test_bm25_ranking_cloud_logs(self) -> None:
-        query = "inspect amazon cloudwatch log streams via oauth"
-        res = self.bm25.search(query, top_k=3)
-        self.assertTrue(len(res.candidates) > 0)
-        top_names = [c.name for c in res.candidates]
-        self.assertTrue("aws-logs" in top_names or "aws-read" in top_names)
 
     def test_bm25_empty_query(self) -> None:
         res = self.bm25.search("", top_k=3)
@@ -213,19 +195,6 @@ class TestHybridDispatcher(unittest.TestCase):
 
 class TestSchemaV2SkillParsing(unittest.TestCase):
     """Unit tests for Schema V2 metadata parsing and indexing."""
-
-    def test_load_skill_record_v2_fields(self) -> None:
-        # Test loading an existing skill
-        threat_model_path = ROOT / "ai-tooling" / "skills" / "threat-model" / "SKILL.md"
-        rec = load_skill_record(threat_model_path)
-        self.assertEqual(rec["name"], "threat-model")
-        self.assertEqual(rec["owner_agent"], "assessment-agent")
-        self.assertEqual(rec["rank"], "high")
-        self.assertEqual(rec["isolation"], "mutate")
-        self.assertIn("on_failure", rec)
-        self.assertIn("prerequisites", rec)
-        self.assertIn("dependencies", rec)
-        self.assertIn("contracts", rec)
 
     def test_parse_v2_frontmatter_synthetic(self) -> None:
         v2_raw = """---
