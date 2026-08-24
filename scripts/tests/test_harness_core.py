@@ -330,7 +330,7 @@ class A2AProtocolTests(unittest.TestCase):
             "artifacts": [],
             "handoff_requests": [],
             "metrics": {},
-            "result_data": "Generated key: [REDACTED_OPENAI_KEY]",
+            "result_data": "Generated key: sk-EXAMPLE_NOT_A_SECRET_KEY",
         }
         with self.assertRaises(A2ASecurityError):
             self.protocol.validate_envelope(payload)
