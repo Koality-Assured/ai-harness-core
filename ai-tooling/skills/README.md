@@ -61,6 +61,15 @@ Human index (not agent SoT):
 | [`skill-builder/`](./meta/skill-builder/) | ai-tooling-ops | mutate |
 | [`skill-dry-run/`](./meta/skill-dry-run/) | ai-tooling-ops | read-only |
 | [`source-validation/`](./meta/source-validation/) | reference-ops | mutate |
+| [`benchlm-lookup/`](./meta/benchlm-lookup/) | detailed-activity | read-only |
+| [`social-sentiment-analysis/`](./community/social-sentiment-analysis/) | community-analyst | mutate |
+| [`community-troubleshooting/`](./community/community-troubleshooting/) | community-analyst | mutate |
+| [`niche-discovery/`](./community/niche-discovery/) | community-analyst | mutate |
+| [`social-osint/`](./community/social-osint/) | community-analyst | mutate |
+| [`product-opportunity-scout/`](./community/product-opportunity-scout/) | community-analyst | mutate |
+| [`community-pattern-analysis/`](./community/community-pattern-analysis/) | community-analyst | mutate |
+| [`breaking-tech-news/`](./community/breaking-tech-news/) | community-analyst | mutate |
+| [`community-registry-maintain/`](./community/community-registry-maintain/) | community-analyst | mutate |
 | [`sync-downstream-repos/`](./meta/sync-downstream-repos/) | repo-sync-ops | mutate |
 | [`tabler-dashboard/`](./reporting/tabler-dashboard/) | artifact-agent | mutate |
 | [`threat-model/`](./reporting/threat-model/) | assessment-agent | mutate |

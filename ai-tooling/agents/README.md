@@ -27,5 +27,6 @@ Human index (not agent SoT):
 | [`git-fast-operator/`](./git-fast-operator/) | simple git fetch/status/log/diff/sync | fast |
 | [`reference-ops/`](./reference-ops/) | `references/` captures and normalization | standard |
 | [`repo-sync-ops/`](./repo-sync-ops/) | downstream repo sync + public export redaction | standard |
+| [`community-analyst/`](./community-analyst/) | public communities, subreddits, developer forums & OSINT | standard |
 
 A2A specifications & schemas: canonical in `AGENT.md` (Schema V2); see also [`../a2a/agent-cards/README.md`](../a2a/agent-cards/README.md).

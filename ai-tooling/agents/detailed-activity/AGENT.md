@@ -2,9 +2,9 @@
 schema_version: 2.0.0
 agent_id: detailed-activity
 name: Detailed activity
-description: Antagonistic review, deep research, and vendor intelligence specialist. Owns antagonistic-review,
-  deep-research, and ai-vendor-updates. Use for ranked findings on PRs, docs, plans, commits, or diffs,
-  foundational value vs. bloat/friction audits, and frontier AI vendor updates/briefings under results/. Spawned by
+description: Antagonistic review, deep research, vendor intelligence, and model benchmark specialist. Owns antagonistic-review,
+  deep-research, ai-vendor-updates, and benchlm-lookup. Use for ranked findings on PRs, docs, plans, commits, or diffs,
+  foundational value vs. bloat/friction audits, frontier AI vendor updates/briefings, and BenchLM model performance/pricing queries. Spawned by
   the router; recommendations return to the orchestrating agent.
 model_tier: high
 token_ceiling: 150000
@@ -12,6 +12,7 @@ capabilities:
 - antagonistic-review
 - deep-research
 - ai-vendor-updates
+- benchlm-lookup
 - ranked findings
 - foundational value vs bloat/friction audit
 - recommendations to orchestrator
@@ -65,7 +66,7 @@ Specialist for antagonistic review and deep research under `results/reviews/` an
 
 ## Owns
 
-`antagonistic-review`, `deep-research`
+`antagonistic-review`, `deep-research`, `ai-vendor-updates`, `benchlm-lookup`
 
 ## Isolation
 

@@ -64,6 +64,8 @@ areas:
 nested_defaults:
   - path: docs/guidance
     default_agent: documentation-ops
+  - path: references/socials
+    default_agent: community-analyst
   - path: supporting/github
     default_agent: github-ops
   - path: supporting/qmd
