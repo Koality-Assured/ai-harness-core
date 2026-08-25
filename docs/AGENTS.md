@@ -6,6 +6,7 @@ Ingest simply; do not duplicate skills or paste root Critical — link [`../AGEN
 
 ## Rules
 
+- **Protected Corpus of Record:** `docs/` contains protected, normative corpus-of-record material. Agents MUST NOT create, modify, or delete content under `docs/` based on inferred need. Drafts, proposals, investigations, and generated deliverables belong under `projects/`, `research/`, or `results/` until explicitly authorized for corpus promotion.
 - Every durable page: kebab-case filename + YAML frontmatter (`doc_kind`, `canonical_id`, `purpose`, optional `rank`).
 - Prefer updating an existing standard over near-duplicates.
 - Keep controls portable — no employer/studio-specific org names in generalized standards.
@@ -13,6 +14,18 @@ Ingest simply; do not duplicate skills or paste root Critical — link [`../AGEN
 - `README.md` is human-only (root [`../AGENTS.md`](../AGENTS.md) High README rule).
 - After add/remove/rename of indexed Markdown: `python scripts/qmd/refresh_qmd_index.py` (parent session-end gate — do not mint a specialist for it).
 - Spawn `documentation-ops` / matching skill owner when a catalogued docs skill is material. Nested files MUST NOT undo root spawn-if-material.
+
+## Folder-Level AGENTS.md 8-Point Schema
+
+When authoring or maintaining area `AGENTS.md` files, define:
+1. **Content ownership:** Which agent and area owns this content.
+2. **Placement:** Exact layout and subfolder rules.
+3. **Lifecycle:** How content advances, archives, or moves.
+4. **Relationships:** Allowed and prohibited dependencies (e.g. `project -> supporting` one-way).
+5. **Source-of-truth boundaries:** What this folder is SoT for, and what it is not.
+6. **Validation:** Automated scripts/linters required before done.
+7. **Escalation:** When to trigger the Ambiguity Gate or spawn research.
+8. **Local exceptions:** Folder-specific overrides or deltas.
 
 ## Maintenance (folded)
 

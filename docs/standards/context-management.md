@@ -65,6 +65,7 @@ Frontier LLM prompt caching relies strictly on exact byte-for-byte prefix matchi
 - **Content**: Latest user input prompt, active tool call invocations, current execution results, compiler logs, and git diffs.
 - **Volatility**: Volatile per turn; discarded or promoted into Tier 3 history upon turn completion.
 - **Compression**: Bulky dumps (build output, large files, JSON structures) MUST be compressed prior to injection using the Headroom compression proxy, `ast-grep` symbol outlines, or `qmd` BM25 snippets.
+- **Sectional & Heading Subtree Extraction**: When ingesting supporting documentation, standards, or reference corpuses into active turn context (Tier 4/5), agents MUST extract only the relevant heading subtree or line-bounded range (`StartLine`/`EndLine`). Ingesting full documents when only a single control or procedure is needed bloats turn context, accelerates token consumption, and introduces noise.
 
 ### Context Hierarchy Summary
 

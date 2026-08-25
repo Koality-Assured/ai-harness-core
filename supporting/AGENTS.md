@@ -7,6 +7,7 @@ Ingest simply; do not duplicate skills or paste root Critical — link [`../AGEN
 ## Rules
 
 - One tool family per folder (`cloudflare/`, `github/`, `qmd/`, `headroom/`, `ast-grep/`, …).
+- **One-way dependency invariant:** `supporting/` holds durable platform and tool facts. Its relationship is strictly one-way (`project -> supporting`). Supporting files MUST NOT link back to transient `projects/`, `research/`, or `actionable/` queues.
 - Record confirmed commands, project names, gotchas, and where things live.
 - Prefer linking upstream docs over large excerpts.
 - Promote from `scratch/` / chat only after verified.

@@ -39,6 +39,7 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 | [`sync/sync_and_push_downstreams.py`](./sync/sync_and_push_downstreams.py) | `sync`, `git`, `export`, `downstream` | sync-and-push, update-downstreams, multi-repo-publish, downstream-repo-update | Automated synchronization, sanitation, commit, and push engine for public downstream repositories. |
 | [`sync/sync_public_repos.py`](./sync/sync_public_repos.py) | `sync`, `security`, `export` | sync, redaction, multi-repo, export, sanitize, wiki-template | Multi-repo synchronization and sanitization/redaction engine for public exports. |
 | [`tests/test_cloud_admin.py`](./tests/test_cloud_admin.py) | `tests`, `cloud`, `admin` | tests, cloud-admin, aws, gcp, azure | Unit tests for scripts/cloud/cloud_admin.py. |
+| [`tests/test_generate_routing_index.py`](./tests/test_generate_routing_index.py) | `tests`, `routing`, `index` | tests, generate_routing_index, agent-dispatch, skill-dispatch, area-map | Unit tests for generate_routing_index.py. |
 | [`tests/test_google_suite.py`](./tests/test_google_suite.py) | `tests`, `google`, `drive`, `gmail`, `security`, `redaction` | — | Tests for Google Suite operations, administration, security gates, and downstream redaction. |
 | [`tests/test_harness_core.py`](./tests/test_harness_core.py) | `tests`, `harness`, `core` | harness, tests, core, isolation, a2a, cache | Comprehensive unit tests for the decoupled bare-metal .harness engine. |
 | [`tests/test_hybrid_dispatch.py`](./tests/test_hybrid_dispatch.py) | `tests`, `routing`, `ai-tooling` | tests, hybrid-dispatch, bm25, ambiguity-gate, schema-v2 | Unit tests for 3-Tier Hybrid Dispatch Pipeline and Schema V2 Indexing. |
@@ -74,6 +75,7 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 - **google:** `tests/test_google_suite.py`
 - **harness:** `tests/test_harness_core.py`
 - **headroom:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`
+- **index:** `tests/test_generate_routing_index.py`
 - **isolation:** `routing/spawn_worktree.py`
 - **lint:** `docs/validate_structure_fast.py`
 - **llm:** `tests/test_public_llm_admin.py`
@@ -83,11 +85,11 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 - **redaction:** `tests/test_google_suite.py`
 - **repos:** `repos/scaffold_public_repos.py`, `tests/test_scaffold_public_repos.py`
 - **results:** `tests/test_new_run_dir.py`, `tests/test_validate_wiki_structure.py`
-- **routing:** `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `docs/validate_wiki_structure.py`, `routing/generate_routing_index.py`, `routing/generate_script_index.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `routing/resolve_skill_graph.py`, `routing/spawn_worktree.py`, `tests/test_hybrid_dispatch.py`, `tests/test_skill_graph.py`
+- **routing:** `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `docs/validate_wiki_structure.py`, `routing/generate_routing_index.py`, `routing/generate_script_index.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `routing/resolve_skill_graph.py`, `routing/spawn_worktree.py`, `tests/test_generate_routing_index.py`, `tests/test_hybrid_dispatch.py`, `tests/test_skill_graph.py`
 - **scaffold:** `repos/scaffold_public_repos.py`, `tests/test_scaffold_public_repos.py`
 - **schema-v2:** `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
 - **security:** `sync/sync_public_repos.py`, `tests/test_google_suite.py`, `tests/test_pretty_docs_security.py`
 - **skills:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`, `tests/test_validate_skill.py`
 - **sync:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`
-- **tests:** `tests/test_cloud_admin.py`, `tests/test_google_suite.py`, `tests/test_harness_core.py`, `tests/test_hybrid_dispatch.py`, `tests/test_model_memory.py`, `tests/test_new_run_dir.py`, `tests/test_pretty_docs_security.py`, `tests/test_public_llm_admin.py`, `tests/test_qmd_preflight.py`, `tests/test_scaffold_public_repos.py`, `tests/test_skill_graph.py`, `tests/test_validate_agent.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
+- **tests:** `tests/test_cloud_admin.py`, `tests/test_generate_routing_index.py`, `tests/test_google_suite.py`, `tests/test_harness_core.py`, `tests/test_hybrid_dispatch.py`, `tests/test_model_memory.py`, `tests/test_new_run_dir.py`, `tests/test_pretty_docs_security.py`, `tests/test_public_llm_admin.py`, `tests/test_qmd_preflight.py`, `tests/test_scaffold_public_repos.py`, `tests/test_skill_graph.py`, `tests/test_validate_agent.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
 - **validation:** `docs/validate_structure_fast.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`

@@ -305,3 +305,40 @@ def load_skill_record(path: Path) -> dict[str, Any]:
         "routing_hints": routing_hints,
         "body": body,
     }
+
+
+def load_agent_record(path: Path) -> dict[str, Any]:
+    """Parse an AGENT.md file and return a structured dictionary."""
+    text = path.read_text(encoding="utf-8")
+    fields, body = parse_frontmatter(text)
+    folder = path.parent.name
+    agent_id = str(fields.get("agent_id", folder))
+    name = str(fields.get("name", agent_id))
+    desc = str(fields.get("description", ""))
+    model_tier = str(fields.get("model_tier", "standard"))
+    
+    caps = fields.get("capabilities", [])
+    capabilities = [str(c) for c in caps] if isinstance(caps, list) else []
+    
+    tools = fields.get("allowed_tools", [])
+    allowed_tools = [str(t) for t in tools] if isinstance(tools, list) else []
+    
+    targets = fields.get("delegation_targets", [])
+    delegation_targets = [str(t) for t in targets] if isinstance(targets, list) else []
+    
+    modes = fields.get("isolation_modes", [])
+    isolation_modes = [str(m) for m in modes] if isinstance(modes, list) else ["mutate", "read-only"]
+    
+    return {
+        "agent_id": agent_id,
+        "name": name,
+        "path": path,
+        "description": desc,
+        "model_tier": model_tier,
+        "capabilities": capabilities,
+        "allowed_tools": allowed_tools,
+        "delegation_targets": delegation_targets,
+        "isolation_modes": isolation_modes,
+        "body": body,
+    }
+

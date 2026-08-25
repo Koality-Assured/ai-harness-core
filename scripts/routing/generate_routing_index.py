@@ -19,12 +19,13 @@ from areas import (  # noqa: E402
     load_area_records,
     load_nested_defaults,
 )
-from md import load_skill_record, parse_frontmatter, skill_paths  # noqa: E402
+from md import agent_paths, load_agent_record, load_skill_record, parse_frontmatter, skill_paths  # noqa: E402
 from paths import REPO_ROOT as ROOT  # noqa: E402
 
 GENERATOR = "scripts/routing/generate_routing_index.py"
 AREA_MAP = ROOT / "routing" / "area-map.md"
 SKILL_DISPATCH = ROOT / "routing" / "skill-dispatch.md"
+AGENT_DISPATCH = ROOT / "routing" / "agent-dispatch.md"
 
 
 def _utc_now() -> str:
@@ -196,6 +197,72 @@ def write_skill_dispatch(*, now: str, rows: list[dict[str, Any]] | None = None) 
     return len(rows)
 
 
+def collect_agent_rows() -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for path in agent_paths(ROOT):
+        rec = load_agent_record(path)
+        rows.append(rec)
+    return rows
+
+
+def write_agent_dispatch(*, now: str, rows: list[dict[str, Any]] | None = None) -> int:
+    rows = collect_agent_rows() if rows is None else rows
+    lines = [
+        "---",
+        "doc_kind: routing_map",
+        "canonical_id: agent-dispatch",
+        "topics: [routing, agents, specialists]",
+        f"generated_at_utc: {now}",
+        f"generator: {GENERATOR}",
+        "---",
+        "",
+        "# Agent dispatch (specialist catalogue)",
+        "",
+        "Generated from `ai-tooling/agents/*/AGENT.md` frontmatter. Do not hand-edit — run "
+        f"`python {GENERATOR}`.",
+        "",
+        "## Specialist agents",
+        "",
+        "| Agent ID | Name | Model tier | Isolation modes | Role / Description |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    for row in rows:
+        agent_id = row["agent_id"]
+        agent_link = f"[`{agent_id}`](../ai-tooling/agents/{agent_id}/AGENT.md)"
+        modes = ", ".join(f"`{m}`" for m in row.get("isolation_modes", ["mutate", "read-only"]))
+        lines.append(
+            f"| {agent_link} | {_md_cell(row['name'])} | `{row['model_tier']}` | {modes} | {_md_cell(row['description'])} |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Capabilities and tool access",
+            "",
+            "| Agent | Primary capabilities | Allowed tools | Delegation targets |",
+            "| --- | --- | --- | --- |",
+        ]
+    )
+    for row in rows:
+        agent_id = row["agent_id"]
+        agent_link = f"[`{agent_id}`](../ai-tooling/agents/{agent_id}/AGENT.md)"
+        caps = ", ".join(row.get("capabilities", [])[:4])
+        if len(row.get("capabilities", [])) > 4:
+            caps += f" (+{len(row['capabilities']) - 4} more)"
+        tools = ", ".join(f"`{t}`" for t in row.get("allowed_tools", [])[:5])
+        if len(row.get("allowed_tools", [])) > 5:
+            tools += f" (+{len(row['allowed_tools']) - 5} more)"
+        targets = ", ".join(f"`{t}`" for t in row.get("delegation_targets", [])) if row.get("delegation_targets") else "—"
+
+        lines.append(
+            f"| {agent_link} | {_md_cell(caps or '—')} | {tools or '—'} | {_md_cell(targets)} |"
+        )
+
+    lines.append("")
+    AGENT_DISPATCH.write_text("\n".join(lines), encoding="utf-8")
+    return len(rows)
+
+
 def main() -> int:
     try:
         mismatches = check_areas_consistency(ROOT)
@@ -211,12 +278,15 @@ def main() -> int:
     now = _utc_now()
     write_area_map(now=now)
     n_skills = write_skill_dispatch(now=now)
+    n_agents = write_agent_dispatch(now=now)
     n_areas = len(load_area_records(ROOT))
     n_nested = len(load_nested_defaults(ROOT))
     print(f"wrote {AREA_MAP.relative_to(ROOT).as_posix()} ({n_areas} areas, {n_nested} nested defaults)")
     print(f"wrote {SKILL_DISPATCH.relative_to(ROOT).as_posix()} ({n_skills} skills)")
+    print(f"wrote {AGENT_DISPATCH.relative_to(ROOT).as_posix()} ({n_agents} agents)")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

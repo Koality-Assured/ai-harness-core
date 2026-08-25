@@ -26,7 +26,17 @@ Ingest simply; do not duplicate skills or paste root Critical — link [`../AGEN
   ---
   ```
 
-- Required sections in `README.md`: Intent, Plan / next actions, Related repos & paths, Research & results pointers, Decisions (links to docs/), Open questions.
+- Required sections in `README.md`:
+  - `## Intent`: Goal and core problem statement.
+  - `## Current state`: Active progress and baseline facts.
+  - `## Completed work`: Milestones delivered.
+  - `## Plan / next actions`: Concrete remaining tasks and execution steps.
+  - `## Exit criteria`: Definitive completion conditions.
+  - `## Risks & mitigations`: Key failure modes and mitigations.
+  - `## Related repos & paths`: Links to touched workspaces and trees.
+  - `## Research & results pointers`: Links to deep research dossiers and results deliverables.
+  - `## Decisions (links to docs/)`: Pointers to normative standards.
+  - `## Open questions`: Unresolved architecture questions or trade-offs.
 - Do not store ongoing history here — point at `research/`, `results/`; provenance via change-history scripts.
 - Update `status:` field in YAML frontmatter on status change (do not move directories; eliminates dead relative link churn).
 - Nested `AGENTS.md` only if a subfolder's process truly diverges (`notes/` does).

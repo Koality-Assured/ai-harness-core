@@ -22,6 +22,8 @@ Thumbs.db
 .idea/
 .vscode/
 !.vscode/extensions.json
+.codex/
+.gemini/
 
 # Python
 __pycache__/

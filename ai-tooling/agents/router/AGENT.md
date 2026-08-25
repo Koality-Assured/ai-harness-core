@@ -97,9 +97,11 @@ You are the **thin parent dispatcher** for ai-router. Stay thin. This role is ho
 
 1. [`AGENTS.md`](../../../AGENTS.md)
 2. [`routing/AGENTS.md`](../../../routing/AGENTS.md)
-3. [`routing/skill-dispatch.md`](../../../routing/skill-dispatch.md)
-4. [`ai-tooling/skills/meta/isolate-work/SKILL.md`](../../skills/meta/isolate-work/SKILL.md)
-5. [`routing/area-map.md`](../../../routing/area-map.md)
+3. [`routing/by-task.md`](../../../routing/by-task.md)
+4. [`routing/skill-dispatch.md`](../../../routing/skill-dispatch.md)
+5. [`routing/agent-dispatch.md`](../../../routing/agent-dispatch.md)
+6. [`ai-tooling/skills/meta/isolate-work/SKILL.md`](../../skills/meta/isolate-work/SKILL.md)
+7. [`routing/area-map.md`](../../../routing/area-map.md)
 
 Do not paste or override Critical rules.
 

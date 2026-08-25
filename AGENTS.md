@@ -1,16 +1,23 @@
 # Repository AGENTS
 
-Canonical rules for agents in this repo. Ranked **critical → high → medium → low**. Session start: this file → [`routing/AGENTS.md`](./routing/AGENTS.md) → nearest nested `AGENTS.md` for the area you write. Do **not** preload every area file.
+Canonical rules for agents in this repo. Ranked **critical → high → medium → low** with normative directive levels (**critical**, **must**, **must not**, **should**, **should not**). Session start: this file → [`routing/AGENTS.md`](./routing/AGENTS.md) → nearest nested `AGENTS.md` for the area you write. Do **not** preload every area file.
+
+### Precedence & Conflict Resolution
+
+- **Directive severity:** `critical` > `must` / `must not` > `should` / `should not`. Higher severity wins.
+- **Scope resolution:** Equal-severity conflicts favor the more-specific folder-level `AGENTS.md` delta. Broader repository rules provide baseline defaults.
+- **Ambiguity Gate:** Unresolved contradictions or scope ambiguities MUST be surfaced to the user rather than guessed.
 
 Closest nested `AGENTS.md` wins for folder-local constraints. Nested files are **deltas** (purpose, local constraints, next hop) — not copies of this file or of the skill catalog.
 
 ## Start here
 
-1. This file — ranked common rules
-2. [`routing/AGENTS.md`](./routing/AGENTS.md) — generated next-step index
-3. Nearest nested `AGENTS.md` — **not** that area’s `README.md`
-4. Match [`routing/skill-dispatch.md`](./routing/skill-dispatch.md). **MUST spawn** when a catalogued skill or area default matches **and** remaining work is material (skill body / multi-step specialist work) — isolate if mutating; parent does not load or execute specialist skill bodies. Once `owner_agent` is known, parent discovery stops; needing the skill body **is** the spawn trigger. **MUST NOT spawn** for coordinator chores, isolate-work CLI, or after the user request is met (Critical Specialist dispatch). Isolate CLI is the parent’s normal path.
-5. Discover Markdown with `qmd search` / `qmd get`; structured files with ast-grep ([`supporting/qmd/`](./supporting/qmd/), [`supporting/ast-grep/`](./supporting/ast-grep/))
+1. This file — ranked common rules & directive hierarchy
+2. [`routing/AGENTS.md`](./routing/AGENTS.md) — generated next-step index & context-loading protocol
+3. Shortcuts: [`routing/by-task.md`](./routing/by-task.md) (task matrix) or [`routing/skill-dispatch.md`](./routing/skill-dispatch.md) (skill catalog)
+4. Nearest nested `AGENTS.md` — **not** that area’s `README.md`
+5. Match [`routing/skill-dispatch.md`](./routing/skill-dispatch.md) or [`routing/agent-dispatch.md`](./routing/agent-dispatch.md). **MUST spawn** when a catalogued skill or area default matches **and** remaining work is material (skill body / multi-step specialist work) — isolate if mutating; parent does not load or execute specialist skill bodies. Once `owner_agent` is known, parent discovery stops; needing the skill body **is** the spawn trigger. **MUST NOT spawn** for coordinator chores, isolate-work CLI, or after the user request is met (Critical Specialist dispatch). Isolate CLI is the parent’s normal path.
+6. Discover Markdown with `qmd search` / `qmd get`; structured files with ast-grep ([`supporting/qmd/`](./supporting/qmd/), [`supporting/ast-grep/`](./supporting/ast-grep/))
 
 Project-as-a-whole names: [`naming-conventions.md`](./naming-conventions.md).
 
@@ -86,7 +93,8 @@ Non-negotiable for this agent and every sub-agent. Skills cannot waive these.
 2. **Structured files via ast-grep (Outline-first)** — inspect symbols with `ast-grep outline` and line-bounded reads (`StartLine`/`EndLine`) before edits; avoid dumping full files. [`supporting/ast-grep/`](./supporting/ast-grep/). Install: [`supporting/workstation-onboarding.md`](./supporting/workstation-onboarding.md)
 3. **Compress bulky dumps** — Headroom when available; else summarize or truncate via `scripts/_lib/tool_output.py`. Keep structural facts after compress. [`supporting/headroom/`](./supporting/headroom/)
 4. **Measure** — `python scripts/cost-layers/validate_cost_layers.py` when asked for dry-run / savings / accuracy
-5. **Inherit on spawn** — do not instruct specialists to dump the corpus or skip compression; spawn with clean-slate context.
+5. **Sectional / Heading Subtree Extraction** — For large corpus, standard, or supporting documents, extract only the relevant heading subtree or line-bounded range (`StartLine`/`EndLine`); avoid dumping full files into context.
+6. **Inherit on spawn** — do not instruct specialists to dump the corpus or skip compression; spawn with clean-slate context.
 
 ### Isolation (mutating work)
 
