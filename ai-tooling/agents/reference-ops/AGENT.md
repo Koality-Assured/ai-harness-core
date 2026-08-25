@@ -40,7 +40,7 @@ quirks:
 - Version + captured_at_utc on captures
 - Family README human-thin; content in kebab-case topic files
 - Update references/AGENTS.md family table
-last_verified: '2026-08-24'
+last_verified: '2026-08-25'
 ---
 
 # Reference operations

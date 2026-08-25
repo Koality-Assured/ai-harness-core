@@ -3,6 +3,7 @@ doc_kind: reference
 canonical_id: conventional-commits
 topics: [git, commits, pull-requests]
 rag_keywords: [conventional-commits, feat, fix, docs, refactor, chore, breaking-change, pr]
+advisory_only: true
 ---
 
 # Conventional Commits (operational guide)
