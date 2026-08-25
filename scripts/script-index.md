@@ -12,8 +12,9 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 
 | Script | Tags | Hints | Summary |
 | --- | --- | --- | --- |
+| [`ai-tooling/model_memory.py`](./ai-tooling/model_memory.py) | `ai-tooling`, `memory` | model-memory, model-capability-memory, capability-retrieval, promote-model-learning | Search, validate, and propose promotion of model-family capability memory. |
 | [`ai-tooling/validate_agent.py`](./ai-tooling/validate_agent.py) | `ai-tooling`, `routing`, `agents` | agents, validate, dry-run, schema-v2 | Validate one or all agents against Schema V2 frontmatter and agent conventions. |
-| [`ai-tooling/validate_skill.py`](./ai-tooling/validate_skill.py) | `ai-tooling`, `routing` | skills, dry-run, template | Validate one or all skills against skill-conventions.md. |
+| [`ai-tooling/validate_skill.py`](./ai-tooling/validate_skill.py) | `ai-tooling`, `routing` | skills, dry-run, template, schema-v2 | Validate one or all skills against skill-conventions.md. |
 | [`change-history/append_change_history.py`](./change-history/append_change_history.py) | `change-history` | provenance, session-end, completion-gate | Append a change-history entry for the active year/quarter. |
 | [`change-history/ensure_change_history_quarter.py`](./change-history/ensure_change_history_quarter.py) | `change-history` | provenance, scaffold | Ensure change-history year/quarter entries file exists. |
 | [`cost-layers/extract_ast_facts.py`](./cost-layers/extract_ast_facts.py) | `qmd`, `headroom`, `ast-grep` | structural-facts, outline, cost-layers | Extract structural facts via ast-grep outline/kind JSON (not full files). |
@@ -24,8 +25,9 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 | [`docs/validate_structure_fast.py`](./docs/validate_structure_fast.py) | `docs`, `validation`, `lint` | validate, structure, frontmatter, links, markdown | Fast structural validator for Markdown documents in ai-router. |
 | [`docs/validate_wiki_structure.py`](./docs/validate_wiki_structure.py) | `docs`, `routing` | wiki, structure, validation | Validate router wiki structure (areas, catalogs, frontmatter, dispatch). |
 | [`github/resolve_github_path.py`](./github/resolve_github_path.py) | `github` | blob, main, path, url | Resolve local repo paths to GitHub https blob/tree URLs on main. |
-| [`qmd/refresh_qmd_index.py`](./qmd/refresh_qmd_index.py) | `qmd` | index, embed, session-end, completion-gate | Refresh the local qmd index after indexed Markdown changes (update then embed). |
-| [`qmd/setup_qmd_collections.py`](./qmd/setup_qmd_collections.py) | `qmd` | index, collections, embed | Print qmd collection/context setup commands for this repo (and optionally run them). |
+| [`qmd/qmd_preflight.py`](./qmd/qmd_preflight.py) | `qmd` | preflight, index, onboarding, safety | Inspect reusable qmd state without creating or refreshing an index. |
+| [`qmd/refresh_qmd_index.py`](./qmd/refresh_qmd_index.py) | `qmd` | index, embed, session-end, completion-gate | Refresh an existing local qmd index after explicit user approval. |
+| [`qmd/setup_qmd_collections.py`](./qmd/setup_qmd_collections.py) | `qmd` | index, collections, embed | Set up missing qmd collections only after an explicit, inspected approval. |
 | [`qmd/validate_qmd_retrieval.py`](./qmd/validate_qmd_retrieval.py) | `qmd` | validation, dry-run, tokens | Dry-run qmd retrieval: health, relevance, and token-cost comparison. |
 | [`repos/scaffold_public_repos.py`](./repos/scaffold_public_repos.py) | `repos`, `scaffold`, `github` | scaffold, public-repos, agent-skills, agent-standards, ai-research, wiki-template | Automated scaffolding CLI to initialize the 3 public Koality-Assured ecosystem repositories. |
 | [`routing/generate_routing_index.py`](./routing/generate_routing_index.py) | `routing` | area-map, skill-dispatch, areas.yaml, index | Generate routing/area-map.md and routing/skill-dispatch.md. |
@@ -40,18 +42,21 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 | [`tests/test_google_suite.py`](./tests/test_google_suite.py) | `tests`, `google`, `drive`, `gmail`, `security`, `redaction` | — | Tests for Google Suite operations, administration, security gates, and downstream redaction. |
 | [`tests/test_harness_core.py`](./tests/test_harness_core.py) | `tests`, `harness`, `core` | harness, tests, core, isolation, a2a, cache | Comprehensive unit tests for the decoupled bare-metal .harness engine. |
 | [`tests/test_hybrid_dispatch.py`](./tests/test_hybrid_dispatch.py) | `tests`, `routing`, `ai-tooling` | tests, hybrid-dispatch, bm25, ambiguity-gate, schema-v2 | Unit tests for 3-Tier Hybrid Dispatch Pipeline and Schema V2 Indexing. |
+| [`tests/test_model_memory.py`](./tests/test_model_memory.py) | `tests`, `ai-tooling`, `memory` | tests, model-memory, model-capability-memory | Unit tests for scripts/ai-tooling/model_memory.py. |
 | [`tests/test_pretty_docs_security.py`](./tests/test_pretty_docs_security.py) | `tests`, `security`, `github` | tests, href, github-paths | Stdlib unit tests for href allow-list and GitHub path helpers. |
 | [`tests/test_public_llm_admin.py`](./tests/test_public_llm_admin.py) | `tests`, `llm`, `admin` | tests, public-llm-admin, openai, anthropic, gemini | Unit tests for scripts/llm/public_llm_admin.py. |
+| [`tests/test_qmd_preflight.py`](./tests/test_qmd_preflight.py) | `tests`, `qmd` | qmd, preflight, onboarding | Unit tests for the non-mutating qmd lifecycle preflight. |
 | [`tests/test_scaffold_public_repos.py`](./tests/test_scaffold_public_repos.py) | `tests`, `repos`, `scaffold` | tests, scaffold_public_repos, agent-skills, agent-standards, ai-research, wiki-template | Unit tests for public ecosystem repositories scaffolding automation. |
 | [`tests/test_skill_graph.py`](./tests/test_skill_graph.py) | `tests`, `routing`, `skills`, `dag` | tests, dag, topological-sort, dependencies, prerequisites | Unit tests for skill dependency DAG resolution, topological ordering, and Schema V2 conventions. |
 | [`tests/test_validate_agent.py`](./tests/test_validate_agent.py) | `tests`, `ai-tooling`, `agents`, `schema-v2` | tests, validate-agent, agents | Unit tests for Schema V2 agent validation. |
+| [`tests/test_validate_skill.py`](./tests/test_validate_skill.py) | `tests`, `ai-tooling`, `skills`, `schema-v2` | tests, validate-skill, skills | Unit tests for Schema V2 skill validation. |
 | [`tests/test_validate_structure_fast.py`](./tests/test_validate_structure_fast.py) | `tests`, `docs`, `validation` | tests, validate_structure_fast, markdown | Unit tests for fast structural validator. |
 
 ## By tag
 
 - **admin:** `tests/test_cloud_admin.py`, `tests/test_public_llm_admin.py`
 - **agents:** `ai-tooling/validate_agent.py`, `tests/test_validate_agent.py`
-- **ai-tooling:** `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `tests/test_hybrid_dispatch.py`, `tests/test_validate_agent.py`
+- **ai-tooling:** `ai-tooling/model_memory.py`, `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `tests/test_hybrid_dispatch.py`, `tests/test_model_memory.py`, `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
 - **ast-grep:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`
 - **change-history:** `change-history/append_change_history.py`, `change-history/ensure_change_history_quarter.py`
 - **cloud:** `tests/test_cloud_admin.py`
@@ -71,14 +76,15 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 - **lint:** `docs/validate_structure_fast.py`
 - **llm:** `tests/test_public_llm_admin.py`
 - **markdown:** `docs/run_markdownlint.py`
-- **qmd:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `qmd/refresh_qmd_index.py`, `qmd/setup_qmd_collections.py`, `qmd/validate_qmd_retrieval.py`
+- **memory:** `ai-tooling/model_memory.py`, `tests/test_model_memory.py`
+- **qmd:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `qmd/qmd_preflight.py`, `qmd/refresh_qmd_index.py`, `qmd/setup_qmd_collections.py`, `qmd/validate_qmd_retrieval.py`, `tests/test_qmd_preflight.py`
 - **redaction:** `tests/test_google_suite.py`
 - **repos:** `repos/scaffold_public_repos.py`, `tests/test_scaffold_public_repos.py`
 - **routing:** `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `docs/validate_wiki_structure.py`, `routing/generate_routing_index.py`, `routing/generate_script_index.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `routing/resolve_skill_graph.py`, `routing/spawn_worktree.py`, `tests/test_hybrid_dispatch.py`, `tests/test_skill_graph.py`
 - **scaffold:** `repos/scaffold_public_repos.py`, `tests/test_scaffold_public_repos.py`
-- **schema-v2:** `tests/test_validate_agent.py`
+- **schema-v2:** `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
 - **security:** `sync/sync_public_repos.py`, `tests/test_google_suite.py`, `tests/test_pretty_docs_security.py`
-- **skills:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`
+- **skills:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`, `tests/test_validate_skill.py`
 - **sync:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`
-- **tests:** `tests/test_cloud_admin.py`, `tests/test_google_suite.py`, `tests/test_harness_core.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pretty_docs_security.py`, `tests/test_public_llm_admin.py`, `tests/test_scaffold_public_repos.py`, `tests/test_skill_graph.py`, `tests/test_validate_agent.py`, `tests/test_validate_structure_fast.py`
+- **tests:** `tests/test_cloud_admin.py`, `tests/test_google_suite.py`, `tests/test_harness_core.py`, `tests/test_hybrid_dispatch.py`, `tests/test_model_memory.py`, `tests/test_pretty_docs_security.py`, `tests/test_public_llm_admin.py`, `tests/test_qmd_preflight.py`, `tests/test_scaffold_public_repos.py`, `tests/test_skill_graph.py`, `tests/test_validate_agent.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`
 - **validation:** `docs/validate_structure_fast.py`, `tests/test_validate_structure_fast.py`

@@ -8,6 +8,12 @@ description: >-
 owner_agent: ai-tooling-ops
 rank: high
 isolation: mutate
+schema_version: "2.0.0"
+contracts:
+  inputs:
+    - Target memory file path, updated operational failure modes, quirks, and recovery steps
+  outputs:
+    - Validated and updated memory file conforming to memory standard
 ---
 
 # Memory adjust

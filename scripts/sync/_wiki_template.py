@@ -508,14 +508,6 @@ def render_dest_skill_dispatch(dest_root: Path) -> str:
             return "`none`" if owner == "none" else (owner or "—")
         return f"[`{owner}`](../ai-tooling/agents/{owner}/AGENT.md)"
 
-    skill_link_map = {}
-    for r in rows:
-        p = r.get("path")
-        if isinstance(p, Path):
-            skill_link_map[r["name"]] = (Path("..") / p.relative_to(dest_root)).as_posix()
-        else:
-            skill_link_map[r["name"]] = f"../ai-tooling/skills/{r['name']}/SKILL.md"
-
     lines = [
         "---",
         "doc_kind: routing_map",
@@ -535,8 +527,7 @@ def render_dest_skill_dispatch(dest_root: Path) -> str:
         "| --- | --- | --- | --- | --- |",
     ]
     for row in rows:
-        link_target = skill_link_map.get(row["name"], f"../ai-tooling/skills/{row['name']}/SKILL.md")
-        skill_link = f"[`{row['name']}`]({link_target})"
+        skill_link = f"[`{row['name']}`](../ai-tooling/skills/{row['name']}/SKILL.md)"
         lines.append(
             f"| {skill_link} | {_agent_cell(row['owner_agent'])} | `{row['rank']}` | "
             f"`{row['isolation']}` | {_md_cell(row['description'])} |"
@@ -552,29 +543,16 @@ def render_dest_skill_dispatch(dest_root: Path) -> str:
         ]
     )
     for row in rows:
-        link_target = skill_link_map.get(row["name"], f"../ai-tooling/skills/{row['name']}/SKILL.md")
-        skill_link = f"[`{row['name']}`]({link_target})"
+        skill_link = f"[`{row['name']}`](../ai-tooling/skills/{row['name']}/SKILL.md)"
         deps = row.get("dependencies", {})
         req_list = deps.get("required_skills", [])
         del_list = deps.get("delegated_skills", [])
         ins_list = deps.get("in_session_skills", [])
         prereqs_list = row.get("prerequisites", [])
 
-        req_str = (
-            ", ".join(f"[`{s}`]({skill_link_map.get(s, f'../ai-tooling/skills/{s}/SKILL.md')})" for s in req_list)
-            if req_list
-            else "—"
-        )
-        del_str = (
-            ", ".join(f"[`{s}`]({skill_link_map.get(s, f'../ai-tooling/skills/{s}/SKILL.md')})" for s in del_list)
-            if del_list
-            else "—"
-        )
-        ins_str = (
-            ", ".join(f"[`{s}`]({skill_link_map.get(s, f'../ai-tooling/skills/{s}/SKILL.md')})" for s in ins_list)
-            if ins_list
-            else "—"
-        )
+        req_str = ", ".join(f"[`{s}`](../ai-tooling/skills/{s}/SKILL.md)" for s in req_list) if req_list else "—"
+        del_str = ", ".join(f"[`{s}`](../ai-tooling/skills/{s}/SKILL.md)" for s in del_list) if del_list else "—"
+        ins_str = ", ".join(f"[`{s}`](../ai-tooling/skills/{s}/SKILL.md)" for s in ins_list) if ins_list else "—"
         prereqs_str = ", ".join(f"`{p}`" for p in prereqs_list) if prereqs_list else "—"
         fail_str = f"`{row.get('on_failure', 'abort_and_rollback')}`"
 
@@ -638,12 +616,11 @@ def _keep_ai_tooling(parts: list[str]) -> bool:
             return agent_is_kept(parts[2])
         return False
     if len(parts) >= 2 and parts[1] == "skills":
-        if len(parts) == 3 and parts[2] in {"AGENTS.md", "skill-conventions.md", "README.md"}:
+        if len(parts) == 3 and parts[2] in {"AGENTS.md", "skill-conventions.md"}:
             return True
-        for p in parts[2:]:
-            if p in WIKI_TEMPLATE_DROP_SKILLS or p.startswith(WIKI_TEMPLATE_DROP_SKILL_PREFIXES):
-                return False
-        return any(skill_is_kept(p) for p in parts[2:]) or len(parts) == 3
+        if len(parts) >= 3:
+            return skill_is_kept(parts[2])
+        return False
     if len(parts) >= 2 and parts[1] == "memory":
         if parts[-1] in {"AGENTS.md", ".gitkeep"}:
             if len(parts) >= 4 and parts[2] == "user":
@@ -675,10 +652,7 @@ def _ai_tooling_dir_may_contain_kept(parts: list[str]) -> bool:
     if parts[1] == "skills":
         if len(parts) == 2:
             return True
-        for p in parts[2:]:
-            if p in WIKI_TEMPLATE_DROP_SKILLS or p.startswith(WIKI_TEMPLATE_DROP_SKILL_PREFIXES):
-                return False
-        return True
+        return skill_is_kept(parts[2])
     if parts[1] == "memory":
         if len(parts) >= 4 and parts[2] == "user":
             return False

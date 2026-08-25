@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: github-workflow
 description: >-
   GitHub operations via gh (status, PRs, checks, issues) plus branch discipline
@@ -8,6 +9,11 @@ description: >-
 owner_agent: github-ops
 rank: high
 isolation: mutate
+contracts:
+  inputs:
+    - GitHub operation (status, PR create/review, checks, issues) and branch context
+  outputs:
+    - gh command results, PR URL or summary, or remote status
 ---
 
 # GitHub workflow

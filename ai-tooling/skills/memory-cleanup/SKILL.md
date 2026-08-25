@@ -8,6 +8,12 @@ description: >-
 owner_agent: ai-tooling-ops
 rank: medium
 isolation: mutate
+schema_version: "2.0.0"
+contracts:
+  inputs:
+    - Memory cleanup scope, target agent/user folders
+  outputs:
+    - Cleaned memory directories with obsolete files removed or archived
 ---
 
 # Memory cleanup

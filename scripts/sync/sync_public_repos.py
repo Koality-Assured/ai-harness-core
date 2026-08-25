@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import hashlib
 import datetime as dt
 import json
 import os
@@ -110,7 +111,8 @@ class RedactionAuditEntry:
     file: str
     line: int
     rule: str
-    match_preview: str
+    match_fingerprint: str
+    match_length: int
     replacement: str
 
     def to_dict(self) -> dict[str, Any]:
@@ -118,7 +120,8 @@ class RedactionAuditEntry:
             "file": self.file,
             "line": self.line,
             "rule": self.rule,
-            "match_preview": self.match_preview,
+            "match_fingerprint": self.match_fingerprint,
+            "match_length": self.match_length,
             "replacement": self.replacement,
         }
 
@@ -212,7 +215,13 @@ def build_default_rules(custom_usernames: list[str] | None = None) -> list[Redac
         RedactionRule(
             name="scratch_worktree_path",
             description="Internal scratch and agent worktree paths",
-            pattern=re.compile(r"(?:[a-zA-Z0-9_\-\./\\]*[/\\])?scratch[/\\]worktrees[/\\][a-zA-Z0-9_\-\./\\]*"),
+            # Lookbehinds sit immediately before scratch so parent-relative
+            # ../scratch/worktrees/ docs are not swallowed by a leading slash.
+            pattern=re.compile(
+                r"(?:(?:[a-zA-Z]:)?(?:[/\\](?:(?!\.\.)[a-zA-Z0-9_\-\.]+))+[/\\])?"
+                r"(?<!\.\./)(?<!\.\.\\)"
+                r"scratch[/\\]worktrees[/\\](?!<)[a-zA-Z0-9_\-\./\\]+"
+            ),
             replacement="[REDACTED_WORKTREE_PATH]",
         ),
         RedactionRule(
@@ -226,12 +235,6 @@ def build_default_rules(custom_usernames: list[str] | None = None) -> list[Redac
             description="Absolute internal repo root directory paths",
             pattern=re.compile(r"(?i)[a-zA-Z]:[\\/](?:Code|Projects|repos|dev)[\\/]ai-router[\\/]"),
             replacement="[REPO_ROOT]/",
-        ),
-        RedactionRule(
-            name="google_drive_test_folder",
-            description="Google Drive test folder ID and URL",
-            pattern=re.compile(r"https?://drive\.google\.com/drive/folders/1noGxOG_[a-zA-Z0-9_-]+|1noGxOG_[a-zA-Z0-9_-]+"),
-            replacement="[REDACTED_GOOGLE_DRIVE_TEST_FOLDER]",
         ),
 
         # 3. Internal Identities & Domains
@@ -301,13 +304,14 @@ class RedactionEngine:
                     repl_str = rule.replacement
 
                 # Record audit log
-                preview = matched_str if len(matched_str) <= 60 else matched_str[:25] + "..." + matched_str[-25:]
+                digest = hashlib.sha256(matched_str.encode("utf-8")).hexdigest()[:12]
                 audit_entries.append(
                     RedactionAuditEntry(
                         file=file_rel_path,
                         line=line_num,
                         rule=rule.name,
-                        match_preview=preview,
+                        match_fingerprint=f"sha256:{digest}",
+                        match_length=len(matched_str),
                         replacement=repl_str if len(repl_str) <= 60 else repl_str[:50] + "...",
                     )
                 )
@@ -331,9 +335,10 @@ class RedactionEngine:
                 start_pos = match.start()
                 line_num = text.count("\n", 0, start_pos) + 1
                 matched_str = match.group(0)
-                preview = matched_str if len(matched_str) <= 40 else matched_str[:18] + "..." + matched_str[-18:]
+                digest = hashlib.sha256(matched_str.encode("utf-8")).hexdigest()[:12]
                 violations.append(
-                    f"{file_rel_path}:{line_num} - Found sensitive pattern '{rule.name}' ({rule.description}): {preview}"
+                    f"{file_rel_path}:{line_num} - Found sensitive pattern '{rule.name}' "
+                    f"({rule.description}; length={len(matched_str)}; sha256:{digest})"
                 )
         return violations
 
@@ -424,11 +429,9 @@ class SyncEngine:
         for root, dirs, files in os.walk(src_dir):
             root_path = Path(root)
             try:
-                src_resolved = src_dir.resolve()
-                if dest_resolved == src_resolved or src_resolved in dest_resolved.parents:
-                    if root_path.resolve() == dest_resolved or dest_resolved in root_path.resolve().parents:
-                        dirs[:] = []
-                        continue
+                if root_path.resolve() == dest_resolved or dest_resolved in root_path.resolve().parents:
+                    dirs[:] = []
+                    continue
             except OSError:
                 pass
 
@@ -688,7 +691,7 @@ def format_text_report(report: SyncReport) -> str:
         for entry in all_audits[:30]:
             lines.append(
                 f"  - {entry['file']}:{entry['line']} [{entry['rule']}]\n"
-                f"      Original:    {entry['match_preview']}\n"
+                f"      Match:       {entry['match_fingerprint']} (length={entry['match_length']})\n"
                 f"      Replacement: {entry['replacement']}"
             )
         if len(all_audits) > 30:

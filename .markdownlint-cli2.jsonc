@@ -29,7 +29,7 @@
   "noInlineConfig": true,
   "ignores": [
     "scratch/**",
-    "[REDACTED_WORKTREE_PATH]**",
+    "scratch/worktrees/**",
     "change-history/**",
     "node_modules/**",
     ".git/**",

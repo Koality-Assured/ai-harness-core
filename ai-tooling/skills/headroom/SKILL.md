@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: headroom
 description: >-
   Operate Headroom (local LLM context-compression proxy and MCP) for token cost
@@ -9,6 +10,11 @@ description: >-
 owner_agent: router-maintenance
 rank: critical
 isolation: read-only
+contracts:
+  inputs:
+    - Install or run intent, proxy port, and profile (default coding)
+  outputs:
+    - Headroom proxy or MCP on localhost, or a compressed bulky tool-output result
 ---
 
 # Headroom

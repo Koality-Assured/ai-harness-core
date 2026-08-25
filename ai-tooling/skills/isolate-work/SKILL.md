@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: isolate-work
 description: >-
   Spawn a git worktree and branch with area claims so concurrent agents do not
@@ -7,6 +8,11 @@ description: >-
 owner_agent: router
 rank: critical
 isolation: mutate
+contracts:
+  inputs:
+    - Area CSV, kebab slug, and owner agent id
+  outputs:
+    - spawn_worktree.py check/add/remove JSON with worktree path, branch, and claim result
 ---
 
 # Isolate work
@@ -32,7 +38,7 @@ Critical: overlapping checkouts corrupt work and confuse agents. Area overlap wi
 
 ## Isolation
 
-This skill *is* isolation. Parent/router **MUST** run `python scripts/routing/spawn_worktree.py` check/add/remove itself before other mutating skills. **MUST NOT spawn** `router-maintenance` to run that CLI, even bundled with other chores. After merge, the parent removes the worktree without a specialist. `spawn_worktree.py` writes claims on the primary checkout under `[REDACTED_WORKTREE_PATH]` (gitignored).
+This skill *is* isolation. Parent/router **MUST** run `python scripts/routing/spawn_worktree.py` check/add/remove itself before other mutating skills. **MUST NOT spawn** `router-maintenance` to run that CLI, even bundled with other chores. After merge, the parent removes the worktree without a specialist. `spawn_worktree.py` writes claims on the primary checkout under `scratch/worktrees/` (gitignored).
 
 ## How to use
 

@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: scratch-cleanup
 description: >-
   Delete or promote scratch/ contents (downloads, experiments, leftover
@@ -7,13 +8,18 @@ description: >-
 owner_agent: router-maintenance
 rank: high
 isolation: mutate
+contracts:
+  inputs:
+    - scratch/ cleanup scope (promote vs delete; worktree slugs)
+  outputs:
+    - Promoted owning-area files or deleted scratch items; worktrees removed when authorized
 ---
 
 # Scratch cleanup
 
 ## When to use
 
-Session-end hygiene, leftover `[REDACTED_WORKTREE_PATH]`, downloads, or experiments that were never promoted.
+Session-end hygiene, leftover `scratch/worktrees/`, downloads, or experiments that were never promoted.
 
 ## When not to use
 

@@ -8,6 +8,12 @@ description: >-
 owner_agent: ai-tooling-ops
 rank: high
 isolation: mutate
+schema_version: "2.0.0"
+contracts:
+  inputs:
+    - Target skill name matching ai-tooling/skills/<name>/SKILL.md, owner agent ID, isolation mode, description
+  outputs:
+    - Validated SKILL.md file and updated dispatch table
 ---
 
 # Skill builder
@@ -39,8 +45,8 @@ High: every router skill must share this shape so dispatch, validation, and spec
 1. Confirm source-area docs exist; update them first if behavior is a durable rule.
 2. Choose `name` (folder), `owner_agent`, `rank`, `isolation`.
 3. Prefer creating or calling tagged Python under `scripts/<purpose>/` for repeatable steps; associate that script from the skill. Python unless the step is OS-shell-only (`git` / `gh` / `qmd` / vendor installers).
-4. Write `ai-tooling/skills/<name>/SKILL.md` with required frontmatter and the nine `##` headings. Link; do not paste Critical rules. `## How to use` must discover via `qmd search` (no tree walks). `## Security` must include the sentence starting `Inherits Critical cost layers` and name qmd, ast-grep, and Headroom.
-5. Register via `python scripts/routing/generate_skill_dispatch.py` — that file plus `owner_agent` AGENT.md + A2A cards are the agent catalogs. Keep [`../README.md`](../README.md) **human-thin** (folder blurb); do not treat README as the skill catalog.
+4. Write `ai-tooling/skills/<name>/SKILL.md` (flat catalog; not `skills/<family>/<name>/`) with required Schema V2 frontmatter and the nine `##` headings. Link; do not paste Critical rules. `## How to use` must discover via `qmd search` (no tree walks). `## Security` must include the sentence starting `Inherits Critical cost layers` and name qmd, ast-grep, and Headroom.
+5. Register via `python scripts/routing/generate_skill_dispatch.py` — that file plus the `owner_agent` AGENT.md are the agent catalogs; deprecated standalone A2A cards are not registration. Keep [`../README.md`](../README.md) **human-thin** (folder blurb); do not treat README as the skill catalog.
 6. `python scripts/ai-tooling/validate_skill.py --skill <name>`
 7. Dry-run the new skill's own Dry run section.
 

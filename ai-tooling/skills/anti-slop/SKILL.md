@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: anti-slop
 description: >-
   Strips AI wording and design/UI slop from human-readable deliverables, or
@@ -9,6 +10,11 @@ description: >-
 owner_agent: artifact-agent
 rank: high
 isolation: mutate
+contracts:
+  inputs:
+    - Deliverable path and mode (edit rewrite or detect-only)
+  outputs:
+    - Slop-stripped draft, or quoted pattern findings with short fixes
 ---
 
 # Anti-slop

@@ -40,6 +40,27 @@ Body text.
         self.assertEqual(data.get("agent_id"), "test-agent")
         self.assertIn("# Title", body)
 
+    def test_extract_frontmatter_preserves_nested_schema_without_pyyaml(self) -> None:
+        raw = """---
+schema_version: 2.0.0
+description: >-
+  First line.
+  Second line.
+contracts:
+  inputs:
+    properties:
+      request:
+        description: Nested description must not replace the skill description
+  outputs:
+    result: string
+---
+# Title
+"""
+        data, _, err = extract_frontmatter_and_body(raw)
+        self.assertIsNone(err)
+        self.assertEqual(data.get("description"), "First line. Second line.")
+        self.assertEqual(data["contracts"]["inputs"]["properties"]["request"]["description"], "Nested description must not replace the skill description")
+
     def test_extract_frontmatter_missing(self) -> None:
         raw = "# No frontmatter"
         data, body, err = extract_frontmatter_and_body(raw)

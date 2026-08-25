@@ -1,4 +1,4 @@
-"""Print qmd collection/context setup commands for this repo (and optionally run them).
+"""Set up missing qmd collections only after an explicit, inspected approval.
 
 tags: [qmd]
 routing_hints: [index, collections, embed]
@@ -15,10 +15,12 @@ qmd ignore patterns are **YAML-only** (no ``collection add`` flag). After
 ``index.yml`` with ``PREFERRED_README_IGNORE`` for matching names only.
 
 ``--apply`` mutates local qmd config (operator ``index.yml`` under XDG /
-``~/.config/qmd/`` / AppData, or project ``.qmd/``). That can affect
-workstation-wide qmd behavior for this repo's collection names — require
-human OK before ``--apply``. After scoping, other repos' collections must
-remain untouched.
+``~/.config/qmd/`` / AppData, or project ``.qmd/``). It is intentionally
+blocked unless the caller supplies ``--approved-by-user``. Existing
+collections are reused; only ``--create-missing`` can add absent collections.
+Before mutation, the script inspects known qmd config files for hook keys and
+requires ``--allow-detected-hooks`` if it finds any. Other operator-global
+collections remain untouched.
 
 Supporting tool pages are kebab-case topic files (not READMEs), e.g.
 ``query-pattern.md``, ``pages-wrangler.md``, ``precision-retrieval.md``,
@@ -41,6 +43,7 @@ from pathlib import Path
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
 from paths import REPO_ROOT as ROOT  # noqa: E402
+from qmd_preflight import inspect_qmd_hooks  # noqa: E402
 
 COLLECTIONS: list[tuple[str, str, str]] = [
     ("routing", "routing", "Second-hop area maps — read early in agent sessions"),
@@ -111,6 +114,11 @@ def apply_readme_ignore(
     try:
         import yaml  # type: ignore
     except ImportError:
+        if dry_run:
+            return [
+                "warning: PyYAML unavailable; dry run cannot inspect existing ignore patterns. "
+                f"Planned ignore for repo collections: {PREFERRED_README_IGNORE}"
+            ]
         return [
             "error: PyYAML required to patch index.yml ignore patterns "
             "(pip install pyyaml)"
@@ -169,15 +177,80 @@ def run(cmd: list[str], *, dry_run: bool) -> None:
     subprocess.run(cmd, check=True, cwd=ROOT)
 
 
+def list_collection_names(qmd: str) -> set[str]:
+    """Return qmd collection names before a requested setup mutation."""
+    proc = subprocess.run(
+        [qmd, "collection", "list"],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=ROOT,
+    )
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout).strip()[-1200:]
+        raise RuntimeError(
+            "qmd collection list failed; preserve the existing index and resolve "
+            f"access before setup. Detail: {detail}"
+        )
+    names: set[str] = set()
+    for line in proc.stdout.splitlines():
+        if "(qmd://" in line:
+            names.add(line.strip().split(None, 1)[0])
+    return names
+
+
+def require_mutation_approval(args: argparse.Namespace) -> str | None:
+    """Fail closed before any qmd/config mutation is attempted."""
+    if not args.approved_by_user:
+        return "error: --apply requires explicit --approved-by-user; run qmd_preflight first"
+    hooks = inspect_qmd_hooks()
+    candidates = hooks["potential_hooks"]
+    errors = hooks["inspection_errors"]
+    if errors:
+        return (
+            "error: unable to inspect qmd config for hooks: "
+            + ", ".join(errors)
+            + ". Preserve existing state and resolve host access before setup."
+        )
+    if candidates and not args.allow_detected_hooks:
+        return (
+            "error: potential qmd config hook directives found in "
+            f"{', '.join(candidates)}; inspect them and pass --allow-detected-hooks "
+            "only with explicit user approval"
+        )
+    if candidates:
+        print("warning: approved potential qmd config hook directives in " + ", ".join(candidates))
+    else:
+        print("qmd config hook inspection: no potential hook directives found")
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--apply",
         action="store_true",
         help=(
-            "Run qmd commands and patch index.yml ignore for this repo's "
-            "COLLECTIONS only (mutates local qmd config; needs human OK)"
+            "Patch this repo's existing collection config only; requires "
+            "--approved-by-user and hook inspection"
         ),
+    )
+    parser.add_argument(
+        "--approved-by-user",
+        action="store_true",
+        help="Confirm the human explicitly approved the requested qmd mutation",
+    )
+    parser.add_argument(
+        "--create-missing",
+        action="store_true",
+        help="With --apply, add only absent repo collections and their contexts",
+    )
+    parser.add_argument(
+        "--allow-detected-hooks",
+        action="store_true",
+        help="Acknowledge inspected qmd config hook directives before --apply",
     )
     parser.add_argument(
         "--embed",
@@ -192,7 +265,15 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     dry_run = not args.apply
 
+    if args.embed and not args.apply:
+        print("error: --embed requires --apply and explicit user approval", file=sys.stderr)
+        return 1
+
     if args.apply:
+        approval_error = require_mutation_approval(args)
+        if approval_error:
+            print(approval_error, file=sys.stderr)
+            return 1
         yaml_err = require_pyyaml()
         if yaml_err:
             print(yaml_err, file=sys.stderr)
@@ -203,8 +284,30 @@ def main(argv: list[str] | None = None) -> int:
         print("error: `qmd` not found on PATH; install with: npm i -g @tobilu/qmd", file=sys.stderr)
         return 1
 
+    existing: set[str] = set()
+    if args.apply:
+        try:
+            existing = list_collection_names(qmd or "qmd")
+        except RuntimeError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+
+    missing = [name for name, _, _ in COLLECTIONS if name not in existing]
+    if args.apply and missing and not args.create_missing:
+        print(
+            "error: repo qmd collection(s) missing: "
+            + ", ".join(missing)
+            + ". Existing collections were not changed. Re-run with --create-missing only after "
+            "reviewing qmd_preflight output and receiving explicit user approval.",
+            file=sys.stderr,
+        )
+        return 1
+
     for name, rel, context in COLLECTIONS:
         path = ROOT / rel
+        if args.apply and name in existing:
+            print(f"= reuse existing collection {name}; no collection/context mutation")
+            continue
         run([qmd or "qmd", "collection", "add", str(path), "--name", name], dry_run=dry_run)
         run([qmd or "qmd", "context", "add", f"qmd://{name}", context], dry_run=dry_run)
 
@@ -232,12 +335,13 @@ def main(argv: list[str] | None = None) -> int:
             run([qmd or "qmd", "embed"], dry_run=False)
 
     if dry_run:
-        print("\nDry run only. Re-run with --apply (and optionally --embed) after installing qmd.")
+        print("\nDry run only. First run qmd_preflight.py to check whether an index is reusable.")
         print(
-            f"README ignore {PREFERRED_README_IGNORE} is applied via YAML patch of index.yml "
+            f"README ignore {PREFERRED_README_IGNORE} would be applied via YAML patch of index.yml "
             f"for this repo's COLLECTIONS only ({', '.join(sorted(COLLECTION_NAMES))}). "
             "Other collections in the operator index are untouched. "
-            "--apply mutates local qmd config and needs human OK for workstation-wide effects. "
+            "Mutation requires --apply --approved-by-user; use --create-missing only when preflight says "
+            "collections are missing. Inspect hooks before approving any mutation. "
             "(Supporting kebab-case pages: query-pattern.md, pages-wrangler.md, "
             "precision-retrieval.md, proxy-mcp.md, gh-workflow-notes.md)."
         )

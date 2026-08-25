@@ -13,8 +13,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
 from md import (  # noqa: E402
@@ -23,6 +21,7 @@ from md import (  # noqa: E402
     agent_ids,
     agent_paths,
     heading_titles,
+    parse_frontmatter,
 )
 from paths import REPO_ROOT as ROOT  # noqa: E402
 
@@ -45,16 +44,7 @@ def extract_frontmatter_and_body(text: str) -> tuple[dict[str, Any] | None, str,
     end = rest.find("\n---")
     if end == -1:
         return None, text, "unterminated YAML frontmatter (no closing ---)"
-    raw_yaml = rest[:end]
-    body = rest[end + 4 :]
-    if body.startswith("\r\n"):
-        body = body[2:]
-    elif body.startswith("\n"):
-        body = body[1:]
-    try:
-        data = yaml.safe_load(raw_yaml)
-    except yaml.YAMLError as exc:
-        return None, body, f"YAML parse error: {exc}"
+    data, body = parse_frontmatter(text)
     if not isinstance(data, dict):
         return None, body, "frontmatter is not a YAML mapping"
     return data, body, None

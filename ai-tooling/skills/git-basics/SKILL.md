@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: git-basics
 description: >-
   Simple git operations: fetch, status, log, diff, branch list, pull/sync on the
@@ -7,6 +8,11 @@ description: >-
 owner_agent: git-fast-operator
 rank: low
 isolation: mutate
+contracts:
+  inputs:
+    - Allowed git op (fetch, status, log, diff, branch list, pull/sync) on the current branch
+  outputs:
+    - Summarized git state for the parent (not full log dumps)
 ---
 
 # Git basics

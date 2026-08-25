@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: skill-dry-run
 description: >-
   Dry-run test any catalogued skill (template check plus the skill's own Dry
@@ -8,6 +9,11 @@ description: >-
 owner_agent: ai-tooling-ops
 rank: high
 isolation: read-only
+contracts:
+  inputs:
+    - Skill name or --all flag
+  outputs:
+    - Template validation result plus Dry run command output and unexpected-diff report
 ---
 
 # Skill dry run

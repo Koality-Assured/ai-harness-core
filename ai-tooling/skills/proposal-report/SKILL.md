@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: proposal-report
 description: >-
   Proposal report based on projects/ specs via build_document.py --type
@@ -8,6 +9,11 @@ description: >-
 owner_agent: artifact-agent
 rank: medium
 isolation: mutate
+contracts:
+  inputs:
+    - projects/ spec slug
+  outputs:
+    - Proposal report under results/reports/proposal/ with open decisions for the orchestrator
 ---
 
 # Proposal report

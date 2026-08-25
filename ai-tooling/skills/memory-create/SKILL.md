@@ -8,6 +8,12 @@ description: >-
 owner_agent: ai-tooling-ops
 rank: high
 isolation: mutate
+schema_version: "2.0.0"
+contracts:
+  inputs:
+    - Target agent ID or user git-identity, topic slug, failure modes, quirks, recovery strategies
+  outputs:
+    - Validated memory file conforming to memory standard
 ---
 
 # Memory create

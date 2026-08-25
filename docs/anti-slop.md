@@ -57,8 +57,8 @@ Criterion: a point of view plus structural variety — not swapping one default 
 
 ## Skills (procedure)
 
-- [`../ai-tooling/skills/anti-slop/SKILL.md`](..\ai-tooling\skills\reporting\anti-slop\SKILL.md) — detect and strip AI wording/design slop
-- [`../ai-tooling/skills/humanizer/SKILL.md`](..\ai-tooling\skills\reporting\humanizer\SKILL.md) — rewrite remaining prose so it reads human without changing claims
+- [`../ai-tooling/skills/anti-slop/SKILL.md`](../ai-tooling/skills/anti-slop/SKILL.md) — detect and strip AI wording/design slop
+- [`../ai-tooling/skills/humanizer/SKILL.md`](../ai-tooling/skills/humanizer/SKILL.md) — rewrite remaining prose so it reads human without changing claims
 
 Parent matches [`../routing/skill-dispatch.md`](../routing/skill-dispatch.md), isolates if mutating, and spawns the skill `owner_agent`. Do not execute those skills in the parent when a specialist owns them.
 

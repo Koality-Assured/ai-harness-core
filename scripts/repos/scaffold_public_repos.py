@@ -475,17 +475,17 @@ author: Koality-Assured
 ### 1. Worktree Creation
 ```bash
 # Create dedicated branch and worktree
-git worktree add [REDACTED_WORKTREE_PATH]<branch-slug> -b agent/<YYYY-MM-DD>-<branch-slug>
+git worktree add scratch/worktrees/<branch-slug> -b agent/<YYYY-MM-DD>-<branch-slug>
 ```
 
 ### 2. Execution & Isolation
-- All commands, edits, and test runs for the task MUST be confined to `[REDACTED_WORKTREE_PATH]<branch-slug>`.
+- All commands, edits, and test runs for the task MUST be confined to `scratch/worktrees/<branch-slug>`.
 - Do not modify files in the root worktree or other sibling worktrees.
 
 ### 3. Cleanup & Teardown
 ```bash
 # After branch is committed or merged
-git worktree remove [REDACTED_WORKTREE_PATH]<branch-slug>
+git worktree remove scratch/worktrees/<branch-slug>
 git worktree prune
 ```
 """

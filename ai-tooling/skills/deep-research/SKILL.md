@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: deep-research
 description: >-
   Deep research into a topic with vendor primary sources and high-quality
@@ -8,6 +9,11 @@ description: >-
 owner_agent: detailed-activity
 rank: high
 isolation: mutate
+contracts:
+  inputs:
+    - Research question or topic and optional in-repo vs external scope
+  outputs:
+    - Cited research note under results/research/<topic>/<date>/
 ---
 
 # Deep research

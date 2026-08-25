@@ -4,7 +4,7 @@ canonical_id: workstation-onboarding
 purpose: [process]
 rank: high
 topics: [onboarding, python, qmd, ast-grep, headroom]
-rag_keywords: [onboarding, python, path, qmd, headroom, ast-grep, utf8, noir]
+rag_keywords: [onboarding, python, path, qmd, headroom, ast-grep, utf8, noir, smart-app-control]
 ---
 
 # Workstation onboarding
@@ -27,10 +27,6 @@ This repo expects a real CPython, Node for qmd, and the cost-layer CLIs. Optiona
 | uv | recommended | 0.4+ | Isolated Python tools (Headroom) | Vendor install |
 | Headroom | recommended | 0.35+ | Compress bulky dumps | Else `scripts/_lib/tool_output.py`. [`headroom/proxy-mcp.md`](./headroom/proxy-mcp.md) |
 | GitHub CLI (`gh`) | if you use GitHub | current | Auth, PRs | [`github/gh-workflow-notes.md`](./github/gh-workflow-notes.md) |
-| AWS CLI (`aws`) | optional (cloud-admin) | 2.15+ | AWS Organizations & SSO | [`../docs/guidance/cloud-aws-setup.md`](../docs/guidance/cloud-aws-setup.md) |
-| Google Cloud SDK (`gcloud`) | optional (cloud-admin) | current | GCP Resource Manager & ADC | [`../docs/guidance/cloud-gcp-setup.md`](../docs/guidance/cloud-gcp-setup.md) |
-| Azure CLI (`az`) | optional (cloud-admin) | 2.50+ | Azure Management Groups & Entra | [`../docs/guidance/cloud-azure-setup.md`](../docs/guidance/cloud-azure-setup.md) |
-| Google Workspace APIs | optional (google-suite) | current | Drive, Gmail, Docs & Workspace Admin | [`google/google-suite-patterns.md`](./google/google-suite-patterns.md) |
 | Mermaid CLI (`mmdc`) | optional | 10+ | Offline diagram render | [`mermaid/agent-diagram-notes.md`](./mermaid/agent-diagram-notes.md) |
 | Docker / Noir | optional | — | Attack-surface inventory | Wrapper only. [`noir/agent-scan.md`](./noir/agent-scan.md) |
 
@@ -49,16 +45,19 @@ These fail silently if omitted. The linked page has the recipe when one is neede
 | Windows Store `python` stub | `python` may open the Store. Disable App execution aliases for `python.exe` / `python3.exe`. Use python.org (or equivalent) CPython. Typical 3.13 layout: `%LOCALAPPDATA%\Programs\Python\Python313\`. |
 | PATH order | Put that Python directory and its `Scripts\` folder on `PATH` ahead of `%LOCALAPPDATA%\Microsoft\WindowsApps`. pip-installed `ast-grep.exe` lands in `Scripts\`. |
 | Windows UTF-8 | Default PowerShell encoding corrupts non-ASCII CLI output. Configure the console per [`powershell/powershell-python-patterns.md`](./powershell/powershell-python-patterns.md). |
-| qmd execution policy | If PowerShell blocks `qmd.ps1`, call `qmd.cmd` (or `node`). Pitfalls: [`qmd/query-pattern.md`](./qmd/query-pattern.md). |
+| qmd execution policy / cache access | If PowerShell blocks `qmd.ps1`, call `qmd.cmd` (or `node`). Before any setup, run the qmd preflight; a present-but-inaccessible index is a sandbox or permissions issue, not a reason to rebuild. [`qmd/query-pattern.md`](./qmd/query-pattern.md). |
 | Headroom bind and extras | Bind `127.0.0.1`; do not pass `--host 0.0.0.0`. Install `headroom-ai[proxy,mcp]`. Do not install `[all]` (local PyTorch/ML). [`headroom/proxy-mcp.md`](./headroom/proxy-mcp.md). |
-| Cloud & LLM credentials | Never store static keys in config files. Use AWS CLI SSO (`aws configure sso`), GCP Application Default Credentials (`gcloud auth application-default login`), Azure Entra login (`az login`), and ephemeral environment variables for LLM APIs. |
-| Google Workspace OAuth | Use ADC or Workload Identity Federation. Dedicated test folder IDs ([REDACTED_GOOGLE_DRIVE_TEST_FOLDER]) are scrubbed upon sync export. [`google/google-suite-patterns.md`](./google/google-suite-patterns.md). |
 | Noir | Agents MUST call `python scripts/results/run_noir_scan.py`. Never invoke raw `noir` or pass `--ai-provider` / `--ai-context` / `--ai-model`. [`noir/agent-scan.md`](./noir/agent-scan.md). |
 | User memory | Create `ai-tooling/memory/user/<git-identity>/` (lowercase GitHub login or other stable id). [`../ai-tooling/memory/user/AGENTS.md`](../ai-tooling/memory/user/AGENTS.md). |
+| Windows Smart App Control | Unsigned or untrusted binaries may fail to start. Run the read-only preflight; do not disable SAC. [`powershell/windows-execution-control.md`](./powershell/windows-execution-control.md). |
+
+## Windows execution-control preflight
+
+On Windows, report SAC mode before treating a missing CLI as a PATH or install failure. If a binary was blocked, capture only the Code Integrity event ID and file path, then recover with a signed vendor build, a host-bundled runtime, or an enterprise App Control policy. Commands: [`powershell/windows-execution-control.md`](./powershell/windows-execution-control.md).
 
 ## Verify
 
-Confirm each required tool is on `PATH`. If you use `gh`, it should already be authenticated. Index Markdown once per machine with `python scripts/qmd/setup_qmd_collections.py --apply --embed`. After later add/remove/rename, run `python scripts/qmd/refresh_qmd_index.py`.
+Confirm each required tool is on `PATH`. If you use `gh`, it should already be authenticated. Before qmd setup, run `python scripts/qmd/qmd_preflight.py --inspect-hooks`. Reuse a healthy existing index; never recreate one by default. Only when preflight reports a missing index and the user explicitly approves the mutation, run `python scripts/qmd/setup_qmd_collections.py --apply --approved-by-user --create-missing` (add `--embed` only when embedding is also approved). After later add/remove/rename, use `python scripts/qmd/refresh_qmd_index.py --approved-by-user` only as the approved session-end mutation.
 
 Repo validators exist; run them when you need a check:
 
@@ -73,8 +72,8 @@ Repo validators exist; run them when you need a check:
 | [`ast-grep/precision-retrieval.md`](./ast-grep/precision-retrieval.md) | ast-grep CLI |
 | [`headroom/proxy-mcp.md`](./headroom/proxy-mcp.md) | Headroom proxy / MCP |
 | [`github/gh-workflow-notes.md`](./github/gh-workflow-notes.md) | `gh` and PRs |
-| [`google/google-suite-patterns.md`](./google/google-suite-patterns.md) | Google Workspace operations & auth |
 | [`mermaid/agent-diagram-notes.md`](./mermaid/agent-diagram-notes.md) | `mmdc` |
 | [`noir/agent-scan.md`](./noir/agent-scan.md) | Noir wrapper |
 | [`powershell/powershell-python-patterns.md`](./powershell/powershell-python-patterns.md) | PowerShell encoding and quoting |
+| [`powershell/windows-execution-control.md`](./powershell/windows-execution-control.md) | Read-only SAC / Code Integrity preflight |
 | [`../ai-tooling/memory/AGENTS.md`](../ai-tooling/memory/AGENTS.md) | User vs agent memory |

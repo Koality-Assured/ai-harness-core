@@ -24,7 +24,7 @@ Orchestrators pick a reasoning tier and a **platform-native** model when spawnin
 
 The orchestrator selects the column for the **current host** and never defaults to another vendor's model on a host that has first-party models. Cursor → Cursor models (never default GPT/Claude on Cursor). ChatGPT/Codex → GPT models. Antigravity → Gemini models.
 
-Product names in the table are the human-facing map. Host picker IDs change — record those on the host A2A card.
+Product names in the table are the human-facing map. Host picker IDs change and are host-local operational data; do not persist them in cross-host canonical contracts.
 
 New agents get `model_tier: standard` unless the human specifies otherwise.
 
@@ -33,5 +33,5 @@ New agents get `model_tier: standard` unless the human specifies otherwise.
 | Doc | Role |
 | --- | --- |
 | [`AGENTS.md`](./AGENTS.md) | Agent authoring rules |
-| [`../a2a/agent-cards/README.md`](../a2a/agent-cards/README.md) | Host cards (`type: host`) |
-| [`../skills/isolate-work/SKILL.md`](..\skills\meta\isolate-work\SKILL.md) | Isolate then spawn |
+| [`../a2a/agent-cards/README.md`](../a2a/agent-cards/README.md) | Host cards (`type: host`; migration note only) |
+| [`../skills/isolate-work/SKILL.md`](../skills/isolate-work/SKILL.md) | Isolate then spawn |

@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: humanizer
 description: >-
   Rewrites remaining prose so it reads human without changing claims, names,
@@ -9,6 +10,11 @@ description: >-
 owner_agent: artifact-agent
 rank: high
 isolation: mutate
+contracts:
+  inputs:
+    - Prose path after anti-slop and optional writer-sample cadence notes
+  outputs:
+    - Human-sounding rewrite that preserves claims, names, numbers, quotes, and citations
 ---
 
 # Humanizer

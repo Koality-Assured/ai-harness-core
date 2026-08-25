@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: as-code-builder
 description: >-
   Draft Terraform, Pulumi, Ansible, Kyverno, Rego, or similar as-code under
@@ -7,6 +8,11 @@ description: >-
 owner_agent: as-code-agent
 rank: high
 isolation: mutate
+contracts:
+  inputs:
+    - As-code type (terraform, pulumi, ansible, kyverno, rego, ...) and topic slug
+  outputs:
+    - Draft IaC or policy-as-code under results/as-code/<type>/<topic>/<date>/ (not applied)
 ---
 
 # As-code builder

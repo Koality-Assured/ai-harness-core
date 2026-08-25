@@ -10,6 +10,12 @@ description: >-
 owner_agent: detailed-activity
 rank: high
 isolation: mutate
+schema_version: "2.0.0"
+contracts:
+  inputs:
+    - Target PR, path, commit, plan, or review scope
+  outputs:
+    - Ranked findings report and orchestrator-facing recommendations under results/reviews/
 ---
 
 # Antagonistic review

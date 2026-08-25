@@ -4,7 +4,7 @@ Second hop after root [`../AGENTS.md`](../AGENTS.md). This folder is the generat
 
 ## Maps
 
-1. **MUST spawn** when a catalogued skill matches **and** remaining work is material. Match [`skill-dispatch.md`](./skill-dispatch.md); isolate if `mutate`; spawn `owner_agent`. Do not load or execute the skill in the parent. **Exception:** when the matched skill is `isolate-work`, the parent runs `python scripts/routing/spawn_worktree.py` check/add/remove itself and **MUST NOT spawn** `router-maintenance` for that CLI (even bundled with other chores).
+1. **MUST spawn** when a catalogued skill matches **and** remaining work is material. Match [`skill-dispatch.md`](./skill-dispatch.md); isolate if `mutate`; spawn `owner_agent`. Do not load or execute the skill in the parent. Once `owner_agent` is known, parent discovery stops — do not load specialist `SKILL.md` to write the prompt. Needing the skill body is the spawn trigger. **Exception:** when the matched skill is `isolate-work`, the parent runs `python scripts/routing/spawn_worktree.py` check/add/remove itself and **MUST NOT spawn** `router-maintenance` for that CLI (even bundled with other chores).
 2. Else [`area-map.md`](./area-map.md) default agent — same material-work gate, isolate-then-spawn. **MUST NOT spawn** for isolate-work CLI, coordinator chores, user-request-met leftovers, duplicate in-flight specialists, or host follow-up nags (root Critical Specialist dispatch).
 3. Open only that destination area’s `AGENTS.md` (loaded strictly JIT upon dispatch — never preload all area files).
 
@@ -14,7 +14,7 @@ Rebuild after new folder types or skills: edit [`areas.yaml`](./areas.yaml) if n
 
 ## Isolate then spawn
 
-`python scripts/routing/spawn_worktree.py check --areas <csv> --json` then `add`. Procedure: [`../ai-tooling/skills/isolate-work/SKILL.md`](..\ai-tooling\skills\meta\isolate-work\SKILL.md).
+`python scripts/routing/spawn_worktree.py check --areas <csv> --json` then `add`. Procedure: [`../ai-tooling/skills/isolate-work/SKILL.md`](../ai-tooling/skills/isolate-work/SKILL.md).
 
 ## One-liners
 

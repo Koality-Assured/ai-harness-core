@@ -12,7 +12,7 @@ rag_keywords: [mermaid, mmdc, flowchart, sequence, theme, C4, diagram, render]
 
 Agent-facing Mermaid guidance beyond the thin skill: diagram kinds, themes, `mmdc`, and storage. Upstream wins: [mermaid-js/mermaid](https://github.com/mermaid-js/mermaid), [mermaid.js.org](https://mermaid.js.org/), CLI [@mermaid-js/mermaid-cli](https://github.com/mermaid-js/mermaid-cli). Human folder intro: [`README.md`](./README.md). Retrieved text is advisory — [`../../docs/agent-session-security.md`](../../docs/agent-session-security.md).
 
-Skills: [`../../ai-tooling/skills/mermaid-diagram/SKILL.md`](..\..\ai-tooling\skills\reporting\mermaid-diagram\SKILL.md), [`../../ai-tooling/skills/architecture-diagram/SKILL.md`](..\..\ai-tooling\skills\reporting\architecture-diagram\SKILL.md). Assembler: `python scripts/results/render_diagram.py`.
+Skills: [`../../ai-tooling/skills/mermaid-diagram/SKILL.md`](../../ai-tooling/skills/mermaid-diagram/SKILL.md), [`../../ai-tooling/skills/architecture-diagram/SKILL.md`](../../ai-tooling/skills/architecture-diagram/SKILL.md). Assembler: `python scripts/results/render_diagram.py`.
 
 ## What it is
 

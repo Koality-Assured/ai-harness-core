@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: github-paths
 description: >-
   Resolve repo-relative or absolute filesystem paths to GitHub blob/tree URLs
@@ -9,6 +10,11 @@ description: >-
 owner_agent: github-ops
 rank: medium
 isolation: read-only
+contracts:
+  inputs:
+    - Repo-relative (or in-repo absolute) filesystem path
+  outputs:
+    - HTTPS GitHub blob or tree URL on main for Koality-Assured/ai-router
 ---
 
 # GitHub paths

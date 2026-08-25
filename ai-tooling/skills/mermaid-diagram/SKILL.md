@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: mermaid-diagram
 description: >-
   Author a Mermaid diagram in Markdown and render via render_diagram.py (mmdc
@@ -9,6 +10,11 @@ description: >-
 owner_agent: artifact-agent
 rank: medium
 isolation: mutate
+contracts:
+  inputs:
+    - Topic, diagram kind, and source .mmd or mermaid fence
+  outputs:
+    - Mermaid source plus rendered PNG/SVG when mmdc is available under results/diagrams/ or beside a host report
 ---
 
 # Mermaid diagram

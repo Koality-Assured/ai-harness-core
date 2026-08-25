@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: architecture-diagram
 description: >-
   Produce architecture diagrams (prefer Mermaid) under results/diagrams/ or
@@ -7,6 +8,11 @@ description: >-
 owner_agent: artifact-agent
 rank: medium
 isolation: mutate
+contracts:
+  inputs:
+    - Actors, trust boundaries, components, and topic slug
+  outputs:
+    - Architecture diagram (prefer Mermaid) under results/diagrams/ or beside a host report
 ---
 
 # Architecture diagram

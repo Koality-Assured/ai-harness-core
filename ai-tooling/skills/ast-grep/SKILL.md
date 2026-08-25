@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: ast-grep
 description: >-
   Run ast-grep for precision retrieval and structured facts (Python outline,
@@ -9,6 +10,11 @@ description: >-
 owner_agent: router-maintenance
 rank: critical
 isolation: read-only
+contracts:
+  inputs:
+    - Query need, language or kind (Python outline, JSON pair, YAML frontmatter), and optional area list
+  outputs:
+    - Structured facts (symbols, IDs, frontmatter fields) without full-file dumps
 ---
 
 # ast-grep

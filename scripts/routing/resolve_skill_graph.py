@@ -14,17 +14,19 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 # Standard _lib imports
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 if str(_LIB) not in sys.path:
     sys.path.insert(0, str(_LIB))
 
 try:
+    from md import parse_frontmatter
     from paths import REPO_ROOT as DEFAULT_ROOT
 except ImportError:
     DEFAULT_ROOT = Path(__file__).resolve().parents[2]
+    from md import parse_frontmatter
+
+from md import REQUIRED_SKILL_SCHEMA_VERSION, check_required_skill_v2_contracts  # noqa: E402
 
 ALLOWED_RANKS = {"critical", "high", "medium", "low"}
 ALLOWED_ISOLATION = {"mutate", "read-only"}
@@ -34,7 +36,7 @@ ALLOWED_FAILURE_POLICIES = {
     "continue_with_partial",
 }
 DEFAULT_FAILURE_POLICY = "abort_and_rollback"
-DEFAULT_SCHEMA_VERSION = "2.0.0"
+DEFAULT_SCHEMA_VERSION = REQUIRED_SKILL_SCHEMA_VERSION
 
 
 class SkillGraphError(Exception):
@@ -75,6 +77,7 @@ class SkillDefinition:
     in_session_skills: list[str] = field(default_factory=list)
     prerequisites: list[str] = field(default_factory=list)
     contracts: dict[str, Any] = field(default_factory=dict)
+    schema_errors: list[str] = field(default_factory=list)
     path: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -91,6 +94,7 @@ class SkillDefinition:
             "in_session_skills": list(self.in_session_skills),
             "prerequisites": list(self.prerequisites),
             "contracts": self.contracts,
+            "schema_errors": list(self.schema_errors),
             "path": self.path,
         }
 
@@ -191,18 +195,7 @@ def parse_skill_frontmatter(text: str, source_path: Path | None = None) -> tuple
         if end == -1:
             return {}, text
 
-    raw_yaml = rest[:end]
-    body = rest[end + 4 :]
-    if body.startswith("\r\n"):
-        body = body[2:]
-    elif body.startswith("\n"):
-        body = body[1:]
-
-    try:
-        data = yaml.safe_load(raw_yaml) or {}
-    except yaml.YAMLError as exc:
-        location = f" in {source_path}" if source_path else ""
-        raise InvalidSkillSchemaError(f"Malformed YAML frontmatter{location}: {exc}") from exc
+    data, body = parse_frontmatter(text)
 
     if not isinstance(data, dict):
         location = f" in {source_path}" if source_path else ""
@@ -220,7 +213,9 @@ def load_skill_from_file(path: Path) -> SkillDefinition:
     if not name:
         name = path.parent.name
 
-    schema_version = str(data.get("schema_version", "1.0.0")).strip()
+    # Do not default missing schema_version to 1.0.0 — that skipped V2 contract checks.
+    raw_schema = data.get("schema_version")
+    schema_version = str(raw_schema).strip() if raw_schema is not None else ""
     description = str(data.get("description", "")).strip()
     owner_agent = str(data.get("owner_agent", "")).strip()
     rank = str(data.get("rank", "medium")).strip()
@@ -259,6 +254,24 @@ def load_skill_from_file(path: Path) -> SkillDefinition:
     # Contracts parsing
     contracts_raw = data.get("contracts") or {}
     contracts = contracts_raw if isinstance(contracts_raw, dict) else {}
+    schema_errors: list[str] = []
+    if schema_version == DEFAULT_SCHEMA_VERSION:
+        if not isinstance(data.get("name"), str) or not name:
+            schema_errors.append("Schema V2 requires a non-empty name")
+        if not isinstance(data.get("description"), str) or not description:
+            schema_errors.append("Schema V2 requires a non-empty description")
+        if not isinstance(data.get("owner_agent"), str) or not owner_agent:
+            schema_errors.append("Schema V2 requires a non-empty owner_agent")
+        if rank not in ALLOWED_RANKS:
+            schema_errors.append(f"Schema V2 rank must be one of {sorted(ALLOWED_RANKS)}")
+        if isolation not in ALLOWED_ISOLATION:
+            schema_errors.append("Schema V2 isolation must be mutate or read-only")
+        for contract_key in ("inputs", "outputs"):
+            value = contracts.get(contract_key)
+            # Schema V2 permits concise list contracts and JSON-Schema-style
+            # mappings; both are used by the existing catalog.
+            if not isinstance(value, (str, list, dict)) or not value:
+                schema_errors.append(f"Schema V2 contracts.{contract_key} must be non-empty")
 
     return SkillDefinition(
         name=name,
@@ -273,6 +286,7 @@ def load_skill_from_file(path: Path) -> SkillDefinition:
         in_session_skills=in_session_skills,
         prerequisites=prerequisites,
         contracts=contracts,
+        schema_errors=schema_errors,
         path=str(path.resolve()),
     )
 
@@ -291,9 +305,7 @@ class SkillGraph:
         graph = cls()
         if not skills_dir.exists():
             return graph
-        for skill_file in sorted(skills_dir.rglob("SKILL.md")):
-            if any(part.startswith(".") for part in skill_file.parts):
-                continue
+        for skill_file in sorted(skills_dir.glob("*/SKILL.md")):
             skill = load_skill_from_file(skill_file)
             graph.add_skill(skill)
         return graph
@@ -308,7 +320,10 @@ class SkillGraph:
 
         results: dict[str, dict[str, Any]] = {}
         for tool in sorted(tool_requirements.keys()):
-            binary_path = shutil.which(tool)
+            # A validator can only be executed by an already-running Python.
+            # Prefer that interpreter over PATH, which is often intentionally
+            # minimal in sandboxed agent hosts.
+            binary_path = sys.executable if tool == "python" else shutil.which(tool)
             results[tool] = {
                 "tool": tool,
                 "available": binary_path is not None,
@@ -494,8 +509,16 @@ class SkillGraph:
         warnings: list[str] = []
         missing_dependencies: list[dict[str, str]] = []
 
-        # Check references
+        # Check references and required Schema V2 contracts (no 1.0.0 skip/default).
         for name, skill in sorted(self.skills.items()):
+            for schema_err in check_required_skill_v2_contracts(
+                skill.schema_version,
+                skill.contracts,
+                skill_label=name,
+            ):
+                errors.append(schema_err)
+            for schema_error in skill.schema_errors:
+                errors.append(f"Skill '{name}': {schema_error}")
             for req in skill.required_skills:
                 if req not in self.skills:
                     msg = f"Skill '{name}' requires unknown skill '{req}'"

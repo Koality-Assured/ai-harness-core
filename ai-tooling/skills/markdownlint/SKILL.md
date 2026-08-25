@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: markdownlint
 description: >-
   Lint and fix Markdown with markdownlint-cli2 (MD001 and related rules) via
@@ -9,6 +10,11 @@ description: >-
 owner_agent: documentation-ops
 rank: high
 isolation: mutate
+contracts:
+  inputs:
+    - Lint target path and mode (dry-run, lint, or --fix)
+  outputs:
+    - markdownlint-cli2 findings or fixed Markdown in the worktree
 ---
 
 # Markdownlint

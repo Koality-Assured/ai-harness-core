@@ -87,11 +87,7 @@ FIXTURES: list[Fixture] = [
         need="qmd query pattern collections min-score",
         lex="qmd collection setup query min-score embed",
         vec="how agents should query qmd and which collections are registered",
-        expect_any=[
-            "supporting/qmd/query-pattern.md",
-            "ai-tooling/skills/meta/qmd-usage/SKILL.md",
-            "ai-tooling/skills/qmd-usage/SKILL.md",
-        ],
+        expect_any=["supporting/qmd/query-pattern.md", "ai-tooling/skills/qmd-usage/SKILL.md"],
         collection_hint="supporting",
     ),
     Fixture(

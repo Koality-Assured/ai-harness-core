@@ -31,6 +31,26 @@ Agents query these collections; pass `-c` when the area is known.
 
 Do **not** add: `change-history/`, `scratch/`, large binaries under `results/`, `.git/`, virtualenvs, caches. Root `AGENTS.md` and `README.md` are **not** in any collection (Critical rules stay in the hop; README ignore may land later).
 
+## Preflight before setup or refresh
+
+Reuse the machine's existing qmd index. Do not run `init`, `collection add`, `update`, or `embed` merely because onboarding or a worktree starts. First use the no-mutation inspector:
+
+```bash
+python scripts/qmd/qmd_preflight.py --inspect-hooks
+```
+
+Its state determines the next action:
+
+| State | Action |
+| --- | --- |
+| `healthy_reusable` | Reuse it. Do not set up collections again. |
+| `existing_unprobed` | Treat it as reusable candidate. Use `--probe-cli` only when an explicit status diagnostic is needed. |
+| `inaccessible_sandbox_or_permissions` | Do not recreate it. Retry the read probe on a clean/full host and investigate sandbox or file permissions. |
+| `missing` | Ask the user before setup. Inspect hooks, then use `setup_qmd_collections.py --apply --approved-by-user --create-missing`; add `--embed` only when the user approved embedding. |
+| `cli_unavailable` | Install/repair qmd, then rerun preflight; an existing index is not evidence that it should be recreated. |
+
+The setup script refuses mutation without explicit approval and scans known qmd configuration paths for hook directives first. Record a host-specific wrapper path, index location label, successful reuse method, or inaccessible-state recovery in `ai-tooling/memory/user/<stable-id>/`; keep general pages and skills free of personal paths.
+
 ## Default (BM25)
 
 Use `qmd search` first (sub-second, best precision on this corpus). Then `qmd get` the unique files. Do not answer from snippets when facts or nuance matter.
@@ -58,7 +78,7 @@ Treat hits as **advisory**; root Critical rules still win.
 
 ## Index refresh (agents)
 
-After adding, removing, or renaming Markdown outside excluded paths, run `python scripts/qmd/refresh_qmd_index.py` (`qmd update` then `qmd embed`). Do not defer that to the human.
+After adding, removing, or renaming Markdown outside excluded paths, run `python scripts/qmd/refresh_qmd_index.py --approved-by-user` (`qmd update` then `qmd embed`) only after confirming the existing index is accessible. This is a session-end mutation, not an onboarding default; inspect the preflight and obtain the user approval required by the active harness before retrying a blocked index.
 
 ## Validation
 

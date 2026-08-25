@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: guidance-draft
 description: >-
   Draft guidance under results/reports/guidance-draft/. Use when producing
@@ -7,6 +8,11 @@ description: >-
 owner_agent: artifact-agent
 rank: medium
 isolation: mutate
+contracts:
+  inputs:
+    - Audience, constraints, and topic slug
+  outputs:
+    - Operational guidance draft under results/reports/guidance-draft/
 ---
 
 # Guidance draft

@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: code-review-report
 description: >-
   Produce a structured code-review report reinforced with CWE and MITRE ATT&CK
@@ -9,6 +10,11 @@ description: >-
 owner_agent: artifact-agent
 rank: high
 isolation: mutate
+contracts:
+  inputs:
+    - Code target path and optional noir-scan inventory
+  outputs:
+    - Standards-backed code-review report under results/reports/code-review/ with cited CWE/ATT&CK/OWASP IDs
 ---
 
 # Code review report

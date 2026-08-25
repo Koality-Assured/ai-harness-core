@@ -1,7 +1,7 @@
 """Validate one or all skills against skill-conventions.md.
 
 tags: [ai-tooling, routing]
-routing_hints: [skills, dry-run, template]
+routing_hints: [skills, dry-run, template, schema-v2]
 """
 
 from __future__ import annotations
@@ -18,6 +18,7 @@ from md import (  # noqa: E402
     RANKS,
     REQUIRED_SKILL_HEADINGS,
     agent_ids,
+    check_required_skill_v2_contracts,
     heading_titles,
     parse_frontmatter,
     skill_paths,
@@ -61,6 +62,12 @@ def check_skill(path: Path, owners: set[str]) -> list[str]:
         errors.append(f"rank must be one of {sorted(RANKS)}")
     if isolation not in ISOLATION:
         errors.append("isolation must be mutate or read-only")
+    errors.extend(
+        check_required_skill_v2_contracts(
+            fields.get("schema_version"),
+            fields.get("contracts"),
+        )
+    )
 
     titles = heading_titles(body)
     for required in REQUIRED_SKILL_HEADINGS:
@@ -97,11 +104,11 @@ def readme_skill_slugs() -> set[str] | None:
     slugs: set[str] = set()
     for line in readme.splitlines():
         if "./" in line and "](./" in line:
+            # [`name/`](./name/)
             start = line.find("](./")
             if start != -1:
                 rest = line[start + 4 :]
-                target = rest.split(")")[0].strip("/")
-                slug = target.split("/")[-1]
+                slug = rest.split(")")[0].strip("/").split("/")[0]
                 if slug:
                     slugs.add(slug)
     return slugs
@@ -125,15 +132,11 @@ def main(argv: list[str] | None = None) -> int:
     owners = agent_ids(ROOT)
     paths = skill_paths(ROOT)
     if args.skill:
-        matched = [
-            p for p in paths
-            if p.parent.name == args.skill
-            or p.relative_to(ROOT / "ai-tooling" / "skills").as_posix().startswith(args.skill)
-        ]
-        if not matched:
-            print(f"error: skill {args.skill!r} not found under ai-tooling/skills/", file=sys.stderr)
+        target = ROOT / "ai-tooling" / "skills" / args.skill / "SKILL.md"
+        if not target.exists():
+            print(f"error: missing {target.relative_to(ROOT)}", file=sys.stderr)
             return 2
-        paths = matched
+        paths = [target]
 
     report = []
     listed = readme_skill_slugs()

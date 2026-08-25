@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: cost-layer-dry-run
 description: >-
   Dry-run qmd retrieval, Headroom compression, and ast-grep structural-fact
@@ -10,6 +11,11 @@ description: >-
 owner_agent: router-maintenance
 rank: high
 isolation: mutate
+contracts:
+  inputs:
+    - Output directory slug/date and optional layer-skip or hybrid flags
+  outputs:
+    - Combined token-savings and gold-fact accuracy report under results/cost-layers/
 ---
 
 # Cost-layer dry run

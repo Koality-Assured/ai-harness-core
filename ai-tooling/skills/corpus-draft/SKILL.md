@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: corpus-draft
 description: >-
   Draft a new corpus page under results/reports/corpus-draft/ for later handoff
@@ -8,6 +9,11 @@ description: >-
 owner_agent: artifact-agent
 rank: medium
 isolation: mutate
+contracts:
+  inputs:
+    - Draft topic slug and related in-repo pages to avoid duplicating
+  outputs:
+    - Corpus draft under results/reports/corpus-draft/ with handoff notes for doc-builder
 ---
 
 # Corpus draft

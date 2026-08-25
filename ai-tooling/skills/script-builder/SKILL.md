@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: script-builder
 description: >-
   Add or revise tagged Python scripts under scripts/ (docstring tags, argparse,
@@ -8,6 +9,11 @@ description: >-
 owner_agent: script-ops
 rank: high
 isolation: mutate
+contracts:
+  inputs:
+    - Script purpose folder, filename, tags, and intended CLI args
+  outputs:
+    - Tagged Python script under scripts/<purpose>/
 ---
 
 # Script builder

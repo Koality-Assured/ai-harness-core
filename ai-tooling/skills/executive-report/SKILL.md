@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: executive-report
 description: >-
   Short useful executive report via build_document.py --type executive, with
@@ -10,6 +11,11 @@ description: >-
 owner_agent: artifact-agent
 rank: medium
 isolation: mutate
+contracts:
+  inputs:
+    - Facts or topic slug and links to deeper artifacts (threat model, etc.)
+  outputs:
+    - Executive report package (md + structured HTML) under results/reports/executive/
 ---
 
 # Executive report

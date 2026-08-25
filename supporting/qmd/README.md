@@ -8,18 +8,20 @@ Human intro for [qmd](https://www.npmjs.com/package/@tobilu/qmd) — Markdown re
 
 ```bash
 npm install -g @tobilu/qmd
-python scripts/qmd/setup_qmd_collections.py --apply --embed
+python scripts/qmd/qmd_preflight.py --inspect-hooks
 ```
 
-Needs **Python 3** (repo scripts) and **Node/npm** (qmd). On Windows, use python.org/winget so `python` is real, not the Store stub; put `%LOCALAPPDATA%\Programs\Python\Python313\` (and its `Scripts\`) on `PATH` ahead of `WindowsApps`. Index on this workstation: `C:/home/developer/.cache/qmd/index.sqlite` (user-global).
+Reuse an existing healthy index. Only if preflight reports it missing and the user explicitly approves creating collections, use `python scripts/qmd/setup_qmd_collections.py --apply --approved-by-user --create-missing --embed`.
+
+Needs **Python 3** (repo scripts) and **Node/npm** (qmd). On Windows, use python.org/winget so `python` is real, not the Store stub; put `%LOCALAPPDATA%\Programs\Python\Python313\` (and its `Scripts\`) on `PATH` ahead of `WindowsApps`. QMD indexes are user-global cache state; use the preflight instead of hard-coding a workstation path.
 
 ## Daily commands
 
 ```bash
 qmd collection list
 qmd status
-qmd update
-qmd embed
+qmd update  # explicit index mutation; preflight and user approval required
+qmd embed   # explicit index mutation; preflight and user approval required
 ```
 
-After Markdown add/remove/rename, agents refresh via `python scripts/qmd/refresh_qmd_index.py` (see [`query-pattern.md`](./query-pattern.md)). Do not index `change-history/` or `scratch/` (full collection list in the agent page).
+After Markdown add/remove/rename, agents refresh via `python scripts/qmd/refresh_qmd_index.py --approved-by-user` (see [`query-pattern.md`](./query-pattern.md)). Do not index `change-history/` or `scratch/` (full collection list in the agent page).

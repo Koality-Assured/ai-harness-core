@@ -10,3 +10,4 @@ Per-specialist thread checkpoints. Folder ids must match registered agents under
 - One kebab-case file per thread; Status / Last updated; ≈30-second read; no secrets.
 - Classify by owning specialist (`owner_agent` / area default), not by which parent wrote the file.
 - Complete threads: promote durable bits, then delete or keep a one-line tombstone (`memory-cleanup`).
+- Model-family capability outcomes do **not** live here. Spawn `memory-operator` for `model-memory-operate` (writes under [`../model/`](../model/)) — not `ai-tooling-ops`.

@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: doc-builder
 description: >-
   Create or revise durable docs with kebab-case names, YAML frontmatter, rank,
@@ -8,6 +9,11 @@ description: >-
 owner_agent: documentation-ops
 rank: high
 isolation: mutate
+contracts:
+  inputs:
+    - Target docs path or new kebab-case page intent, doc_kind, and canonical_id
+  outputs:
+    - Durable tagged Markdown page under docs/ with required frontmatter
 ---
 
 # Doc builder

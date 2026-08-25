@@ -1,4 +1,5 @@
 ---
+schema_version: "2.0.0"
 name: qmd-efficiency
 description: >-
   Dry-run test qmd retrieval efficiency (health, relevance, token-cost vs tree
@@ -8,6 +9,11 @@ description: >-
 owner_agent: qmd-ops
 rank: medium
 isolation: mutate
+contracts:
+  inputs:
+    - Collection or fixture scope and optional output directory
+  outputs:
+    - Retrieval-efficiency report (health, relevance, token cost vs tree walks)
 ---
 
 # qmd efficiency
