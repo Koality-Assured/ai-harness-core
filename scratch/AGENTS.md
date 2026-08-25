@@ -2,7 +2,7 @@
 
 Temporary workspace for downloads, worktrees, experiments, and captures — never durable SoT.
 
-Ingest simply; do not duplicate skills or paste root Critical — link [`../AGENTS.md`](../AGENTS.md). Parent spawns `router-maintenance` for `scratch-cleanup` / isolation work.
+Ingest simply; do not duplicate skills or paste root Critical — link [`../AGENTS.md`](../AGENTS.md). Parent runs isolate CLI (`spawn_worktree.py`). Spawn `router-maintenance` for `scratch-cleanup` when that work is material — never for isolation.
 
 ## Rules
 

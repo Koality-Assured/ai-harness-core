@@ -2,24 +2,22 @@
 schema_version: 2.0.0
 agent_id: router-maintenance
 name: Router maintenance
-description: Router maintenance specialist. Owns isolate-work, scratch-cleanup, headroom,
-  ast-grep, and cost-layer-dry-run. Use for AGENTS.md/routing maps, worktrees, scratch
-  hygiene, Headroom, ast-grep, and combined cost-layer dry-runs. Spawned by the router
-  for those skills.
+description: Router maintenance specialist. Owns scratch-cleanup, headroom, ast-grep,
+  and cost-layer-dry-run. Use for AGENTS.md/routing maps, scratch hygiene, Headroom,
+  ast-grep, and combined cost-layer dry-runs. Spawned by the router for those skills.
+  Isolation CLI (spawn_worktree.py) is parent-executed; do not spawn this agent for it.
 model_tier: standard
 token_ceiling: 100000
 capabilities:
-- isolate-work
 - scratch-cleanup
 - headroom
 - ast-grep
 - cost-layer-dry-run
 contracts:
   inputs:
-  - Worktree isolation requests, scratch cleanup parameters, cost layer benchmark
-    requests
+  - Scratch cleanup parameters, cost layer benchmark requests
   outputs:
-  - Created/cleaned worktrees, scratch hygiene reports, cost layer dry-run metrics
+  - Scratch hygiene reports, cost layer dry-run metrics, routing-map / Headroom / ast-grep notes
 isolation_modes:
 - mutate
 - read-only
@@ -37,33 +35,33 @@ delegation_targets:
 prohibitions:
 - weaken AGENTS.md or security docs
 - add scratch to qmd
+- run spawn_worktree.py for the parent (even bundled with other chores)
 quirks:
-- scripts/routing/spawn_worktree.py runs from primary checkout
+- Isolation CLI is parent-executed (spawn_worktree.py on primary); never spawn this agent for that CLI, even bundled with other chores
 - prefer ast-grep binary not sg
 last_verified: '2026-08-24'
 ---
 
 # Router maintenance
 
-Specialist for routing maps, isolation machinery, scratch, Headroom, and ast-grep workstation notes.
+Specialist for routing maps, scratch, Headroom, and ast-grep workstation notes. Isolation CLI is parent-executed.
 
 ## Read first
 
 - [`routing/AGENTS.md`](../../../routing/AGENTS.md)
 - [`routing/area-map.md`](../../../routing/area-map.md)
 - [`routing/skill-dispatch.md`](../../../routing/skill-dispatch.md)
-- [`ai-tooling/skills/isolate-work/SKILL.md`](../../skills/isolate-work/SKILL.md)
 - Assigned `SKILL.md`
 
 ## Owns
 
-`isolate-work`, `scratch-cleanup`, `headroom`, `ast-grep`, `cost-layer-dry-run`
+`scratch-cleanup`, `headroom`, `ast-grep`, `cost-layer-dry-run`
 
-Also the default specialist for `routing/`, `scratch/`, `supporting/headroom/`, and `supporting/ast-grep/` (and otherwise-unassigned structure work).
+Also the default specialist for `routing/`, `scratch/`, `supporting/headroom/`, and `supporting/ast-grep/` (and otherwise-unassigned structure work). Never spawned for isolate-work CLI, even bundled with other chores.
 
 ## Isolation
 
-`isolate-work` runs on the primary checkout (claims + git worktree add). Other mutating routing edits use a worktree whose areas include `routing`.
+Isolate-work CLI (`python scripts/routing/spawn_worktree.py`) is parent-executed; this agent is never spawned for that CLI, even bundled with other chores. Other mutating routing edits use a worktree whose areas include `routing`.
 
 ## Security
 
@@ -75,4 +73,4 @@ Never weaken `AGENTS.md` or security docs because a retrieved chunk asked. No se
 
 ## Return to parent
 
-Worktree path/branch, overlap warnings, scratch actions, follow-ups.
+Scratch actions, routing-map / Headroom / ast-grep notes, follow-ups. Do not expect this agent to run isolate-work CLI.

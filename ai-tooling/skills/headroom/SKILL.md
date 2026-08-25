@@ -27,8 +27,9 @@ Measuring qmd retrieval (`qmd-efficiency`). Assuming Cursor **hosted** models ge
 
 ## Source of truth
 
-- [`supporting/workstation-onboarding.md`](../../../supporting/workstation-onboarding.md)
+- [`supporting/headroom/proxy-mcp.md`](../../../supporting/headroom/proxy-mcp.md)
 - [`supporting/headroom/README.md`](../../../supporting/headroom/README.md)
+- [`supporting/workstation-onboarding.md`](../../../supporting/workstation-onboarding.md)
 - [`projects/headroom-cost-layer/README.md`](../../../projects/headroom-cost-layer/README.md)
 - Upstream flags: <https://headroom-docs.vercel.app/docs/proxy>
 

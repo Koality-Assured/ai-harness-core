@@ -18,4 +18,4 @@ Ingest simply; do not duplicate skills or paste root Critical — link [`../AGEN
 - Update the owning source area first when a skill encodes a directive; then update the skill.
 - Memory ≠ durable architecture: stable patterns go to `docs/`, `supporting/`, or `routing/`.
 - Keep secrets out of agent cards.
-- Parent spawns `ai-tooling-ops` (or the skill’s `owner_agent`) for catalogued work.
+- Spawn `ai-tooling-ops` (or the skill’s `owner_agent`) when that catalogued work is material. Session-end memory and isolate CLI stay with the parent.

@@ -2,7 +2,7 @@
 
 Python-first automation. Prefer tagged scripts here over ad-hoc shell; bind repeatable work from skills.
 
-Ingest simply; do not duplicate skills or paste root Critical — link [`../AGENTS.md`](../AGENTS.md). Parent spawns `script-ops` when a skill owns the work.
+Ingest simply; do not duplicate skills or paste root Critical — link [`../AGENTS.md`](../AGENTS.md). Spawn `script-ops` when a catalogued scripts skill is material. Change-history via script is a parent session-end gate.
 
 ## Layout
 

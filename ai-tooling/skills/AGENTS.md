@@ -2,7 +2,7 @@
 
 Each skill is a subdirectory with `SKILL.md` (optional `references/`, `scripts/`, `assets/`). Authoring SoT: [`skill-conventions.md`](./skill-conventions.md).
 
-Ingest simply; do not duplicate skills or paste root Critical — link [`../../AGENTS.md`](../../AGENTS.md). Parent **spawns** `owner_agent`; do not embed skill bodies here or rely on `.cursor/skills/` auto-invoke.
+Ingest simply; do not duplicate skills or paste root Critical — link [`../../AGENTS.md`](../../AGENTS.md). Spawn `owner_agent` when catalogued skill work is material. Do not embed skill bodies here or rely on `.cursor/skills/` auto-invoke. Nested files MUST NOT undo root spawn-if-material.
 
 ## Rules
 

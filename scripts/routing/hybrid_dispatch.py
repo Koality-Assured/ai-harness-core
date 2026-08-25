@@ -142,11 +142,14 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "isolate-work",
-        "owner_agent": "router-maintenance",
+        "owner_agent": "router",
         "patterns": [
             r"\b(?:spawn|create|claim)\s+(?:git\s+)?worktree\b",
             r"\bgit\s+worktree\b",
+            r"\bisolate-work\b",
             r"\bisolate\s+work\b",
+            r"\bisolate\s+this\s+mutating\s+work\b",
+            r"\bisolat(?:e|ing)\s+the\s+worktree\b",
             r"\bworktree\s+isolation\b",
             r"\bbranch\s+claim\b",
         ],

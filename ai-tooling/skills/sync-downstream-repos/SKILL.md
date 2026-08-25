@@ -65,9 +65,9 @@ High: Public repositories must never receive private credentials, internal file 
      - KEEP machinery: `AGENTS.md`; `routing/`; generic `ai-tooling/` (filtered); generic `scripts/` (`routing`, `qmd`, `cost-layers`, `change-history`, `_lib`, plus `sync`/`repos` as needed); generic `supporting/` (`qmd`, `ast-grep`, `headroom`, `github`, `powershell` if generic); portable `docs/` (`agent-session-security.md`, `anti-slop.md`, `docs/AGENTS.md`, harness-architecture standards only); `.harness/` kept as `.harness/` (engine is part of the template, not the whole product); generic `config/`; lint/ast-grep config; empty scaffolds for `actionable/`, `scratch/`, `results/`, `projects/`, `research/`, `change-history`.
      - DROP domain feed: `references/` families nist-ai-rmf, nist-csf, owasp, cwe, mitre-attack, mitre-atlas, stride (keep conventional-commits and markdown tooling); most `docs/standards` security-ops pages; cloud/security skills (`aws-*`, `azure-*`, `gcp-*`, framework-mapper, threat-model, noir if present); instance `projects/`/`research/` content; user memory checkpoints; scratch worktrees; results dumps; `.git`.
      - Stub dropped areas with area `AGENTS.md` (or empty tree + AGENTS) stating this is a generic template: feed domain content later; do not ship this instance’s security corpus.
-2. Run validation check to ensure source repository is clean of unredacted leaks:
+2. Run `--validate` as a **source-cleanliness linter**. It flags patterns still present in source (including documented internal paths) and **exits 1** when any hit exists. That nonzero status is expected on this repo when skills document `[REDACTED_WORKTREE_PATH]`; it is **not** a public leak. Do not abort the export solely because `--validate` is dirty:
    `python scripts/sync/sync_public_repos.py --validate --json`
-3. Execute dry-run simulation to review planned file changes and redactions:
+3. Execute dry-run simulation to review planned file changes and redactions (this is the **export leak gate**; a redaction here is the control):
    `python scripts/sync/sync_public_repos.py --dest <export_dir> --dry-run --json`
 4. Inspect the generated redaction audit log in the output. If unexpected patterns or errors arise, halt and remediate.
 5. Perform live export synchronization:

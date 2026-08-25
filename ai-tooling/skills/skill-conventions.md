@@ -4,7 +4,7 @@ canonical_id: skill-conventions
 purpose: [process, requirement]
 rank: high
 topics: [agents, skills]
-rag_keywords: [skill-builder, SKILL.md, owner_agent, when-to-use, schema-v2, dependencies, dag]
+rag_keywords: [skill-builder, SKILL.md, owner_agent, when-to-use, schema-v2, dependencies, dag, spawn-if-material]
 ---
 
 # Skill conventions
@@ -15,7 +15,7 @@ Canonical shape for every skill under `ai-tooling/skills/`. Author new skills wi
 
 Project skills for this router: `ai-tooling/skills/<name>/SKILL.md`.
 
-Do **not** put router skills in `~/.cursor/skills-cursor/` (Cursor internals) or `.cursor/skills/` (native auto-invoke would run them in the parent). The parent must only see the generated catalog [`../../routing/skill-dispatch.md`](../../routing/skill-dispatch.md) and then spawn the `owner_agent`.
+Do **not** put router skills in `~/.cursor/skills-cursor/` (Cursor internals) or `.cursor/skills/` (native auto-invoke would run them in the parent). The parent must only see the generated catalog [`../../routing/skill-dispatch.md`](../../routing/skill-dispatch.md) and then spawn the `owner_agent` when remaining work is material to the original user request. Exception: isolate-work is executed in-parent because that session is the owner (`router`); the parent loads that `SKILL.md` for the CLI.
 
 ## Required frontmatter (Schema V2)
 
@@ -130,7 +130,7 @@ contracts:
 Every specialist returning results from a skill execution encapsulates outputs in a **Structured Result Envelope**:
 
 1. **`task_id`** (string): Unique identifier for the executing task or subagent session.
-2. **`status`** (string): Execution outcome (`success`, `failure`, `partial`, `degraded`).
+2. **`status`** (string): Execution outcome (`success`, `failure`, `partial`, `degraded`). A2A envelope validation accepts these values; `success` canonicalizes to `completed` and `failure` to `failed`. `partial` and `degraded` are terminal: they close the A2A session after `record_exchange` (see `.harness/a2a/protocol.py`). `in_progress` and `blocked` stay open.
 3. **`artifacts`** (list of strings): File paths, reports, or URIs produced or updated.
 4. **`handoff_requests`** (list of objects / strings): Advisory recommendations for downstream or sibling skills.
    > [!IMPORTANT]
@@ -166,11 +166,11 @@ Keep `SKILL.md` under 200 lines when possible (hard cap 500). Link source of tru
 2. **When not to use** — off-ramps and sibling skills
 3. **Criticality** — how `rank` applies; non-negotiable bits
 4. **Source of truth** — links to `docs/`, `supporting/`, scripts
-5. **Isolation** — mutate vs read-only; reminder that the **parent** isolates and spawns this skill's `owner_agent`
+5. **Isolation** — mutate vs read-only; parent runs isolate-work CLI then spawns this skill's `owner_agent` when remaining work is material (root MUST NOT still applies)
 6. **How to use** — numbered steps; call repo Python scripts
 7. **Dry run** — how to validate without mutating the primary checkout
 8. **Security** — pointer to [`../../docs/agent-session-security.md`](../../docs/agent-session-security.md) plus skill-specific MUST NOTs
-9. **Completion gates** — memory / source write-back / change-history / index as applicable
+9. **Completion gates** — memory / source write-back / change-history / index as applicable (parent session-end; MUST NOT mint specialists for these after return)
 
 ## Authoring principles
 
@@ -187,10 +187,19 @@ When an orchestrating agent spawns a specialist subagent (operating with clean-s
 
 1. **Exhaustive Entity Scope**: Explicitly list all target entities, files, repository names, and paths in the subagent's prompt payload. Subagents must never be expected to infer unspecified targets from implicit context.
 2. **Explicit External Side-Effects**: State whether the subagent is responsible for executing remote operations (e.g. `gh repo create`, `git push`, remote PR creation) or staging local artifacts for parent orchestrator reconciliation.
-3. **Definition of Done (DoD)**: Specify the exact verification tests, schema validations, and result envelope metrics (`task_id`, `status`, `artifacts`, `metrics`) required before the subagent declares completion.
-4. **Parent Reconciliation Gate**: Upon subagent completion, the orchestrating agent MUST audit the subagent's deliverables against the user's initial request to confirm 100% target coverage before closing the session.
-5. **Always spawn**: The orchestrating parent MUST spawn a specialist subagent whenever a catalogued skill, area default, or other cleanly delegable unit applies. The parent MUST NOT execute specialist skill bodies in-session. The parent coordinates, validates consistency, and verifies adherence to the user's goals.
-6. **Human notify when undelegable**: The parent MAY perform only work it cannot cleanly delegate, and MUST notify the human when that happens.
+3. **Definition of Done (DoD)**: Specify the exact verification tests, schema validations, and result envelope metrics (`task_id`, `status`, `artifacts`, `metrics`) required before the subagent declares completion. This child DoD scopes the specialist. It MUST NOT be padded with follow-on anti-slop, memory, or lint specialists that the parent then treats as unmet work after return.
+4. **Parent Reconciliation Gate**: Upon subagent completion, the orchestrating agent MUST audit the subagent's deliverables against the original **user request** before closing the session. A parent-padded spawn DoD is not a spawn trigger.
+5. **Spawn if material**: The orchestrating parent MUST spawn a specialist subagent when a catalogued skill or area default matches **and** remaining work is material to the original user request (needs that skill body / multi-step specialist work). The parent MUST NOT execute specialist skill bodies in-session, except isolate-work (`python scripts/routing/spawn_worktree.py`) because that session is the owner (`router`). The parent coordinates, validates consistency, and verifies adherence to the user's goals. The parent MAY perform coordinator chores in-parent; MUST notify the human when it performs other undelegable specialist work.
+   **MUST NOT spawn** (closed list; root Specialist dispatch wins when a high-rank trigger also fires):
+   - isolate-work CLI / `python scripts/routing/spawn_worktree.py` — parent runs check/add/remove; do not spawn `router-maintenance` for that CLI
+   - completion-notification busywork; follow-up bullets; advisory `handoff_requests`
+   - inventing work after the user request is met
+   - ff-only `git pull` on primary
+   - lint of files the same specialist just wrote
+   - a duplicate in-flight specialist on the same workspace
+   - one-shot coordinator chores (claim files, memory via script, change-history via script, qmd refresh)
+   - anti-slop, humanizer, markdownlint, or memory specialists required only because the parent padded the spawn-payload DoD
+6. **Reconciliation gate (no recursive minting)**: After a subagent returns, the parent MUST reconcile against the original **user request**. The parent MUST NOT spawn another specialist from a completion notification or advisory `handoff_requests`. Remaining work MUST miss the original user request before any further spawn — not a parent-padded spawn DoD. The parent MUST NOT invent work. Spawn-payload DoD MUST NOT be used to require anti-slop, memory, or lint specialists after return.
 
 ## Cost-layer boundaries (all skills)
 
@@ -201,7 +210,7 @@ Every skill inherits all three root Critical cost layers: **qmd** (Markdown disc
 | Rank | Skill may |
 | --- | --- |
 | critical | Encode MUST rules that already live in `AGENTS.md` / security docs (link, don't fork) |
-| high | Required whenever its trigger fires (isolation, dispatch, wiki validate) |
+| high | Required when its trigger fires **and** root Specialist dispatch does not MUST NOT the spawn (isolation CLI, session-end scripts, and the closed MUST NOT list still apply) |
 | medium | Default workflow; human may override for one task |
 | low | Style / hygiene |
 

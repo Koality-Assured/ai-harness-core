@@ -4,11 +4,11 @@ Second hop after root [`../AGENTS.md`](../AGENTS.md). This folder is the generat
 
 ## Maps
 
-1. **ALWAYS spawn** when a catalogued skill, area default, or cleanly delegable unit applies. Match [`skill-dispatch.md`](./skill-dispatch.md); isolate if `mutate`; spawn `owner_agent`. Do not load or execute the skill in the parent.
-2. Else [`area-map.md`](./area-map.md) default agent (same isolate-then-spawn).
+1. **MUST spawn** when a catalogued skill matches **and** remaining work is material. Match [`skill-dispatch.md`](./skill-dispatch.md); isolate if `mutate`; spawn `owner_agent`. Do not load or execute the skill in the parent. **Exception:** when the matched skill is `isolate-work`, the parent runs `python scripts/routing/spawn_worktree.py` check/add/remove itself and **MUST NOT spawn** `router-maintenance` for that CLI (even bundled with other chores).
+2. Else [`area-map.md`](./area-map.md) default agent — same material-work gate, isolate-then-spawn. **MUST NOT spawn** for isolate-work CLI, coordinator chores, user-request-met leftovers, duplicate in-flight specialists, or host follow-up nags (root Critical Specialist dispatch).
 3. Open only that destination area’s `AGENTS.md` (loaded strictly JIT upon dispatch — never preload all area files).
 
-Parent is coordinator/validator. It MAY do only undelegable work and MUST notify the human when that happens.
+Parent is coordinator/validator. Isolate CLI (`spawn_worktree.py` check/add/remove) is the parent’s normal path. On subagent completion, audit the **user request** (not a parent-padded DoD). Host follow-up nags are not a mandate to mint specialists.
 
 Rebuild after new folder types or skills: edit [`areas.yaml`](./areas.yaml) if needed, then `python scripts/routing/generate_routing_index.py`. Do not hand-edit the generated maps.
 

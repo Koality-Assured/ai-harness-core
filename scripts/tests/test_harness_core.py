@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -100,12 +101,14 @@ class HarnessConfigTests(unittest.TestCase):
         self.assertEqual(cfg.cache.openai.min_tokens_prefix, 1024)
         self.assertEqual(cfg.cache.gemini.min_tokens_threshold, 32768)
         self.assertEqual(cfg.a2a.default_budget, 8)
+        self.assertEqual(cfg.paths.memory, "scratch/memory")
         self.assertEqual(cfg.validate(), [])
 
     def test_load_from_repo(self) -> None:
         cfg = load_harness_config(repo_root=REPO_ROOT)
         self.assertEqual(cfg.paths.skills, "ai-tooling/skills")
         self.assertEqual(cfg.paths.agents, "ai-tooling/agents")
+        self.assertEqual(cfg.paths.memory, "ai-tooling/memory")
         self.assertEqual(cfg.paths.worktrees, "scratch/worktrees")
         self.assertEqual(cfg.adapters.headroom.port, 8787)
         self.assertEqual(cfg.adapters.git.branch_prefix, "agent")
@@ -291,6 +294,58 @@ class A2AProtocolTests(unittest.TestCase):
         self.assertEqual(envelope.task_id, "task-001")
         self.assertEqual(envelope.status, "completed")
         self.assertEqual(envelope.artifacts, ["results/report.md"])
+
+    def test_envelope_accepts_skill_convention_status_aliases(self) -> None:
+        for alias, canonical in (("success", "completed"), ("failure", "failed")):
+            envelope = self.protocol.validate_envelope({
+                "task_id": f"task-{alias}",
+                "status": alias,
+                "artifacts": [],
+                "handoff_requests": [],
+                "metrics": {},
+            })
+            self.assertEqual(envelope.status, canonical)
+
+        for status in ("partial", "degraded"):
+            envelope = self.protocol.validate_envelope({
+                "task_id": f"task-{status}",
+                "status": status,
+                "artifacts": [],
+                "handoff_requests": [],
+                "metrics": {},
+            })
+            self.assertEqual(envelope.status, status)
+
+    def test_partial_and_degraded_close_session(self) -> None:
+        for status in ("partial", "degraded"):
+            session = self.protocol.create_session(
+                task_id=f"task-{status}",
+                parent_agent="router",
+                target_agent="script-ops",
+                budget=3,
+            )
+            session.record_exchange(
+                request={"task": status},
+                response={
+                    "task_id": f"task-{status}",
+                    "status": status,
+                    "artifacts": [],
+                    "handoff_requests": [],
+                    "metrics": {},
+                },
+            )
+            self.assertTrue(session.closed, f"{status} must close the A2A session")
+            with self.assertRaises(A2AProtocolError):
+                session.record_exchange(
+                    request={"task": "again"},
+                    response={
+                        "task_id": f"task-{status}",
+                        "status": "in_progress",
+                        "artifacts": [],
+                        "handoff_requests": [],
+                        "metrics": {},
+                    },
+                )
 
     def test_envelope_validation_missing_fields(self) -> None:
         # Missing status
@@ -568,6 +623,17 @@ class HarnessInitCLITests(unittest.TestCase):
             code = cli_main(["--target", tmp, "--json"])
             self.assertEqual(code, 0)
             self.assertTrue((Path(tmp) / "config" / "harness.config.json").is_file())
+
+    def test_cli_script_help_subprocess(self) -> None:
+        script = REPO_ROOT / "scripts" / "harness_init.py"
+        proc = subprocess.run(
+            [sys.executable, str(script), "--help"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("Initialize .harness", proc.stdout)
 
 
 if __name__ == "__main__":

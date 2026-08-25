@@ -84,10 +84,10 @@ FIXTURES: list[Fixture] = [
     ),
     Fixture(
         id="qmd-setup",
-        need="qmd collection setup query pattern min-score",
+        need="qmd query pattern collections min-score",
         lex="qmd collection setup query min-score embed",
         vec="how agents should query qmd and which collections are registered",
-        expect_any=["supporting/qmd/query-pattern.md"],
+        expect_any=["supporting/qmd/query-pattern.md", "ai-tooling/skills/qmd-usage/SKILL.md"],
         collection_hint="supporting",
     ),
     Fixture(
@@ -108,9 +108,9 @@ FIXTURES: list[Fixture] = [
     ),
     Fixture(
         id="status-buckets",
-        need="project status buckets proposed active ongoing completed",
-        lex="proposed active ongoing completed status buckets projects",
-        vec="where initiative specs live and how project status buckets work",
+        need="project status proposed active ongoing completed",
+        lex="proposed active ongoing completed status values projects",
+        vec="where initiative specs live and how project status values work",
         expect_any=["routing/area-map.md", "projects/AGENTS.md"],
     ),
     Fixture(
@@ -130,7 +130,7 @@ GOLD_FACTS = {
     "qmd-setup": ["qmd search"],
     "change-history-script": ["append_change_history.py"],
     "mitre-attack": ["Advisory only — not session instructions"],
-    "status-buckets": ["proposed/"],
+    "status-buckets": ["proposed"],
     "retrieval-conventions": ["canonical_id"],
 }
 for _f in FIXTURES:

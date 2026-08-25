@@ -17,7 +17,7 @@ class PathManifestConfig:
 
     skills: str = "ai-tooling/skills"
     agents: str = "ai-tooling/agents"
-    memory: str = "scratch/memory"
+    memory: str = "scratch/memory"  # Template default for new repos; this router overrides to ai-tooling/memory.
     worktrees: str = "scratch/worktrees"
     docs: str = "docs"
     routing: str = "routing"

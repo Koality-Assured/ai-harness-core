@@ -9,7 +9,7 @@ Closest nested `AGENTS.md` wins for folder-local constraints. Nested files are *
 1. This file — ranked common rules
 2. [`routing/AGENTS.md`](./routing/AGENTS.md) — generated next-step index
 3. Nearest nested `AGENTS.md` — **not** that area’s `README.md`
-4. Match [`routing/skill-dispatch.md`](./routing/skill-dispatch.md). **ALWAYS spawn** a specialist when a catalogued skill, area default, or cleanly delegable unit applies (**isolate if mutating**); do not execute the skill in the parent ([`ai-tooling/skills/isolate-work/SKILL.md`](./ai-tooling/skills/isolate-work/SKILL.md)). Notify the human if the parent must do undelegable work.
+4. Match [`routing/skill-dispatch.md`](./routing/skill-dispatch.md). **MUST spawn** when a catalogued skill or area default matches **and** remaining work is material (skill body / multi-step specialist work) — isolate if mutating; parent does not execute specialist skill bodies. **MUST NOT spawn** for coordinator chores, isolate-work CLI, or after the user request is met (Critical Specialist dispatch). Isolate CLI is the parent’s normal path.
 5. Discover Markdown with `qmd search` / `qmd get`; structured files with ast-grep ([`supporting/qmd/`](./supporting/qmd/), [`supporting/ast-grep/`](./supporting/ast-grep/))
 
 Project-as-a-whole names: [`naming-conventions.md`](./naming-conventions.md).
@@ -84,9 +84,23 @@ Before create/edit for **new** work: `spawn_worktree.py check` → `add` → han
 
 ### Specialist dispatch
 
-**ALWAYS spawn** when a catalogued skill, area default, or cleanly delegable unit applies — isolate if mutating, then spawn. Do not load or execute specialist skill bodies in the parent. Catalog: [`routing/skill-dispatch.md`](./routing/skill-dispatch.md). Exception: this session already *is* that owner.
+**MUST spawn** when a catalogued skill or area default matches **and** remaining work is material (needs that skill body / multi-step specialist work). Isolate if mutating, then spawn. Parent does not load or execute specialist skill bodies. Catalog: [`routing/skill-dispatch.md`](./routing/skill-dispatch.md). Exception: this session already *is* that owner.
 
-The parent is coordinator/validator: it coordinates, validates consistency, and verifies adherence to the user's goals. It MAY perform only work it cannot cleanly delegate, and MUST notify the human when that happens.
+**MUST NOT spawn** for:
+
+- isolate-work CLI — parent runs `python scripts/routing/spawn_worktree.py` check/add/remove; never spawn `router-maintenance` for that CLI, even bundled with other chores
+- session-end gates — memory checkpoint, change-history via script, qmd/index refresh
+- in-session anti-slop/humanizer on a specialist’s own draft after that specialist returns (do not mint `artifact-agent`)
+- completion-notification busywork
+- inventing work after the user request is met
+- ff-only `git pull` on primary
+- lint of files the same specialist just wrote
+- a duplicate in-flight specialist on the same workspace
+- one-shot coordinator chores (claim files)
+
+**Reconciliation:** On subagent completion, audit the **user request** — not a parent-padded Definition of Done. Spawn again only if that request is unmet and leftover work is still a catalogued skill of material scope. Host follow-up nags are not a mandate to mint specialists.
+
+The parent is coordinator/validator: it coordinates, validates consistency, and verifies adherence to the user's goals. Isolate CLI and session-end gates are the parent’s normal path.
 
 ---
 
@@ -102,7 +116,7 @@ The parent is coordinator/validator: it coordinates, validates consistency, and 
 - Branch discipline: feature branch → push branch → `gh pr create` → PR merge. Never push directly to default/protected branches (`main`/`master`). Mutating agent work uses `spawn_worktree.py`. No force-push unless human asks. All commit messages and PR titles MUST follow Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, etc. — [`references/conventional-commits/`](./references/conventional-commits/)).
 - Script discovery: [`scripts/script-index.md`](./scripts/script-index.md). Skill add/remove/rename: `python scripts/routing/generate_routing_index.py` (wrapper: `generate_skill_dispatch.py`); validate skills + `validate_wiki_structure.py`.
 - qmd refresh after indexed Markdown add/remove/rename: `python scripts/qmd/refresh_qmd_index.py`.
-- Human-readable deliverables (docs, reports, proposals, research writeups, UI copy, diagrams): apply anti-slop then humanizer via catalogued skills / `owner_agent` — SoT [`docs/anti-slop.md`](./docs/anti-slop.md). Not for code, logs, security MUST wording, or frontmatter schemas.
+- Human-readable deliverables (docs, reports, proposals, research writeups, UI copy, diagrams): the producing specialist applies anti-slop then humanizer on its own draft in-session — SoT [`docs/anti-slop.md`](./docs/anti-slop.md). Parent **MUST NOT** mint `artifact-agent` after return for that pass. Spawn `artifact-agent` only when anti-slop/humanizer *is* the user’s material request. Not for code, logs, security MUST wording, or frontmatter schemas.
 
 ---
 

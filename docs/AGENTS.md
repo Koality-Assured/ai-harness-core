@@ -11,8 +11,8 @@ Ingest simply; do not duplicate skills or paste root Critical — link [`../AGEN
 - Keep controls portable — no employer/studio-specific org names in generalized standards.
 - Standards under `standards/` are normative intent. Root `docs/*.md` should stay thin (security MUST + any remaining tagged corpus).
 - `README.md` is human-only (root [`../AGENTS.md`](../AGENTS.md) High README rule).
-- After add/remove/rename of indexed Markdown: `python scripts/qmd/refresh_qmd_index.py`.
-- Parent spawns `documentation-ops` / matching skill owner when a catalogued skill owns the work.
+- After add/remove/rename of indexed Markdown: `python scripts/qmd/refresh_qmd_index.py` (parent session-end gate — do not mint a specialist for it).
+- Spawn `documentation-ops` / matching skill owner when a catalogued docs skill is material. Nested files MUST NOT undo root spawn-if-material.
 
 ## Maintenance (folded)
 

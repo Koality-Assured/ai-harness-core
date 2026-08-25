@@ -137,7 +137,8 @@ def build_default_rules(custom_usernames: list[str] | None = None) -> list[Redac
         RedactionRule(
             name="openai_api_key",
             description="OpenAI API secret keys",
-            pattern=re.compile(r"\bsk-(?!ant-)(?:proj-|live-)?[a-zA-Z0-9_-]{20,}\b"),
+            # Skip sk-EXAMPLE_* fixtures so dest A2A secret-leak tests stay valid Python.
+            pattern=re.compile(r"\bsk-(?!ant-)(?!EXAMPLE)(?:proj-|live-)?[a-zA-Z0-9_-]{20,}\b"),
             replacement="[REDACTED_OPENAI_KEY]",
         ),
         RedactionRule(
@@ -731,7 +732,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--validate",
         action="store_true",
-        help="Scan and validate source files for secrets and proprietary leaks",
+        help="Source-cleanliness linter: scan source for secrets and proprietary leaks. Export leak control is --dry-run (redaction on copy).",
     )
     parser.add_argument(
         "--report-file",

@@ -25,14 +25,29 @@ except (ImportError, ValueError):
         sys.path.insert(0, str(_HARNESS_ROOT))
     from config import A2AConfig, HarnessConfig
 
-VALID_STATUSES = {
+# Canonical A2A statuses. Skill-convention aliases (success/failure) map via STATUS_ALIASES.
+CANONICAL_STATUSES = {
     "completed",
     "failed",
     "in_progress",
     "budget_exhausted",
     "blocked",
     "rejected",
+    "partial",
+    "degraded",
 }
+
+STATUS_ALIASES = {
+    "success": "completed",
+    "failure": "failed",
+}
+
+VALID_STATUSES = CANONICAL_STATUSES | set(STATUS_ALIASES.keys())
+
+
+def canonicalize_status(status: str) -> str:
+    """Map skill-convention aliases onto canonical A2A statuses."""
+    return STATUS_ALIASES.get(status, status)
 
 INJECTION_PATTERNS = [
     re.compile(r"(?i)\bignore\s+(?:all\s+)?(?:previous|prior)\s+instructions\b"),
@@ -202,6 +217,7 @@ class A2AProtocol:
             raise A2AValidationError(
                 f"Invalid status '{status}'. Must be one of: {sorted(VALID_STATUSES)}"
             )
+        status = canonicalize_status(status)
 
         artifacts = data.get("artifacts")
         if artifacts is None or not isinstance(artifacts, list):
@@ -352,7 +368,14 @@ class A2AExchangeSession:
         )
         self.exchanges.append(exchange)
 
-        if envelope.status in {"completed", "failed", "budget_exhausted", "rejected"}:
+        if envelope.status in {
+            "completed",
+            "failed",
+            "budget_exhausted",
+            "rejected",
+            "partial",
+            "degraded",
+        }:
             self.closed = True
 
         return exchange

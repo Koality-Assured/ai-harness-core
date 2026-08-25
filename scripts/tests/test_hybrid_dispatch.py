@@ -28,8 +28,12 @@ from hybrid_dispatch import (  # noqa: E402
     dispatch_query,
     tokenize,
 )
-from md import parse_frontmatter  # noqa: E402
+from md import load_skill_record, parse_frontmatter  # noqa: E402
 from paths import REPO_ROOT as ROOT  # noqa: E402
+
+
+def _skill_md(name: str) -> Path:
+    return ROOT / "ai-tooling" / "skills" / name / "SKILL.md"
 
 
 class TestTier1FastPath(unittest.TestCase):
@@ -42,7 +46,10 @@ class TestTier1FastPath(unittest.TestCase):
         test_cases = [
             ("git status", "git-basics", "git-fast-operator"),
             ("git fetch and diff", "git-basics", "git-fast-operator"),
-            ("spawn git worktree", "isolate-work", "router-maintenance"),
+            ("spawn git worktree", "isolate-work", "router"),
+            ("isolate-work", "isolate-work", "router"),
+            ("isolate this mutating work in a worktree", "isolate-work", "router"),
+            ("isolate the worktree", "isolate-work", "router"),
             ("qmd search docs", "qmd-usage", "qmd-ops"),
             ("qmd commands and retrieval", "qmd-usage", "qmd-ops"),
             ("run noir scan on api", "noir-scan", "artifact-agent"),
@@ -66,6 +73,15 @@ class TestTier1FastPath(unittest.TestCase):
         self.assertFalse(res.matched)
         self.assertIsNone(res.skill)
         self.assertEqual(res.reason, "no_match")
+
+    def test_isolate_work_fast_path_does_not_match_ordinary_english(self) -> None:
+        for query in (
+            "isolate this work item",
+            "isolating work from the rest",
+        ):
+            res = self.tier1.evaluate(query)
+            self.assertFalse(res.matched, f"Query '{query}' must not hit isolate-work Fast-Path")
+            self.assertEqual(res.reason, "no_match")
 
     def test_med02_multi_intent_collision_avoids_overtriggering(self) -> None:
         """MED-02: Multi-intent requests spanning multiple skills must NOT over-trigger."""
@@ -104,6 +120,28 @@ class TestTier2BM25(unittest.TestCase):
         self.assertIn("standards", tokens)
         self.assertNotIn("and", tokens)
         self.assertNotIn("on", tokens)
+
+    def test_bm25_semantic_ranking_skills(self) -> None:
+        if not _skill_md("noir-scan").is_file():
+            self.skipTest("noir-scan is instance-only; omitted from wiki template")
+        # Query without exact fast-path keywords but matching skill purpose
+        query = "discover shadow routes and attack surface parameters"
+        res = self.bm25.search(query, top_k=3)
+        self.assertTrue(len(res.candidates) > 0)
+        top = res.candidates[0]
+        self.assertEqual(top.name, "noir-scan")
+        self.assertEqual(top.owner_agent, "artifact-agent")
+        self.assertGreater(top.score, 0.0)
+        self.assertGreater(top.confidence, 0.5)
+
+    def test_bm25_ranking_cloud_logs(self) -> None:
+        if not (_skill_md("aws-logs").is_file() or _skill_md("aws-read").is_file()):
+            self.skipTest("aws-logs/aws-read are instance-only; omitted from wiki template")
+        query = "inspect amazon cloudwatch log streams via oauth"
+        res = self.bm25.search(query, top_k=3)
+        self.assertTrue(len(res.candidates) > 0)
+        top_names = [c.name for c in res.candidates]
+        self.assertTrue("aws-logs" in top_names or "aws-read" in top_names)
 
     def test_bm25_empty_query(self) -> None:
         res = self.bm25.search("", top_k=3)
@@ -195,6 +233,19 @@ class TestHybridDispatcher(unittest.TestCase):
 
 class TestSchemaV2SkillParsing(unittest.TestCase):
     """Unit tests for Schema V2 metadata parsing and indexing."""
+
+    def test_load_skill_record_v2_fields(self) -> None:
+        threat_model_path = _skill_md("threat-model")
+        skill_path = threat_model_path if threat_model_path.is_file() else _skill_md("isolate-work")
+        rec = load_skill_record(skill_path)
+        self.assertEqual(rec["name"], skill_path.parent.name)
+        self.assertTrue(rec.get("owner_agent"))
+        self.assertIn(rec.get("rank"), {"critical", "high", "medium", "low"})
+        self.assertIn(rec.get("isolation"), {"mutate", "read-only", "none"})
+        self.assertIn("on_failure", rec)
+        self.assertIn("prerequisites", rec)
+        self.assertIn("dependencies", rec)
+        self.assertIn("contracts", rec)
 
     def test_parse_v2_frontmatter_synthetic(self) -> None:
         v2_raw = """---

@@ -2,7 +2,7 @@
 
 Home for agent-generated artifacts (reports, diagrams, images, exports). Layout details: [`results-conventions.md`](./results-conventions.md).
 
-Ingest simply; do not duplicate skills or paste root Critical — link [`../AGENTS.md`](../AGENTS.md). Parent spawns `artifact-agent` (or a more specific skill owner).
+Ingest simply; do not duplicate skills or paste root Critical — link [`../AGENTS.md`](../AGENTS.md). Spawn `artifact-agent` (or a more specific skill owner) when producing artifacts is material catalogued work. In-session anti-slop/humanizer on a specialist’s own draft MUST NOT mint `artifact-agent` after return.
 
 ## Rules
 

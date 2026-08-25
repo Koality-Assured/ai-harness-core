@@ -2,7 +2,7 @@
 
 Portable checkpoints for cold resumption. Split into **user** (human/workstation) and **agent** (per-specialist threads).
 
-Ingest simply; do not duplicate skills or paste root Critical — link [`../../AGENTS.md`](../../AGENTS.md). Parent spawns `ai-tooling-ops` for `memory-create` / `memory-adjust` / `memory-cleanup`.
+Ingest simply; do not duplicate skills or paste root Critical — link [`../../AGENTS.md`](../../AGENTS.md). Session-end memory checkpoints are a parent gate — do not mint `ai-tooling-ops` for them. Spawn `ai-tooling-ops` when a memory-* skill *is* the material task.
 
 ## Layout
 
@@ -23,4 +23,4 @@ Ingest simply; do not duplicate skills or paste root Critical — link [`../../A
 
 ## Ownership note (skill-agent-dispatch)
 
-The isolation + dispatch + skills enablement thread lives under [`agent/router/`](./agent/router/) (`skill-agent-dispatch.md`). Router owns spawn/isolation/dispatch orchestration; `ai-tooling-ops` owns skill/agent body authoring and still runs the memory-* skills that write these files.
+The isolation + dispatch + skills enablement thread lives under [`agent/router/`](./agent/router/) (`skill-agent-dispatch.md`). Router owns spawn/isolation/dispatch orchestration and writes session-end checkpoints here. `ai-tooling-ops` owns skill/agent body authoring; spawn it for memory-* only when that skill is the material user task.

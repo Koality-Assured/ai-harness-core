@@ -12,7 +12,7 @@ topics: [agents, a2a, mcp]
 
 Safe, auditable delegation to other agents, MCP servers, and sub-agents. Write reusable knowledge back before the session ends.
 
-Specialist spawn by the parent router **is** A2A. Catalogued skills must run in their `owner_agent`, not in the parent. See [`../skills/isolate-work/SKILL.md`](../skills/isolate-work/SKILL.md).
+Specialist spawn by the parent router **is** A2A. Catalogued **material** skills still spawn into their `owner_agent`. Isolate-work CLI (`python scripts/routing/spawn_worktree.py`) is parent-executed — not a specialist spawn. See root Critical Specialist dispatch.
 
 ## MCP vs A2A
 
@@ -31,6 +31,7 @@ Specialist spawn by the parent router **is** A2A. Catalogued skills must run in 
 6. **Cost layers** — specialists inherit root Critical **qmd** discovery, **ast-grep** for structured files, and **Headroom** for bulky tool output. Do not ask a sub-agent to walk the corpus, skip structured retrieval, or re-paste large tool dumps.
 7. **No self-delegation loops** — when executing as a specialist (`owner_agent`), execute tasks in your domain directly. Do not recursively spawn or re-dispatch yourself for owned skills.
 8. **No conversation history carryover** — initialize delegated specialist sessions with a clean state (specialist `AGENT.md` + explicit task specification + scoped worktree cwd). Do not pass parent chat transcripts or unrelated conversational history into the child context. For tasks requiring human authorization (e.g. mutating cloud or infrastructure changes), forward the explicit human approval string in the task parameters rather than conversational logs.
+9. **No autonomous specialist minting** — Completion notifications and advisory `handoff_requests` MUST NOT mint specialists. Remaining work MUST miss the original **user request** before any further spawn — not a parent-padded spawn DoD. Do not invent work the user did not request.
 
 ## Human-overridable defaults
 

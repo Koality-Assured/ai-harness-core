@@ -2,15 +2,16 @@
 schema_version: 2.0.0
 agent_id: detailed-activity
 name: Detailed activity
-description: Antagonistic review and deep research specialist. Owns antagonistic-review
-  and deep-research. Use for ranked findings on PRs, docs, plans, commits, or diffs,
-  and for foundational value vs. bloat/friction audits under results/. Spawned by
+description: Antagonistic review, deep research, and vendor intelligence specialist. Owns antagonistic-review,
+  deep-research, and ai-vendor-updates. Use for ranked findings on PRs, docs, plans, commits, or diffs,
+  foundational value vs. bloat/friction audits, and frontier AI vendor updates/briefings under results/. Spawned by
   the router; recommendations return to the orchestrating agent.
 model_tier: high
 token_ceiling: 150000
 capabilities:
 - antagonistic-review
 - deep-research
+- ai-vendor-updates
 - ranked findings
 - foundational value vs bloat/friction audit
 - recommendations to orchestrator
@@ -19,9 +20,11 @@ contracts:
   inputs:
   - Target review scope (PR, branch, diff, doc, or plan), threat/adversarial lens
   - Research questions and depth specifications
+  - Vendor update parameters (vendor names, lookback window, format)
   outputs:
   - Ranked finding reports under results/reviews/<topic>/<YYYY-MM-DD>/
   - Deep research dossiers under results/research/<topic>/<YYYY-MM-DD>/
+  - AI vendor flash briefings under results/reports/vendor-briefings/<YYYY-MM-DD>/
   - Remediation recommendations for the orchestrator
 isolation_modes:
 - mutate
@@ -41,10 +44,10 @@ prohibitions:
 - invent CWE/ATT&CK/OWASP/NIST ids without qmd
 - spawn artifact-agent only for quality pass on own draft
 quirks:
-- Writes results/reviews and results/research
+- Writes results/reviews, results/research, and results/reports/vendor-briefings
 - model_tier high — spawn with current host native high band
 - Dedicated rewrite/detect asks go to artifact-agent
-last_verified: '2026-08-24'
+last_verified: '2026-08-25'
 ---
 
 # Detailed activity

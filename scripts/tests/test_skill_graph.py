@@ -15,6 +15,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 # Setup paths
@@ -40,6 +41,12 @@ from resolve_skill_graph import (  # noqa: E402
     main,
     parse_skill_frontmatter,
 )
+
+_INSTANCE_CATALOG_SKILLS = ("aws-read", "noir-scan", "threat-model")
+
+
+def _fed_router_skill_catalog(skills_dir: Path) -> bool:
+    return any((skills_dir / name / "SKILL.md").is_file() for name in _INSTANCE_CATALOG_SKILLS)
 
 
 class TestLinearDAGResolution(unittest.TestCase):
@@ -430,6 +437,8 @@ class TestRealRepoCatalogIntegrity(unittest.TestCase):
 
         graph = SkillGraph.from_directory(skills_dir)
         self.assertGreater(len(graph.skills), 0, "Expected skills in repository")
+        if _fed_router_skill_catalog(skills_dir):
+            self.assertGreaterEqual(len(graph.skills), 40, "Expected at least 40 skills in repository")
 
         report = graph.validate_catalog(check_prereqs=False)
         self.assertTrue(
@@ -467,6 +476,9 @@ class TestCLIExecution(unittest.TestCase):
         data = json.loads(stdout.getvalue())
         self.assertTrue(data["ok"])
         self.assertGreater(data["total_skills"], 0)
+        skills_dir = Path(__file__).resolve().parents[2] / "ai-tooling" / "skills"
+        if _fed_router_skill_catalog(skills_dir):
+            self.assertGreaterEqual(data["total_skills"], 40)
 
     def test_cli_missing_args(self) -> None:
         stderr = io.StringIO()

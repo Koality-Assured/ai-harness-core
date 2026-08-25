@@ -2,7 +2,7 @@
 
 Host-agnostic `AGENT.md` definitions (plus optional thin host stubs) for specialists.
 
-Ingest simply; do not duplicate skills or paste root Critical — link [`../../AGENTS.md`](../../AGENTS.md). Author via `agent-builder` (parent spawns that owner).
+Ingest simply; do not duplicate skills or paste root Critical — link [`../../AGENTS.md`](../../AGENTS.md). Author via `agent-builder` — spawn that owner when the work is material.
 
 ## Rules
 

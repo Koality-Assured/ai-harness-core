@@ -26,6 +26,8 @@ uv tool install --python 3.13 "headroom-ai[proxy,mcp]"
 headroom --version
 ```
 
+Do not install `headroom-ai[all]`; that extra pulls local PyTorch/ML. Stick to `[proxy,mcp]`.
+
 Bind the proxy to localhost only. Do not pass `--host 0.0.0.0` unless you have a specific reason and understand the exposure.
 
 Provider API keys stay in the local environment (or the client’s own config). Never commit them.
@@ -106,7 +108,8 @@ Listen on `127.0.0.1` only.
 No proxy process → no automatic savings. MCP-only is weaker and can add context from tool calls.
 
 - `coding` profile ignores `--mode token`; switch `HEADROOM_SAVINGS_PROFILE` instead.
-- Windows Store `python` stubs hide a real 3.13 install; see [`../../supporting/workstation-onboarding.md`](../workstation-onboarding.md).
+- Do not install `[all]` extras (PyTorch/ML). Use `[proxy,mcp]` only.
+- Windows Store `python` stubs hide a real 3.13 install; see [`../workstation-onboarding.md`](../workstation-onboarding.md).
 - Docker is an alternative if wheels fail: `ghcr.io/headroomlabs-ai/headroom:latest` plus the [Docker-native installer](https://headroom-docs.vercel.app/docs/docker-install).
 - Repeatable compression + gold-fact check: `python scripts/cost-layers/validate_headroom_compression.py`. Combined with qmd + ast-grep: `python scripts/cost-layers/validate_cost_layers.py`. Reports under `results/cost-layers/<slug>/<YYYY-MM-DD>/`.
 - JSON tool arrays: large savings (~70%+) with gold facts intact. Search dumps: put markers in **match text**, not only file paths (path-only markers can be dropped). Compiler-style logs need enough log-like lines before the log compressor engages.

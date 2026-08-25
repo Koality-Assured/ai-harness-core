@@ -1,4 +1,10 @@
-"""Scaffolding CLI to initialize the .harness engine, config, and folder skeleton in any repository."""
+"""Scaffolding CLI to initialize the .harness engine, config, and folder skeleton in any repository.
+
+Do not invoke as `python -m .harness.cli.harness_init` — Python rejects dotted
+relative module names. From this repository use:
+
+    python scripts/harness_init.py --help
+"""
 
 from __future__ import annotations
 

@@ -55,10 +55,11 @@ The `Koality-Assured` organization maintains a synchronized suite of repositorie
 Exporting changes from `ai-router` to downstream repositories is automated via `scripts/sync/sync_public_repos.py` with credential/token redaction:
 
 ```bash
-# Validate source tree is clean of unredacted credentials
+# Source-cleanliness linter (exits 1 when source still contains matching patterns,
+# including documented internal paths that --dry-run will redact; not a leak gate)
 python scripts/sync/sync_public_repos.py --validate
 
-# Dry-run simulation of planned downstream exports
+# Dry-run simulation of planned downstream exports (export leak gate)
 python scripts/sync/sync_public_repos.py --dest <export_dir> --dry-run --json
 
 # Execute live sanitized export to downstream repositories
