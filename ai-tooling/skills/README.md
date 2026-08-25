@@ -31,6 +31,7 @@ Human index (not agent SoT):
 | [`cost-layer-dry-run/`](./cost-layers/cost-layer-dry-run/) | router-maintenance | mutate |
 | [`deep-research/`](./meta/deep-research/) | detailed-activity | mutate |
 | [`doc-builder/`](./meta/doc-builder/) | documentation-ops | mutate |
+| [`downstream-repo-update/`](./meta/downstream-repo-update/) | repo-sync-ops | mutate |
 | [`executive-report/`](./reporting/executive-report/) | artifact-agent | mutate |
 | [`foundation-site/`](./reporting/foundation-site/) | artifact-agent | mutate |
 | [`framework-mapper/`](./reporting/framework-mapper/) | artifact-agent | mutate |

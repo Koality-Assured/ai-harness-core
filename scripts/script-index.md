@@ -34,6 +34,7 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 | [`routing/hybrid_dispatch.py`](./routing/hybrid_dispatch.py) | `routing`, `ai-tooling` | dispatch, hybrid-dispatch, bm25, fast-path, ambiguity-gate, router | 3-Tier Hybrid Dispatch Pipeline for skills, agents, and area routing. |
 | [`routing/resolve_skill_graph.py`](./routing/resolve_skill_graph.py) | `routing`, `skills`, `dag` | skills, dependencies, topological-sort, execution-plan, prerequisites | Resolve skill dependency DAGs, topological ordering, and execution stages. |
 | [`routing/spawn_worktree.py`](./routing/spawn_worktree.py) | `routing`, `isolation` | worktree, branch, concurrency, claims | Spawn, list, and remove isolated git worktrees for concurrent agent work. |
+| [`sync/sync_and_push_downstreams.py`](./sync/sync_and_push_downstreams.py) | `sync`, `git`, `export`, `downstream` | sync-and-push, update-downstreams, multi-repo-publish, downstream-repo-update | Automated synchronization, sanitation, commit, and push engine for public downstream repositories. |
 | [`sync/sync_public_repos.py`](./sync/sync_public_repos.py) | `sync`, `security`, `export` | sync, redaction, multi-repo, export, sanitize, wiki-template | Multi-repo synchronization and sanitization/redaction engine for public exports. |
 | [`tests/test_cloud_admin.py`](./tests/test_cloud_admin.py) | `tests`, `cloud`, `admin` | tests, cloud-admin, aws, gcp, azure | Unit tests for scripts/cloud/cloud_admin.py. |
 | [`tests/test_google_suite.py`](./tests/test_google_suite.py) | `tests`, `google`, `drive`, `gmail`, `security`, `redaction` | — | Tests for Google Suite operations, administration, security gates, and downstream redaction. |
@@ -57,8 +58,10 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 - **core:** `tests/test_harness_core.py`
 - **dag:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`
 - **docs:** `docs/run_markdownlint.py`, `docs/validate_structure_fast.py`, `docs/validate_wiki_structure.py`, `tests/test_validate_structure_fast.py`
+- **downstream:** `sync/sync_and_push_downstreams.py`
 - **drive:** `tests/test_google_suite.py`
-- **export:** `sync/sync_public_repos.py`
+- **export:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`
+- **git:** `sync/sync_and_push_downstreams.py`
 - **github:** `github/resolve_github_path.py`, `repos/scaffold_public_repos.py`, `tests/test_pretty_docs_security.py`
 - **gmail:** `tests/test_google_suite.py`
 - **google:** `tests/test_google_suite.py`
@@ -76,6 +79,6 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 - **schema-v2:** `tests/test_validate_agent.py`
 - **security:** `sync/sync_public_repos.py`, `tests/test_google_suite.py`, `tests/test_pretty_docs_security.py`
 - **skills:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`
-- **sync:** `sync/sync_public_repos.py`
+- **sync:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`
 - **tests:** `tests/test_cloud_admin.py`, `tests/test_google_suite.py`, `tests/test_harness_core.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pretty_docs_security.py`, `tests/test_public_llm_admin.py`, `tests/test_scaffold_public_repos.py`, `tests/test_skill_graph.py`, `tests/test_validate_agent.py`, `tests/test_validate_structure_fast.py`
 - **validation:** `docs/validate_structure_fast.py`, `tests/test_validate_structure_fast.py`

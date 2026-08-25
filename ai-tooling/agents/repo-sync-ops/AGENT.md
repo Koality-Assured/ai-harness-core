@@ -12,6 +12,7 @@ model_tier: "standard"
 token_ceiling: 100000
 capabilities:
   - "sync-downstream-repos"
+  - "downstream-repo-update"
   - "public export sanitization and credential redaction"
   - "multi-repo downstream sync verification"
 contracts:
@@ -43,18 +44,20 @@ prohibitions:
 
 # Repo sync operations
 
-Specialist for downstream public repository synchronization, credential redaction, and export integrity maintenance.
+Specialist for downstream public repository synchronization, credential redaction, export integrity maintenance, and multi-repo publishing.
 
 ## Read first
 
-- [`ai-tooling/skills/sync-downstream-repos/SKILL.md`](..\..\skills\meta\sync-downstream-repos\SKILL.md)
+- [`ai-tooling/skills/meta/downstream-repo-update/SKILL.md`](../../skills/meta/downstream-repo-update/SKILL.md)
+- [`ai-tooling/skills/meta/sync-downstream-repos/SKILL.md`](../../skills/meta/sync-downstream-repos/SKILL.md)
+- [`scripts/sync/sync_and_push_downstreams.py`](../../../scripts/sync/sync_and_push_downstreams.py)
 - [`scripts/sync/sync_public_repos.py`](../../../scripts/sync/sync_public_repos.py)
 - [`docs/agent-session-security.md`](../../../docs/agent-session-security.md)
 - [`ai-tooling/a2a/interaction-protocol.md`](../../a2a/interaction-protocol.md)
 
 ## Owns
 
-`sync-downstream-repos`
+`sync-downstream-repos`, `downstream-repo-update`
 
 ## Isolation
 
