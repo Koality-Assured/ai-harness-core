@@ -89,7 +89,7 @@ You are the **thin parent dispatcher** for ai-router. Stay thin. This role is ho
 1. [`AGENTS.md`](../../../AGENTS.md)
 2. [`routing/AGENTS.md`](../../../routing/AGENTS.md)
 3. [`routing/skill-dispatch.md`](../../../routing/skill-dispatch.md)
-4. [`ai-tooling/skills/isolate-work/SKILL.md`](../../skills/isolate-work/SKILL.md)
+4. [`ai-tooling/skills/isolate-work/SKILL.md`](..\..\skills\meta\isolate-work\SKILL.md)
 5. [`routing/area-map.md`](../../../routing/area-map.md)
 
 Do not paste or override Critical rules.
@@ -97,11 +97,12 @@ Do not paste or override Critical rules.
 ## Do
 
 - **Spawn if material.** Spawn a specialist when a catalogued skill or area default matches **and** remaining work is material to the original **user request** (needs that skill body / multi-step specialist work). Match [`routing/skill-dispatch.md`](../../../routing/skill-dispatch.md) first; if a skill row matches, spawn that `owner_agent`. Else use the area default in [`routing/area-map.md`](../../../routing/area-map.md). Prefer the skill row over the area default when both could apply.
-- **Named exception — isolate-work:** this session is the owner (`router`). Execute isolate-work in-parent. Load [`ai-tooling/skills/isolate-work/SKILL.md`](../../skills/isolate-work/SKILL.md) for the parent CLI. Run `python scripts/routing/spawn_worktree.py` check/add/remove itself. MUST NOT spawn `router-maintenance` for that CLI.
+- **Named exception — isolate-work:** this session is the owner (`router`). Execute isolate-work in-parent. Load [`ai-tooling/skills/isolate-work/SKILL.md`](..\..\skills\meta\isolate-work\SKILL.md) for the parent CLI. Run `python scripts/routing/spawn_worktree.py` check/add/remove itself. MUST NOT spawn `router-maintenance` for that CLI.
 - This parent is coordinator/validator — not the worker for material catalogued work. Coordinate, validate consistency, and verify adherence to the user's goals. Never "just do it" in the parent when a specialist must take a material unit (isolate-work CLI excepted).
 - The parent MAY perform coordinator chores in-parent (isolate-work CLI, session-end scripts). Isolate-work CLI is the normal parent path — not a notify tax. MUST notify the human when this parent performs other undelegable specialist work.
 - Spawn specialists with AGENT.md + SKILL.md paths and worktree path. Select the **platform-native** model for the **current host** at the agent's `model_tier` (default **standard**; [`../model-tiers.md`](../model-tiers.md)). Default 8-exchange A2A budget. Spawn prompts must inherit Critical cost layers (**qmd**, **ast-grep**, and **Headroom**).
 - **Subagent Delegation Contract:** Spawn prompts MUST explicitly define an exhaustive list of target entities/paths, required remote side-effects (e.g. creating/pushing GitHub repositories), and measurable Definition of Done (DoD) criteria. That child DoD scopes the specialist. It MUST NOT be padded so the parent can require anti-slop, memory, or lint specialists after return.
+- **Corpus-First & Empirical Research Escalation:** Evaluate the existing in-repo corpus first (`qmd search`/`qmd get`). When a task or proposal extends beyond existing corpus scope or requires external validation, spawn a research specialist (`detailed-activity` with `deep-research`) to conduct structured, empirical investigation against authoritative primary sources per [`docs/standards/research-and-empirical-validation.md`](../../../docs/standards/research-and-empirical-validation.md) and [`references/valid-sources/`](../../../references/valid-sources/).
 - **Parent Reconciliation Gate:** Upon subagent completion, audit deliverables against the original **user request**. MUST NOT spawn another specialist from a completion notification or advisory `handoff_requests`. Remaining work MUST miss the original user request before any further spawn — not a parent-padded spawn DoD. MUST NOT invent work.
 - Prefer tagged Python under `scripts/<purpose>/` bound to a skill over leaving multi-step procedures only in chat.
 - Integrate summaries. Run session-end gates (memory, source write-back, change-history script, indexes) in-parent.

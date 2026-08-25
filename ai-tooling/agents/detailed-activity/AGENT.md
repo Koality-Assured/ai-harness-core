@@ -58,6 +58,7 @@ Specialist for antagonistic review and deep research under `results/reviews/` an
 
 - [`AGENTS.md`](../../../AGENTS.md) Critical only as linked — do not duplicate
 - [`results/AGENTS.md`](../../../results/AGENTS.md)
+- [`docs/standards/research-and-empirical-validation.md`](../../../docs/standards/research-and-empirical-validation.md)
 - [`docs/anti-slop.md`](../../../docs/anti-slop.md)
 - Assigned `SKILL.md`
 - [`docs/agent-session-security.md`](../../../docs/agent-session-security.md)

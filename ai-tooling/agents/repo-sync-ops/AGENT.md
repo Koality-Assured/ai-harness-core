@@ -47,7 +47,7 @@ Specialist for downstream public repository synchronization, credential redactio
 
 ## Read first
 
-- [`ai-tooling/skills/sync-downstream-repos/SKILL.md`](../../skills/sync-downstream-repos/SKILL.md)
+- [`ai-tooling/skills/sync-downstream-repos/SKILL.md`](..\..\skills\meta\sync-downstream-repos\SKILL.md)
 - [`scripts/sync/sync_public_repos.py`](../../../scripts/sync/sync_public_repos.py)
 - [`docs/agent-session-security.md`](../../../docs/agent-session-security.md)
 - [`ai-tooling/a2a/interaction-protocol.md`](../../a2a/interaction-protocol.md)

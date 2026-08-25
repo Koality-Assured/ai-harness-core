@@ -33,6 +33,7 @@ Match [`skill-dispatch.md`](./skill-dispatch.md) first. Use this table only when
 
 | Path | Default agent |
 | --- | --- |
+| `docs/guidance/` | [`documentation-ops`](../ai-tooling/agents/documentation-ops/AGENT.md) |
 | `supporting/github/` | [`github-ops`](../ai-tooling/agents/github-ops/AGENT.md) |
 | `supporting/qmd/` | [`qmd-ops`](../ai-tooling/agents/qmd-ops/AGENT.md) |
 | `supporting/headroom/` | [`router-maintenance`](../ai-tooling/agents/router-maintenance/AGENT.md) |

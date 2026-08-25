@@ -33,7 +33,11 @@ from paths import REPO_ROOT as ROOT  # noqa: E402
 
 
 def _skill_md(name: str) -> Path:
-    return ROOT / "ai-tooling" / "skills" / name / "SKILL.md"
+    skills_dir = ROOT / "ai-tooling" / "skills"
+    for p in skills_dir.rglob("SKILL.md"):
+        if p.parent.name == name:
+            return p
+    return skills_dir / name / "SKILL.md"
 
 
 class TestTier1FastPath(unittest.TestCase):

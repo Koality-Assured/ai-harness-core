@@ -227,6 +227,12 @@ def build_default_rules(custom_usernames: list[str] | None = None) -> list[Redac
             pattern=re.compile(r"(?i)[a-zA-Z]:[\\/](?:Code|Projects|repos|dev)[\\/]ai-router[\\/]"),
             replacement="[REPO_ROOT]/",
         ),
+        RedactionRule(
+            name="google_drive_test_folder",
+            description="Google Drive test folder ID and URL",
+            pattern=re.compile(r"https?://drive\.google\.com/drive/folders/1noGxOG_[a-zA-Z0-9_-]+|1noGxOG_[a-zA-Z0-9_-]+"),
+            replacement="[REDACTED_GOOGLE_DRIVE_TEST_FOLDER]",
+        ),
 
         # 3. Internal Identities & Domains
         RedactionRule(
@@ -418,9 +424,11 @@ class SyncEngine:
         for root, dirs, files in os.walk(src_dir):
             root_path = Path(root)
             try:
-                if root_path.resolve() == dest_resolved or dest_resolved in root_path.resolve().parents:
-                    dirs[:] = []
-                    continue
+                src_resolved = src_dir.resolve()
+                if dest_resolved == src_resolved or src_resolved in dest_resolved.parents:
+                    if root_path.resolve() == dest_resolved or dest_resolved in root_path.resolve().parents:
+                        dirs[:] = []
+                        continue
             except OSError:
                 pass
 

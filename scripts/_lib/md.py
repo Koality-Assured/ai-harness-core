@@ -96,7 +96,11 @@ def heading_titles(body: str) -> list[str]:
 def skill_paths(root: Path) -> list[Path]:
     skills = root / "ai-tooling" / "skills"
     out = []
-    for path in sorted(skills.glob("*/SKILL.md")):
+    if not skills.exists():
+        return out
+    for path in sorted(skills.rglob("SKILL.md")):
+        if any(part.startswith(".") for part in path.parts):
+            continue
         out.append(path)
     return out
 

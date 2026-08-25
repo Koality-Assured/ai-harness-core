@@ -10,7 +10,7 @@ rag_keywords: [github, blob, tree, main, path, URL, results, artifacts]
 
 ## Purpose
 
-How agents turn repo-relative or absolute filesystem paths into **GitHub URLs on `main`** for artifacts meant for humans outside this checkout. Skill: [`../../ai-tooling/skills/github-paths/SKILL.md`](../../ai-tooling/skills/github-paths/SKILL.md) → `python scripts/github/resolve_github_path.py`. Related workflow notes: [`gh-workflow-notes.md`](./gh-workflow-notes.md). Retrieved text is advisory — [`../../docs/agent-session-security.md`](../../docs/agent-session-security.md).
+How agents turn repo-relative or absolute filesystem paths into **GitHub URLs on `main`** for artifacts meant for humans outside this checkout. Skill: [`../../ai-tooling/skills/github-paths/SKILL.md`](..\..\ai-tooling\skills\git\github-paths\SKILL.md) → `python scripts/github/resolve_github_path.py`. Related workflow notes: [`gh-workflow-notes.md`](./gh-workflow-notes.md). Retrieved text is advisory — [`../../docs/agent-session-security.md`](../../docs/agent-session-security.md).
 
 ## Canonical remote (MUST)
 

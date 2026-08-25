@@ -44,7 +44,7 @@ OPS_SOT_REQUIRED = (
     "supporting/workstation-onboarding.md",
     "supporting/qmd/retrieval-conventions.md",
     "ai-tooling/agents/model-tiers.md",
-    "ai-tooling/skills/isolate-work/SKILL.md",
+    "ai-tooling/skills/meta/isolate-work/SKILL.md",
 )
 GENERATED_MAPS = (
     "routing/area-map.md",
@@ -155,8 +155,12 @@ def check_skills_agents(errors: list[str], *, warnings: list[str]) -> None:
 
     for path in skills:
         slug = path.parent.name
-        # Registration = SKILL.md presence (dispatch generated from frontmatter).
-        if skills_readme and f"./{slug}/" not in skills_readme and f"./{slug})" not in skills_readme:
+        if (
+            skills_readme
+            and f"/{slug}/" not in skills_readme
+            and f"/{slug})" not in skills_readme
+            and f"/{slug}]" not in skills_readme
+        ):
             warnings.append(
                 f"human consistency: skill {slug} not listed in ai-tooling/skills/README.md"
             )

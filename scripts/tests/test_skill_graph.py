@@ -46,7 +46,10 @@ _INSTANCE_CATALOG_SKILLS = ("aws-read", "noir-scan", "threat-model")
 
 
 def _fed_router_skill_catalog(skills_dir: Path) -> bool:
-    return any((skills_dir / name / "SKILL.md").is_file() for name in _INSTANCE_CATALOG_SKILLS)
+    return any(
+        any(p.parent.name == name for p in skills_dir.rglob("SKILL.md"))
+        for name in _INSTANCE_CATALOG_SKILLS
+    )
 
 
 class TestLinearDAGResolution(unittest.TestCase):

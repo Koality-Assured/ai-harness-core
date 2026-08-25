@@ -45,7 +45,7 @@ SAMPLES = [
     {
         "id": "skill-frontmatter",
         "area": "skills-frontmatter",
-        "path": "ai-tooling/skills/script-builder/SKILL.md",
+        "path": "ai-tooling/skills/meta/script-builder/SKILL.md",
     },
 ]
 MIN_GOLD_LEN = 6

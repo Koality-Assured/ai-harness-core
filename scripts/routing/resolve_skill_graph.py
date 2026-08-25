@@ -291,7 +291,9 @@ class SkillGraph:
         graph = cls()
         if not skills_dir.exists():
             return graph
-        for skill_file in sorted(skills_dir.glob("*/SKILL.md")):
+        for skill_file in sorted(skills_dir.rglob("SKILL.md")):
+            if any(part.startswith(".") for part in skill_file.parts):
+                continue
             skill = load_skill_from_file(skill_file)
             graph.add_skill(skill)
         return graph

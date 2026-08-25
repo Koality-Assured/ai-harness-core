@@ -35,9 +35,12 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 | [`routing/resolve_skill_graph.py`](./routing/resolve_skill_graph.py) | `routing`, `skills`, `dag` | skills, dependencies, topological-sort, execution-plan, prerequisites | Resolve skill dependency DAGs, topological ordering, and execution stages. |
 | [`routing/spawn_worktree.py`](./routing/spawn_worktree.py) | `routing`, `isolation` | worktree, branch, concurrency, claims | Spawn, list, and remove isolated git worktrees for concurrent agent work. |
 | [`sync/sync_public_repos.py`](./sync/sync_public_repos.py) | `sync`, `security`, `export` | sync, redaction, multi-repo, export, sanitize, wiki-template | Multi-repo synchronization and sanitization/redaction engine for public exports. |
+| [`tests/test_cloud_admin.py`](./tests/test_cloud_admin.py) | `tests`, `cloud`, `admin` | tests, cloud-admin, aws, gcp, azure | Unit tests for scripts/cloud/cloud_admin.py. |
+| [`tests/test_google_suite.py`](./tests/test_google_suite.py) | `tests`, `google`, `drive`, `gmail`, `security`, `redaction` | — | Tests for Google Suite operations, administration, security gates, and downstream redaction. |
 | [`tests/test_harness_core.py`](./tests/test_harness_core.py) | `tests`, `harness`, `core` | harness, tests, core, isolation, a2a, cache | Comprehensive unit tests for the decoupled bare-metal .harness engine. |
 | [`tests/test_hybrid_dispatch.py`](./tests/test_hybrid_dispatch.py) | `tests`, `routing`, `ai-tooling` | tests, hybrid-dispatch, bm25, ambiguity-gate, schema-v2 | Unit tests for 3-Tier Hybrid Dispatch Pipeline and Schema V2 Indexing. |
 | [`tests/test_pretty_docs_security.py`](./tests/test_pretty_docs_security.py) | `tests`, `security`, `github` | tests, href, github-paths | Stdlib unit tests for href allow-list and GitHub path helpers. |
+| [`tests/test_public_llm_admin.py`](./tests/test_public_llm_admin.py) | `tests`, `llm`, `admin` | tests, public-llm-admin, openai, anthropic, gemini | Unit tests for scripts/llm/public_llm_admin.py. |
 | [`tests/test_scaffold_public_repos.py`](./tests/test_scaffold_public_repos.py) | `tests`, `repos`, `scaffold` | tests, scaffold_public_repos, agent-skills, agent-standards, ai-research, wiki-template | Unit tests for public ecosystem repositories scaffolding automation. |
 | [`tests/test_skill_graph.py`](./tests/test_skill_graph.py) | `tests`, `routing`, `skills`, `dag` | tests, dag, topological-sort, dependencies, prerequisites | Unit tests for skill dependency DAG resolution, topological ordering, and Schema V2 conventions. |
 | [`tests/test_validate_agent.py`](./tests/test_validate_agent.py) | `tests`, `ai-tooling`, `agents`, `schema-v2` | tests, validate-agent, agents | Unit tests for Schema V2 agent validation. |
@@ -45,27 +48,34 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 
 ## By tag
 
+- **admin:** `tests/test_cloud_admin.py`, `tests/test_public_llm_admin.py`
 - **agents:** `ai-tooling/validate_agent.py`, `tests/test_validate_agent.py`
 - **ai-tooling:** `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `tests/test_hybrid_dispatch.py`, `tests/test_validate_agent.py`
 - **ast-grep:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`
 - **change-history:** `change-history/append_change_history.py`, `change-history/ensure_change_history_quarter.py`
+- **cloud:** `tests/test_cloud_admin.py`
 - **core:** `tests/test_harness_core.py`
 - **dag:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`
 - **docs:** `docs/run_markdownlint.py`, `docs/validate_structure_fast.py`, `docs/validate_wiki_structure.py`, `tests/test_validate_structure_fast.py`
+- **drive:** `tests/test_google_suite.py`
 - **export:** `sync/sync_public_repos.py`
 - **github:** `github/resolve_github_path.py`, `repos/scaffold_public_repos.py`, `tests/test_pretty_docs_security.py`
+- **gmail:** `tests/test_google_suite.py`
+- **google:** `tests/test_google_suite.py`
 - **harness:** `tests/test_harness_core.py`
 - **headroom:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`
 - **isolation:** `routing/spawn_worktree.py`
 - **lint:** `docs/validate_structure_fast.py`
+- **llm:** `tests/test_public_llm_admin.py`
 - **markdown:** `docs/run_markdownlint.py`
 - **qmd:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `qmd/refresh_qmd_index.py`, `qmd/setup_qmd_collections.py`, `qmd/validate_qmd_retrieval.py`
+- **redaction:** `tests/test_google_suite.py`
 - **repos:** `repos/scaffold_public_repos.py`, `tests/test_scaffold_public_repos.py`
 - **routing:** `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `docs/validate_wiki_structure.py`, `routing/generate_routing_index.py`, `routing/generate_script_index.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `routing/resolve_skill_graph.py`, `routing/spawn_worktree.py`, `tests/test_hybrid_dispatch.py`, `tests/test_skill_graph.py`
 - **scaffold:** `repos/scaffold_public_repos.py`, `tests/test_scaffold_public_repos.py`
 - **schema-v2:** `tests/test_validate_agent.py`
-- **security:** `sync/sync_public_repos.py`, `tests/test_pretty_docs_security.py`
+- **security:** `sync/sync_public_repos.py`, `tests/test_google_suite.py`, `tests/test_pretty_docs_security.py`
 - **skills:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`
 - **sync:** `sync/sync_public_repos.py`
-- **tests:** `tests/test_harness_core.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pretty_docs_security.py`, `tests/test_scaffold_public_repos.py`, `tests/test_skill_graph.py`, `tests/test_validate_agent.py`, `tests/test_validate_structure_fast.py`
+- **tests:** `tests/test_cloud_admin.py`, `tests/test_google_suite.py`, `tests/test_harness_core.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pretty_docs_security.py`, `tests/test_public_llm_admin.py`, `tests/test_scaffold_public_repos.py`, `tests/test_skill_graph.py`, `tests/test_validate_agent.py`, `tests/test_validate_structure_fast.py`
 - **validation:** `docs/validate_structure_fast.py`, `tests/test_validate_structure_fast.py`

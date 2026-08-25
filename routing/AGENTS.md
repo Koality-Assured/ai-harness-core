@@ -14,7 +14,7 @@ Rebuild after new folder types or skills: edit [`areas.yaml`](./areas.yaml) if n
 
 ## Isolate then spawn
 
-`python scripts/routing/spawn_worktree.py check --areas <csv> --json` then `add`. Procedure: [`../ai-tooling/skills/isolate-work/SKILL.md`](../ai-tooling/skills/isolate-work/SKILL.md).
+`python scripts/routing/spawn_worktree.py check --areas <csv> --json` then `add`. Procedure: [`../ai-tooling/skills/isolate-work/SKILL.md`](..\ai-tooling\skills\meta\isolate-work\SKILL.md).
 
 ## One-liners
 

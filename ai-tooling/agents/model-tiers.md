@@ -34,4 +34,4 @@ New agents get `model_tier: standard` unless the human specifies otherwise.
 | --- | --- |
 | [`AGENTS.md`](./AGENTS.md) | Agent authoring rules |
 | [`../a2a/agent-cards/README.md`](../a2a/agent-cards/README.md) | Host cards (`type: host`) |
-| [`../skills/isolate-work/SKILL.md`](../skills/isolate-work/SKILL.md) | Isolate then spawn |
+| [`../skills/isolate-work/SKILL.md`](..\skills\meta\isolate-work\SKILL.md) | Isolate then spawn |
