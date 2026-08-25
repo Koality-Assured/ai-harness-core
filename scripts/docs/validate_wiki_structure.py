@@ -1,7 +1,7 @@
-"""Validate router wiki structure (areas, catalogs, frontmatter, dispatch).
+"""Validate router wiki structure (areas, catalogs, frontmatter, dispatch, results layout).
 
 tags: [docs, routing]
-routing_hints: [wiki, structure, validation]
+routing_hints: [wiki, structure, validation, results-layout]
 """
 
 from __future__ import annotations
@@ -44,7 +44,7 @@ OPS_SOT_REQUIRED = (
     "supporting/workstation-onboarding.md",
     "supporting/qmd/retrieval-conventions.md",
     "ai-tooling/agents/model-tiers.md",
-    "ai-tooling/skills/isolate-work/SKILL.md",
+    "ai-tooling/skills/meta/isolate-work/SKILL.md",
 )
 GENERATED_MAPS = (
     "routing/area-map.md",
@@ -155,8 +155,12 @@ def check_skills_agents(errors: list[str], *, warnings: list[str]) -> None:
 
     for path in skills:
         slug = path.parent.name
-        # Registration = SKILL.md presence (dispatch generated from frontmatter).
-        if skills_readme and f"./{slug}/" not in skills_readme and f"./{slug})" not in skills_readme:
+        if (
+            skills_readme
+            and f"/{slug}/" not in skills_readme
+            and f"/{slug})" not in skills_readme
+            and f"/{slug}]" not in skills_readme
+        ):
             warnings.append(
                 f"human consistency: skill {slug} not listed in ai-tooling/skills/README.md"
             )
@@ -235,6 +239,74 @@ def check_memory(errors: list[str]) -> None:
             err(errors, f"{path.relative_to(ROOT).as_posix()}: missing Last updated")
 
 
+ALLOWED_RESULTS_FILES = frozenset({"AGENTS.md", "README.md", "results-conventions.md"})
+ALLOWED_RESULTS_FAMILIES = frozenset(
+    {"reports", "research", "diagrams", "threat-model", "as-code", "cost-layers"}
+)
+RETIRED_REVIEWS_DIR = "reviews"
+GITKEEP_NAME = ".gitkeep"
+
+
+def check_results_layout(errors: list[str], *, root: Path | None = None) -> None:
+    """Fail leftover scratch-shaped dirs and antagonistic review runs under results/.
+
+    Inspects ``results/`` immediate children only, plus one extra level into
+    ``results/reviews/`` when that directory exists. Does not walk family trees.
+    """
+    base = ROOT if root is None else root
+    results = base / "results"
+    if not results.is_dir():
+        err(errors, "missing results/ directory")
+        return
+
+    allowed_family_csv = ", ".join(sorted(ALLOWED_RESULTS_FAMILIES))
+    allowed_file_csv = ", ".join(sorted(ALLOWED_RESULTS_FILES))
+
+    for child in sorted(results.iterdir(), key=lambda p: p.name):
+        name = child.name
+        if child.is_file():
+            if name not in ALLOWED_RESULTS_FILES:
+                err(
+                    errors,
+                    f"results/{name}: unexpected top-level file "
+                    f"(allowed: {allowed_file_csv})",
+                )
+            continue
+        if not child.is_dir():
+            err(errors, f"results/{name}: unexpected top-level entry")
+            continue
+        if name in ALLOWED_RESULTS_FAMILIES:
+            continue
+        if name == RETIRED_REVIEWS_DIR:
+            _check_retired_reviews(errors, child)
+            continue
+        err(
+            errors,
+            f"results/{name}/: unexpected top-level directory "
+            f"(allowed families: {allowed_family_csv}; "
+            "retired reviews/.gitkeep only)",
+        )
+
+
+def _check_retired_reviews(errors: list[str], reviews: Path) -> None:
+    """Allow ``results/reviews/.gitkeep`` only; fail topic run directories."""
+    for child in sorted(reviews.iterdir(), key=lambda p: p.name):
+        if child.is_file() and child.name == GITKEEP_NAME:
+            continue
+        if child.is_dir():
+            err(
+                errors,
+                f"results/reviews/{child.name}/: antagonistic review runs must not "
+                "live under results/ (interim notes belong in scratch/)",
+            )
+            continue
+        err(
+            errors,
+            f"results/reviews/{child.name}: unexpected file "
+            "(only .gitkeep is allowed under retired reviews/)",
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", action="store_true")
@@ -250,6 +322,7 @@ def main(argv: list[str] | None = None) -> int:
     check_qmd_exclusions(errors, warnings=warnings)
     check_dispatch(errors)
     check_memory(errors)
+    check_results_layout(errors)
     payload = {"ok": not errors, "errors": errors, "warnings": warnings}
     if args.json:
         print(json.dumps(payload, indent=2))

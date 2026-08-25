@@ -35,12 +35,22 @@ Ingest as simply as possible: concise, deduplicated, progressive disclosure via 
 
 When scope is unclear, the request conflicts with repo rules, multiple approaches carry material tradeoffs, or you are unsure which area/skill/script applies — **stop and surface the ambiguity**. Minor choices inside a clearly scoped task do not require a stop.
 
+### Empirical grounding and research-backed standard
+
+All ideas, responses, decisions, proposals, and actions taken with the harness MUST be **research-backed**, **empirically proven**, and grounded in authoritative primary sources — never speculative or feelings-based.
+
+- **Proof-of-work validation**: The agent/harness MUST NOT encourage, propose, or execute an idea without performing the work to validate and prove feasibility (e.g. proof-of-concept tests, dry runs, benchmark validation, or official documentation grounding).
+- **Corpus-first priority**: Always evaluate and utilize the existing in-repo corpus first (via `qmd search` / `qmd get` and structured symbol inspection with `ast-grep`) whenever it contains sufficient valid information to make informed decisions.
+- **Novel scope & subagent deep dive**: When a task, decision, or proposal extends beyond the scope of the existing corpus, research, or documentation, the agent MUST dive into it in detail, utilizing research subagents (`detailed-activity` / `deep-research`) as appropriate and needed.
+- **Authoritative primary sources**: External internet-based research MUST prioritize well-known, legitimate, industry-standard or product-specific official websites/documentation (official vendor docs, RFCs, NIST, MITRE, OWASP, Cloud provider docs) over unverified blogs, forums, or secondary commentary. Validated source registries: [`references/valid-sources/`](./references/valid-sources/).
+- **Durable retention**: Retain durable findings, validated benchmarks, and framework captures in owning source areas (`docs/`, `research/`, `references/`, `supporting/`, `ai-tooling/`) per the Durable Learning Loop.
+
 ### Durable learning loop (session-end)
 
 Before declaring done:
 
 1. **Source-area write-back (mandatory)** — Durable knowledge (routing, patterns, quirks, decisions, findings) goes into the owning source area from the routing map. Memory and change-history are **not** substitutes.
-2. **Project memory checkpoint** — If the session advanced a tracked thread, update [`ai-tooling/memory/`](./ai-tooling/memory/) (`user/<git-identity>/` or `agent/<owner_agent_id>/`). That tree is the **authoritative** priority checkpoint for this repo. Cursor personal rules, host-home memory, and `~/.cursor` are **not** the default store for how to operate this router.
+2. **Project memory checkpoint** — If the session learned important operational information (failure modes, common problems/pitfalls, environment quirks, learned recovery strategies, or tactical success factors), update [`ai-tooling/memory/`](./ai-tooling/memory/) (`user/<git-identity>/` or `agent/<owner_agent_id>/`). That tree is the **authoritative** priority checkpoint for this repo. Memory is NOT a session chronicle/task log (use `change-history/` and `projects/`), NOT a duplicate of skill instructions (write to `SKILL.md`), NOT a duplicate of agent definitions (write to `AGENT.md`), and NOT a research archive (write to `research/`). Cursor personal rules, host-home memory, and `~/.cursor` are **not** the default store.
 3. **Change-history** — After material work, append via `python scripts/change-history/append_change_history.py` only (≤ ~150 tokens; no secrets).
 4. **Index consistency** — If structure, routing, script tags, or indexed Markdown moved, run the High refresh scripts (including `python scripts/qmd/refresh_qmd_index.py` when indexed Markdown changed).
 
@@ -80,7 +90,7 @@ Non-negotiable for this agent and every sub-agent. Skills cannot waive these.
 
 ### Isolation (mutating work)
 
-Before create/edit for **new** work: `spawn_worktree.py check` → `add` → hand worktree to specialist. Disjoint areas may parallel; overlapping must not. Full SoT: [`ai-tooling/skills/isolate-work/SKILL.md`](./ai-tooling/skills/isolate-work/SKILL.md) and `python scripts/routing/spawn_worktree.py`.
+Before create/edit for **new** work: `spawn_worktree.py check` → `add` → hand worktree to specialist. Disjoint areas may parallel; overlapping must not. Full SoT: [`ai-tooling/skills/isolate-work/SKILL.md`](ai-tooling\skills\meta\isolate-work\SKILL.md) and `python scripts/routing/spawn_worktree.py`.
 
 ### Specialist dispatch
 

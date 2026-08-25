@@ -117,6 +117,14 @@ def collect_skill_rows() -> list[dict[str, Any]]:
 
 def write_skill_dispatch(*, now: str, rows: list[dict[str, Any]] | None = None) -> int:
     rows = collect_skill_rows() if rows is None else rows
+    skill_link_map = {}
+    for r in rows:
+        p = r.get("path")
+        if isinstance(p, Path):
+            skill_link_map[r["name"]] = (Path("..") / p.relative_to(ROOT)).as_posix()
+        else:
+            skill_link_map[r["name"]] = f"../ai-tooling/skills/{r['name']}/SKILL.md"
+
     lines = [
         "---",
         "doc_kind: routing_map",
@@ -128,14 +136,15 @@ def write_skill_dispatch(*, now: str, rows: list[dict[str, Any]] | None = None) 
         "",
         "# Skill dispatch",
         "",
-        "Generated from `ai-tooling/skills/*/SKILL.md` frontmatter. Do not hand-edit — run "
+        "Generated from `ai-tooling/skills/**/SKILL.md` frontmatter. Do not hand-edit — run "
         f"`python {GENERATOR}`.",
         "",
         "| Skill | Owner agent | Rank | Isolation | When |",
         "| --- | --- | --- | --- | --- |",
     ]
     for row in rows:
-        skill_link = f"[`{row['name']}`](../ai-tooling/skills/{row['name']}/SKILL.md)"
+        link_target = skill_link_map.get(row["name"], f"../ai-tooling/skills/{row['name']}/SKILL.md")
+        skill_link = f"[`{row['name']}`]({link_target})"
         lines.append(
             f"| {skill_link} | {_agent_cell(row['owner_agent'])} | `{row['rank']}` | "
             f"`{row['isolation']}` | {_md_cell(row['description'])} |"
@@ -152,16 +161,29 @@ def write_skill_dispatch(*, now: str, rows: list[dict[str, Any]] | None = None) 
         ]
     )
     for row in rows:
-        skill_link = f"[`{row['name']}`](../ai-tooling/skills/{row['name']}/SKILL.md)"
+        link_target = skill_link_map.get(row["name"], f"../ai-tooling/skills/{row['name']}/SKILL.md")
+        skill_link = f"[`{row['name']}`]({link_target})"
         deps = row.get("dependencies", {})
         req_list = deps.get("required_skills", [])
         del_list = deps.get("delegated_skills", [])
         ins_list = deps.get("in_session_skills", [])
         prereqs_list = row.get("prerequisites", [])
 
-        req_str = ", ".join(f"[`{s}`](../ai-tooling/skills/{s}/SKILL.md)" for s in req_list) if req_list else "—"
-        del_str = ", ".join(f"[`{s}`](../ai-tooling/skills/{s}/SKILL.md)" for s in del_list) if del_list else "—"
-        ins_str = ", ".join(f"[`{s}`](../ai-tooling/skills/{s}/SKILL.md)" for s in ins_list) if ins_list else "—"
+        req_str = (
+            ", ".join(f"[`{s}`]({skill_link_map.get(s, f'../ai-tooling/skills/{s}/SKILL.md')})" for s in req_list)
+            if req_list
+            else "—"
+        )
+        del_str = (
+            ", ".join(f"[`{s}`]({skill_link_map.get(s, f'../ai-tooling/skills/{s}/SKILL.md')})" for s in del_list)
+            if del_list
+            else "—"
+        )
+        ins_str = (
+            ", ".join(f"[`{s}`]({skill_link_map.get(s, f'../ai-tooling/skills/{s}/SKILL.md')})" for s in ins_list)
+            if ins_list
+            else "—"
+        )
         prereqs_str = ", ".join(f"`{p}`" for p in prereqs_list) if prereqs_list else "—"
         fail_str = f"`{row.get('on_failure', 'abort_and_rollback')}`"
 

@@ -50,11 +50,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--out",
-        default="results/cost-layers/combined",
+        default=None,
         help=(
             "Output directory under repo root "
-            "(default: results/cost-layers/combined; callers may pass a dated dir). "
-            "Legacy results/cost-layer-dry-run is still accepted when passed explicitly."
+            "(default: results/cost-layers/combined/<YYYY-MM-DD>, dated at runtime). "
+            "Pass --out to override. Legacy undated results/cost-layers/combined "
+            "and results/cost-layer-dry-run are still accepted when passed explicitly."
         ),
     )
     parser.add_argument("--skip-hybrid", action="store_true", default=True)
@@ -65,7 +66,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--skip-ast-grep", action="store_true")
     args = parser.parse_args(argv)
 
-    out = ROOT / args.out
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    out_rel = args.out or f"results/cost-layers/combined/{today}"
+    out = ROOT / out_rel
     out.mkdir(parents=True, exist_ok=True)
     qmd_dir = out / "qmd"
     hr_dir = out / "headroom"
@@ -131,7 +134,8 @@ def main(argv: list[str] | None = None) -> int:
         "## How to re-run",
         "",
         "```bash",
-        "python scripts/cost-layers/validate_cost_layers.py --out results/cost-layers/combined",
+        "python scripts/cost-layers/validate_cost_layers.py",
+        "# default: results/cost-layers/combined/<YYYY-MM-DD>/",
         "```",
         "",
         "Add `--hybrid` to include slow `qmd query`. `--skip-ast-grep` skips the structural layer. Reports: `qmd/report.md`, `headroom/report.md`, `ast-grep/report.md`.",

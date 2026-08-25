@@ -62,6 +62,10 @@ areas:
     load: via qmd for the tool in use
     write_back: Confirmed tool or onboarding patterns
 nested_defaults:
+  - path: docs/guidance
+    default_agent: documentation-ops
+  - path: references/socials
+    default_agent: community-analyst
   - path: supporting/github
     default_agent: github-ops
   - path: supporting/qmd

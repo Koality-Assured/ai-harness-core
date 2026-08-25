@@ -303,6 +303,39 @@ class TestScaffoldPublicRepos(unittest.TestCase):
         parsed = json.loads(output)
         self.assertEqual(len(parsed), 6)
 
+    def test_cli_default_destination_is_scratch(self):
+        saved_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            ret = main(["--dry-run", "--json", "--repo-root", str(self.target_dir)])
+            output = sys.stdout.getvalue()
+        finally:
+            sys.stdout = saved_stdout
+
+        self.assertEqual(ret, 0)
+        parsed = json.loads(output)
+        self.assertGreater(len(parsed), 0)
+        dest = Path(parsed[0]["target_path"])
+        expected_parent = Path(self.target_dir).resolve() / "scratch" / "scaffolded-repos"
+        self.assertEqual(dest.parent, expected_parent)
+
+    def test_cli_help_mentions_scratch_interim(self):
+        saved_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+        try:
+            with self.assertRaises(SystemExit) as ctx:
+                main(["--help"])
+            help_text = sys.stdout.getvalue()
+        finally:
+            sys.stdout = saved_stdout
+
+        self.assertEqual(ctx.exception.code, 0)
+        collapsed = " ".join(help_text.split())
+        self.assertIn("scratch/scaffolded", collapsed)
+        self.assertIn("Interim generator output", collapsed)
+        self.assertIn("not a results artifact", collapsed)
+        self.assertIn("pass --output-dir to write elsewhere", collapsed)
+
 
 if __name__ == "__main__":
     unittest.main()

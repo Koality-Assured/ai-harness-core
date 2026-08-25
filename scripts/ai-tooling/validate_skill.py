@@ -104,11 +104,11 @@ def readme_skill_slugs() -> set[str] | None:
     slugs: set[str] = set()
     for line in readme.splitlines():
         if "./" in line and "](./" in line:
-            # [`name/`](./name/)
             start = line.find("](./")
             if start != -1:
                 rest = line[start + 4 :]
-                slug = rest.split(")")[0].strip("/").split("/")[0]
+                target = rest.split(")")[0].strip("/")
+                slug = target.split("/")[-1]
                 if slug:
                     slugs.add(slug)
     return slugs
@@ -132,11 +132,15 @@ def main(argv: list[str] | None = None) -> int:
     owners = agent_ids(ROOT)
     paths = skill_paths(ROOT)
     if args.skill:
-        target = ROOT / "ai-tooling" / "skills" / args.skill / "SKILL.md"
-        if not target.exists():
-            print(f"error: missing {target.relative_to(ROOT)}", file=sys.stderr)
+        matched = [
+            p for p in paths
+            if p.parent.name == args.skill
+            or p.relative_to(ROOT / "ai-tooling" / "skills").as_posix().startswith(args.skill)
+        ]
+        if not matched:
+            print(f"error: skill {args.skill!r} not found under ai-tooling/skills/", file=sys.stderr)
             return 2
-        paths = [target]
+        paths = matched
 
     report = []
     listed = readme_skill_slugs()

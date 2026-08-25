@@ -247,11 +247,20 @@ def write_report(out_dir: Path, payload: dict) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--out", default="results/headroom-dry-run", help="Output directory under repo root")
+    parser.add_argument(
+        "--out",
+        default=None,
+        help=(
+            "Output directory under repo root "
+            "(default: results/cost-layers/headroom/<YYYY-MM-DD>, dated at runtime)"
+        ),
+    )
     args = parser.parse_args(argv)
 
     _ensure_headroom_import()
-    out_dir = ROOT / args.out
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    out_rel = args.out or f"results/cost-layers/headroom/{today}"
+    out_dir = ROOT / out_rel
     out_dir.mkdir(parents=True, exist_ok=True)
 
     fixtures = [_json_search_fixture(), _build_log_fixture(), _grep_fixture()]

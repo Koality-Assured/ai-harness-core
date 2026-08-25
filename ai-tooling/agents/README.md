@@ -21,8 +21,13 @@ Human index (not agent SoT):
 | [`assessment-agent/`](./assessment-agent/) | STRIDE threat models | standard |
 | [`as-code-agent/`](./as-code-agent/) | Terraform/Pulumi/Ansible/Kyverno/Rego drafts | high |
 | [`cloud-operator/`](./cloud-operator/) | AWS/GCP/Azure read, authorized write, logs | standard |
+| [`cloud-admin-agent/`](./cloud-admin-agent/) | Multi-cloud organization admin & landing zone provisioning | standard |
+| [`public-llm-admin/`](./public-llm-admin/) | Public LLM workspace admin, ZDR audit & API key governance | standard |
+| [`google-suite-operator/`](./google-suite-operator/) | Google Workspace resources: Drive, Gmail, Docs, Metadata | standard |
+| [`google-suite-admin/`](./google-suite-admin/) | Google Workspace domain admin, OU hierarchy, DLP, ZDR audit | standard |
 | [`git-fast-operator/`](./git-fast-operator/) | simple git fetch/status/log/diff/sync | fast |
 | [`reference-ops/`](./reference-ops/) | `references/` captures and normalization | standard |
 | [`repo-sync-ops/`](./repo-sync-ops/) | downstream repo sync + public export redaction | standard |
+| [`community-analyst/`](./community-analyst/) | public communities, subreddits, developer forums & OSINT | standard |
 
 A2A specifications & schemas: canonical in `AGENT.md` (Schema V2); see also [`../a2a/agent-cards/README.md`](../a2a/agent-cards/README.md).

@@ -28,6 +28,7 @@ Ingest simply; do not duplicate skills or paste root Critical — link [`../AGEN
 | Path | Contents |
 | --- | --- |
 | `standards/` | Generalized reusable standards |
+| `guidance/` | Repeatable operational playbooks and how-to guides |
 | `standards/wiki-harness-template.md` | Generic template vs this fed instance (`ai-harness-core`) |
 | `agent-session-security.md` | Critical session security MUST |
 | `anti-slop.md` | Deliverable prose/UI quality (anti-slop + humanizer) |

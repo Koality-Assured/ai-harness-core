@@ -13,7 +13,21 @@ Canonical shape for every skill under `ai-tooling/skills/`. Author new skills wi
 
 ## Where skills live
 
-Project skills for this router: `ai-tooling/skills/<name>/SKILL.md` (one catalog level). Do not nest SKILL.md under family folders such as `skills/meta/` or `skills/memory/` — `scripts/_lib/md.py` `skill_paths()` globs `ai-tooling/skills/*/SKILL.md` only, so nested skills never appear in [`../../routing/skill-dispatch.md`](../../routing/skill-dispatch.md).
+Project skills for this router live in domain family subdirectories: `ai-tooling/skills/<family>/<name>/SKILL.md`. A few catalog-root skills (`harness-review`, `model-memory-operate`) also sit at `ai-tooling/skills/<name>/SKILL.md`. `scripts/_lib/md.py` `skill_paths()` uses `rglob("SKILL.md")`, so both layouts appear in [`../../routing/skill-dispatch.md`](../../routing/skill-dispatch.md).
+
+### Recognized skill families
+
+- `google/`: Google Workspace, Drive, Gmail, Docs, and Admin skills.
+- `aws/`: AWS cloud management, logs, and telemetry.
+- `azure/`: Azure cloud management, logs, and Entra.
+- `gcp/`: GCP cloud management, logs, and Resource Manager.
+- `memory/`: User and agent checkpoint creation, adjustment, and cleanup.
+- `cost-layers/`: ast-grep, Headroom, and context-efficiency dry runs.
+- `git/`: Git basics, GitHub workflow, and GitHub path resolution.
+- `reporting/`: Code reviews, executive/proposal reports, corpus drafting, anti-slop, humanizer, diagrams, dashboards, and threat models.
+- `admin/`: Cloud organization and public LLM workspace administration.
+- `meta/`: Agent/skill/script builders, wiki structure, isolate-work, and validation tools.
+- `community/`: Public community analysis, OSINT, sentiment, and registry maintenance.
 
 Do **not** put router skills in `~/.cursor/skills-cursor/` (Cursor internals) or `.cursor/skills/` (native auto-invoke would run them in the parent). The parent must only see the generated catalog [`../../routing/skill-dispatch.md`](../../routing/skill-dispatch.md) and then spawn the `owner_agent` when remaining work is material to the original user request. Parent discovery stops when that `owner_agent` is known — do not load specialist `SKILL.md` to dispatch. Exception: isolate-work is executed in-parent because that session is the owner (`router`); the parent loads that `SKILL.md` for the CLI.
 
@@ -166,7 +180,7 @@ Keep `SKILL.md` under 200 lines when possible (hard cap 500). Link source of tru
 - Progressive disclosure: extra detail in `references/` next to `SKILL.md`, one level deep.
 - Scripts over prose for fragile steps (`scripts/<purpose>/`, tagged; bind from the skill).
 - No Windows-style paths; no secrets; no time-sensitive "before DATE" forks.
-- After add/remove/rename: register by adding `ai-tooling/skills/<name>/SKILL.md` with valid frontmatter, then run `python scripts/routing/generate_skill_dispatch.py` and `python scripts/routing/resolve_skill_graph.py --validate-all`. Agent catalog is [`../../routing/skill-dispatch.md`](../../routing/skill-dispatch.md) plus the owner `AGENT.md`; deprecated standalone A2A cards are not registration. Do **not** treat `ai-tooling/skills/README.md` as required registration (human-thin folder blurb only — root [`../../AGENTS.md`](../../AGENTS.md) High README rule).
+- After add/remove/rename: register by adding `ai-tooling/skills/<family>/<name>/SKILL.md` (or a catalog-root `ai-tooling/skills/<name>/SKILL.md`) with valid frontmatter, then run `python scripts/routing/generate_skill_dispatch.py` and `python scripts/routing/resolve_skill_graph.py --validate-all`. Agent catalog is [`../../routing/skill-dispatch.md`](../../routing/skill-dispatch.md) plus the owner `AGENT.md`; deprecated standalone A2A cards are not registration. Do **not** treat `ai-tooling/skills/README.md` as required registration (human-thin folder blurb only — root [`../../AGENTS.md`](../../AGENTS.md) High README rule).
 - If behavior is a durable rule, **update the source doc first**, then the skill.
 
 ## Subagent delegation & orchestration contracts
@@ -216,7 +230,7 @@ Every skill names a non-mutating check (script `--dry-run`, `validate_skill.py`,
 
 | Topic | Where |
 | --- | --- |
-| Isolation / spawn | [`isolate-work/SKILL.md`](./isolate-work/SKILL.md) |
+| Isolation / spawn | [`isolate-work/SKILL.md`](meta/isolate-work/SKILL.md) |
 | Cursor skill craft | Use Cursor's create-skill guidance for descriptions and concision only; this page wins on location and sections |
 | Schema Validator | `python scripts/ai-tooling/validate_skill.py --all` |
 | DAG Resolver | `python scripts/routing/resolve_skill_graph.py --all` |

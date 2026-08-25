@@ -14,7 +14,7 @@ Human index (not agent SoT):
 | [`google-workspace-admin/`](./google/google-workspace-admin/) | google-suite-admin | mutate |
 | [`agent-builder/`](./meta/agent-builder/) | ai-tooling-ops | mutate |
 | [`ai-vendor-updates/`](./meta/ai-vendor-updates/) | detailed-activity | mutate |
-| [`antagonistic-review/`](./meta/antagonistic-review/) | detailed-activity | mutate |
+| [`antagonistic-review/`](./meta/antagonistic-review/) | detailed-activity | read-only |
 | [`anti-slop/`](./reporting/anti-slop/) | artifact-agent | mutate |
 | [`architecture-diagram/`](./reporting/architecture-diagram/) | artifact-agent | mutate |
 | [`as-code-builder/`](./reporting/as-code-builder/) | as-code-agent | mutate |
@@ -43,6 +43,7 @@ Human index (not agent SoT):
 | [`github-workflow/`](./git/github-workflow/) | github-ops | mutate |
 | [`guidance-draft/`](./reporting/guidance-draft/) | artifact-agent | mutate |
 | [`headroom/`](./cost-layers/headroom/) | router-maintenance | read-only |
+| [`harness-review/`](./harness-review/) | ai-tooling-ops | mutate |
 | [`humanizer/`](./reporting/humanizer/) | artifact-agent | mutate |
 | [`isolate-work/`](./meta/isolate-work/) | router | mutate |
 | [`markdownlint/`](./meta/markdownlint/) | documentation-ops | mutate |
@@ -50,6 +51,7 @@ Human index (not agent SoT):
 | [`memory-cleanup/`](./memory/memory-cleanup/) | ai-tooling-ops | mutate |
 | [`memory-create/`](./memory/memory-create/) | ai-tooling-ops | mutate |
 | [`mermaid-diagram/`](./reporting/mermaid-diagram/) | artifact-agent | mutate |
+| [`model-memory-operate/`](./model-memory-operate/) | memory-operator | mutate |
 | [`noir-scan/`](./reporting/noir-scan/) | artifact-agent | mutate |
 | [`proposal-report/`](./reporting/proposal-report/) | artifact-agent | mutate |
 | [`public-llm-admin/`](./admin/public-llm-admin/) | public-llm-admin | mutate |

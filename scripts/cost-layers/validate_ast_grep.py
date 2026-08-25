@@ -45,7 +45,7 @@ SAMPLES = [
     {
         "id": "skill-frontmatter",
         "area": "skills-frontmatter",
-        "path": "ai-tooling/skills/script-builder/SKILL.md",
+        "path": "ai-tooling/skills/meta/script-builder/SKILL.md",
     },
 ]
 MIN_GOLD_LEN = 6
@@ -292,8 +292,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--out",
-        default="results/ast-grep-dry-run",
-        help="Output directory under repo root",
+        default=None,
+        help=(
+            "Output directory under repo root "
+            "(default: results/cost-layers/ast-grep/<YYYY-MM-DD>, dated at runtime)"
+        ),
     )
     parser.add_argument(
         "--skip-headroom",
@@ -302,7 +305,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    out_dir = ROOT / args.out
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    out_rel = args.out or f"results/cost-layers/ast-grep/{today}"
+    out_dir = ROOT / out_rel
     out_dir.mkdir(parents=True, exist_ok=True)
     findings: list[str] = []
     failed: list[str] = []

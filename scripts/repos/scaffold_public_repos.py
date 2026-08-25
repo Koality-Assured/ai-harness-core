@@ -2524,7 +2524,10 @@ def main(argv: List[str] | None = None) -> int:
     parser.add_argument(
         "--output-dir", "-o",
         default=None,
-        help="Destination directory (default: results/scaffolded-repos relative to repo root)",
+        help=(
+            "Destination directory (default: scratch/scaffolded-repos relative to repo root). "
+            "Interim generator output, not a results artifact; pass --output-dir to write elsewhere."
+        ),
     )
     parser.add_argument(
         "--repo-root",
@@ -2569,7 +2572,7 @@ def main(argv: List[str] | None = None) -> int:
     if args.output_dir:
         target_dir = Path(args.output_dir).expanduser().resolve()
     else:
-        target_dir = root / "results" / "scaffolded-repos"
+        target_dir = root / "scratch" / "scaffolded-repos"
 
     try:
         if args.repo == "all":
