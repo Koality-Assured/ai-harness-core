@@ -25,9 +25,50 @@ class QmdPreflightTests(unittest.TestCase):
         paths = qmd_preflight.candidate_index_paths(
             environ={"QMD_CACHE_DIR": "C:/cache/qmd", "XDG_CACHE_HOME": "C:/cache"},
             home=Path("C:/home/developer"),
+            repo_root=Path("C:/repo"),
         )
-        self.assertEqual(paths[0], Path("C:/cache/qmd/index.sqlite"))
+        self.assertEqual(paths[0], Path("C:/repo/.qmd/index.sqlite"))
+        self.assertEqual(paths[1], Path("C:/cache/qmd/index.sqlite"))
         self.assertEqual(len(paths), len(set(paths)))
+
+    def test_config_candidates_prioritizes_repo_local(self) -> None:
+        paths = qmd_preflight.config_candidates(
+            environ={"XDG_CONFIG_HOME": "C:/config"},
+            home=Path("C:/home/developer"),
+            repo_root=Path("C:/repo"),
+        )
+        self.assertEqual(paths[0], Path("C:/repo/.qmd/index.yml"))
+        self.assertEqual(paths[1], Path("C:/repo/.qmd/index.yaml"))
+        self.assertEqual(len(paths), len(set(paths)))
+
+    def test_dynamic_collection_resolution_from_areas(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            routing_dir = tmp_root / "routing"
+            routing_dir.mkdir()
+            areas_yaml = routing_dir / "areas.yaml"
+            areas_yaml.write_text(
+                "areas:\n"
+                "  - id: custom-docs\n"
+                "    purpose: Custom documentation area\n"
+                "  - id: scratch\n"
+                "    purpose: Temp workspace\n"
+                "  - id: archive\n"
+                "    purpose: Archived items\n"
+                "    load: never\n",
+                encoding="utf-8",
+            )
+            colls = setup_qmd_collections.resolve_collections(tmp_root)
+            self.assertEqual(len(colls), 1)
+            self.assertEqual(colls[0], ("custom-docs", "custom-docs", "Custom documentation area"))
+
+    def test_local_qmd_config_generation_uses_relative_paths(self) -> None:
+        colls = [("docs", "docs", "Decisions and standards"), ("routing", "routing", "Area maps")]
+        config = setup_qmd_collections.generate_local_qmd_config(colls)
+        self.assertIn("docs", config["collections"])
+        self.assertEqual(config["collections"]["docs"]["path"], "docs")
+        self.assertEqual(config["collections"]["docs"]["ignore"], ["**/README.md"])
+        self.assertEqual(config["collections"]["docs"]["context"][""], "Decisions and standards")
 
     def test_index_observations_only_stat_existing_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -1,31 +1,32 @@
 """Set up missing qmd collections only after an explicit, inspected approval.
 
 tags: [qmd]
-routing_hints: [index, collections, embed]
+routing_hints: [index, collections, embed, modular, areas]
+
+Dynamic area discovery
+----------------------
+Collections and context descriptions are derived dynamically from
+``routing/areas.yaml`` via ``_lib/areas.py``, filtering out unindexed areas
+(``change-history``, ``scratch``). This ensures the configuration automatically
+adapts as repository areas grow or change across domain routers.
+
+Project-local isolation (default)
+---------------------------------
+By default, this script creates/patches the repository-local ``.qmd/index.yml``
+using relative paths (e.g. ``path: routing``, ``path: docs``). This isolates
+the SQLite database to ``.qmd/index.sqlite`` inside the repository, preventing
+cross-harness collisions on multi-router workstations.
 
 README exclusion
 ----------------
-Apply ``ignore: ["**/README.md"]`` on **this repo's** collections only (the
-``COLLECTIONS`` names below) so agents do not retrieve human folder indexes
-(root README is already unindexed). Other collections in the operator-global
-``index.yml`` are left untouched.
+Apply ``ignore: ["**/README.md"]`` so agents do not retrieve human folder indexes
+(root README is already unindexed).
 
-qmd ignore patterns are **YAML-only** (no ``collection add`` flag). After
-``collection add`` / ``context add``, this script patches the operator
-``index.yml`` with ``PREFERRED_README_IGNORE`` for matching names only.
-
-``--apply`` mutates local qmd config (operator ``index.yml`` under XDG /
-``~/.config/qmd/`` / AppData, or project ``.qmd/``). It is intentionally
-blocked unless the caller supplies ``--approved-by-user``. Existing
-collections are reused; only ``--create-missing`` can add absent collections.
+``--apply`` mutates local qmd config (default: ``.qmd/index.yml`` in repo root,
+or operator ``index.yml`` under XDG / ``~/.config/qmd/`` if ``--global`` is passed).
+It is intentionally blocked unless the caller supplies ``--approved-by-user``.
 Before mutation, the script inspects known qmd config files for hook keys and
-requires ``--allow-detected-hooks`` if it finds any. Other operator-global
-collections remain untouched.
-
-Supporting tool pages are kebab-case topic files (not READMEs), e.g.
-``query-pattern.md``, ``pages-wrangler.md``, ``precision-retrieval.md``,
-``proxy-mcp.md``, ``gh-workflow-notes.md``. Re-run ``qmd update`` after
-applying ignores so README files drop out of the index.
+requires ``--allow-detected-hooks`` if it finds any.
 
 PyYAML is required for ``--apply``; the script fails closed before any
 mutation if it is missing.
@@ -39,13 +40,18 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
+from areas import AreasYamlError, load_area_records  # noqa: E402
 from paths import REPO_ROOT as ROOT  # noqa: E402
 from qmd_preflight import inspect_qmd_hooks  # noqa: E402
 
-COLLECTIONS: list[tuple[str, str, str]] = [
+UNINDEXED_AREAS = frozenset({"change-history", "scratch"})
+PREFERRED_README_IGNORE = ["**/README.md"]
+
+FALLBACK_COLLECTIONS: list[tuple[str, str, str]] = [
     ("routing", "routing", "Second-hop area maps — read early in agent sessions"),
     ("docs", "docs", "Decisions, requirements, reinforcement, and security MUST docs"),
     ("projects", "projects", "Initiative specs: plans, repos, research pointers"),
@@ -58,8 +64,24 @@ COLLECTIONS: list[tuple[str, str, str]] = [
     ("results", "results", "Generated Markdown reports and artifact indexes"),
 ]
 
-COLLECTION_NAMES = frozenset(name for name, _, _ in COLLECTIONS)
-PREFERRED_README_IGNORE = ["**/README.md"]
+
+def resolve_collections(repo_root: Path = ROOT) -> list[tuple[str, str, str]]:
+    """Dynamically load indexable collections from routing/areas.yaml."""
+    try:
+        records = load_area_records(repo_root)
+    except (AreasYamlError, FileNotFoundError):
+        return FALLBACK_COLLECTIONS
+
+    collections: list[tuple[str, str, str]] = []
+    for row in records:
+        area_id = row.get("id", "").strip()
+        if not area_id or area_id in UNINDEXED_AREAS:
+            continue
+        if row.get("load", "").strip().lower() == "never":
+            continue
+        purpose = row.get("purpose", "").strip()
+        collections.append((area_id, area_id, purpose))
+    return collections or FALLBACK_COLLECTIONS
 
 
 def resolve_qmd() -> str | None:
@@ -69,23 +91,21 @@ def resolve_qmd() -> str | None:
     return shutil.which("qmd")
 
 
-def resolve_index_yml() -> Path | None:
-    """Locate operator qmd index.yml (XDG / Windows config / project-local)."""
-    candidates: list[Path] = []
+def resolve_index_yml(*, global_config: bool = False, repo_root: Path = ROOT) -> Path:
+    """Locate or determine target index.yml path."""
+    if not global_config:
+        return repo_root / ".qmd" / "index.yml"
+
     xdg = os.environ.get("XDG_CONFIG_HOME")
     if xdg:
-        candidates.append(Path(xdg) / "qmd" / "index.yml")
+        return Path(xdg) / "qmd" / "index.yml"
     home = Path.home()
-    candidates.append(home / ".config" / "qmd" / "index.yml")
-    # Windows-style AppData (some installs)
     local = os.environ.get("LOCALAPPDATA")
-    if local:
-        candidates.append(Path(local) / "qmd" / "index.yml")
-    candidates.append(ROOT / ".qmd" / "index.yml")
-    for path in candidates:
-        if path.is_file():
-            return path
-    return None
+    if local and sys.platform == "win32":
+        candidate = Path(local) / "qmd" / "index.yml"
+        if candidate.is_file():
+            return candidate
+    return home / ".config" / "qmd" / "index.yml"
 
 
 def require_pyyaml() -> str | None:
@@ -100,74 +120,72 @@ def require_pyyaml() -> str | None:
     return None
 
 
-def apply_readme_ignore(
+def generate_local_qmd_config(
+    collections: list[tuple[str, str, str]],
+    existing_data: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build the configuration dictionary with relative paths and ignore rules."""
+    data = existing_data.copy() if existing_data else {}
+    colls = data.setdefault("collections", {})
+
+    for name, rel_path, context in collections:
+        col_entry = colls.setdefault(name, {})
+        col_entry["path"] = rel_path
+        col_entry.setdefault("pattern", "**/*.md")
+        if context:
+            ctx = col_entry.setdefault("context", {})
+            if isinstance(ctx, dict):
+                ctx.setdefault("", context)
+            elif isinstance(ctx, str) and not ctx:
+                col_entry["context"] = {"": context}
+        existing_ignores = col_entry.get("ignore", [])
+        if not isinstance(existing_ignores, list):
+            existing_ignores = [existing_ignores]
+        for pattern in PREFERRED_README_IGNORE:
+            if pattern not in existing_ignores:
+                existing_ignores.append(pattern)
+        col_entry["ignore"] = existing_ignores
+
+    return data
+
+
+def write_project_local_config(
     index_yml: Path,
+    collections: list[tuple[str, str, str]],
     *,
     dry_run: bool,
-    collection_names: frozenset[str] = COLLECTION_NAMES,
 ) -> list[str]:
-    """Ensure this repo's collections have ignore: PREFERRED_README_IGNORE.
-
-    Only names in ``collection_names`` (default: COLLECTIONS) are patched.
-    Other entries in the operator-global index.yml are left unchanged.
-    """
+    """Write or update project-local .qmd/index.yml with relative collection paths."""
     try:
-        import yaml  # type: ignore
+        import yaml
     except ImportError:
         if dry_run:
             return [
-                "warning: PyYAML unavailable; dry run cannot inspect existing ignore patterns. "
-                f"Planned ignore for repo collections: {PREFERRED_README_IGNORE}"
+                f"dry-run: would write project-local config to {index_yml} for {len(collections)} collections"
             ]
-        return [
-            "error: PyYAML required to patch index.yml ignore patterns "
-            "(pip install pyyaml)"
-        ]
+        return ["error: PyYAML required to generate index.yml (pip install pyyaml)"]
 
-    data = yaml.safe_load(index_yml.read_text(encoding="utf-8")) or {}
-    collections = data.get("collections")
-    if not isinstance(collections, dict):
-        return [f"error: no collections mapping in {index_yml}"]
+    existing_data: dict[str, Any] = {}
+    if index_yml.is_file():
+        try:
+            existing_data = yaml.safe_load(index_yml.read_text(encoding="utf-8")) or {}
+        except Exception as exc:
+            return [f"error: failed to read existing {index_yml}: {exc}"]
 
-    changed: list[str] = []
-    skipped_other = 0
-    for name, cfg in collections.items():
-        if name not in collection_names:
-            skipped_other += 1
-            continue
-        if not isinstance(cfg, dict):
-            continue
-        ignore = cfg.get("ignore")
-        if ignore is None:
-            ignore = []
-        if not isinstance(ignore, list):
-            ignore = list(ignore)
-        merged = list(ignore)
-        for pattern in PREFERRED_README_IGNORE:
-            if pattern not in merged:
-                merged.append(pattern)
-                changed.append(f"{name}: add ignore {pattern!r}")
-        cfg["ignore"] = merged
-
-    scope_note = (
-        f"(scoped to {len(collection_names)} repo collection name(s); "
-        f"left {skipped_other} other collection(s) untouched)"
-    )
+    updated_data = generate_local_qmd_config(collections, existing_data)
 
     if dry_run:
-        if changed:
-            return (
-                [f"dry-run would patch {index_yml} {scope_note}:"]
-                + [f"  - {c}" for c in changed]
-            )
-        return [f"dry-run: ignore already set on repo collections in {index_yml} {scope_note}"]
+        return [
+            f"dry-run: would write project-local {index_yml} with {len(collections)} collections derived from routing/areas.yaml:",
+            *(f"  - {name}: path='{rel_path}' context='{ctx}'" for name, rel_path, ctx in collections),
+        ]
 
-    if not changed:
-        return [f"ignore already applied in {index_yml} {scope_note}"]
-
-    text = yaml.safe_dump(data, sort_keys=False, default_flow_style=False, allow_unicode=True)
+    index_yml.parent.mkdir(parents=True, exist_ok=True)
+    text = yaml.safe_dump(updated_data, sort_keys=False, default_flow_style=False, allow_unicode=True)
     index_yml.write_text(text, encoding="utf-8")
-    return [f"patched {index_yml} {scope_note}:"] + [f"  - {c}" for c in changed]
+    return [
+        f"wrote project-local {index_yml} ({len(collections)} collections from routing/areas.yaml)"
+    ]
 
 
 def run(cmd: list[str], *, dry_run: bool) -> None:
@@ -175,30 +193,6 @@ def run(cmd: list[str], *, dry_run: bool) -> None:
     if dry_run:
         return
     subprocess.run(cmd, check=True, cwd=ROOT)
-
-
-def list_collection_names(qmd: str) -> set[str]:
-    """Return qmd collection names before a requested setup mutation."""
-    proc = subprocess.run(
-        [qmd, "collection", "list"],
-        check=False,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        cwd=ROOT,
-    )
-    if proc.returncode != 0:
-        detail = (proc.stderr or proc.stdout).strip()[-1200:]
-        raise RuntimeError(
-            "qmd collection list failed; preserve the existing index and resolve "
-            f"access before setup. Detail: {detail}"
-        )
-    names: set[str] = set()
-    for line in proc.stdout.splitlines():
-        if "(qmd://" in line:
-            names.add(line.strip().split(None, 1)[0])
-    return names
 
 
 def require_mutation_approval(args: argparse.Namespace) -> str | None:
@@ -232,10 +226,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--apply",
         action="store_true",
-        help=(
-            "Patch this repo's existing collection config only; requires "
-            "--approved-by-user and hook inspection"
-        ),
+        help="Apply collection configuration; requires --approved-by-user and hook inspection",
     )
     parser.add_argument(
         "--approved-by-user",
@@ -243,9 +234,10 @@ def main(argv: list[str] | None = None) -> int:
         help="Confirm the human explicitly approved the requested qmd mutation",
     )
     parser.add_argument(
-        "--create-missing",
+        "--global",
+        dest="global_config",
         action="store_true",
-        help="With --apply, add only absent repo collections and their contexts",
+        help="Write to operator-global ~/.config/qmd/index.yml instead of project-local .qmd/index.yml",
     )
     parser.add_argument(
         "--allow-detected-hooks",
@@ -260,7 +252,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--index-yml",
         default=None,
-        help="Path to qmd index.yml (default: auto-detect under ~/.config/qmd/)",
+        help="Custom path to qmd index.yml",
     )
     args = parser.parse_args(argv)
     dry_run = not args.apply
@@ -279,74 +271,40 @@ def main(argv: list[str] | None = None) -> int:
             print(yaml_err, file=sys.stderr)
             return 1
 
-    qmd = resolve_qmd()
-    if args.apply and qmd is None:
-        print("error: `qmd` not found on PATH; install with: npm i -g @tobilu/qmd", file=sys.stderr)
-        return 1
+    collections = resolve_collections(ROOT)
+    target_yml = Path(args.index_yml) if args.index_yml else resolve_index_yml(global_config=args.global_config, repo_root=ROOT)
 
-    existing: set[str] = set()
-    if args.apply:
-        try:
-            existing = list_collection_names(qmd or "qmd")
-        except RuntimeError as exc:
-            print(f"error: {exc}", file=sys.stderr)
+    print(f"Target index.yml: {target_yml} ({'operator-global' if args.global_config else 'project-local'})")
+    print(f"Derived {len(collections)} collections from routing/areas.yaml: {', '.join(c[0] for c in collections)}")
+
+    results = write_project_local_config(target_yml, collections, dry_run=dry_run)
+    for line in results:
+        if line.startswith("error:"):
+            print(line, file=sys.stderr)
             return 1
-
-    missing = [name for name, _, _ in COLLECTIONS if name not in existing]
-    if args.apply and missing and not args.create_missing:
-        print(
-            "error: repo qmd collection(s) missing: "
-            + ", ".join(missing)
-            + ". Existing collections were not changed. Re-run with --create-missing only after "
-            "reviewing qmd_preflight output and receiving explicit user approval.",
-            file=sys.stderr,
-        )
-        return 1
-
-    for name, rel, context in COLLECTIONS:
-        path = ROOT / rel
-        if args.apply and name in existing:
-            print(f"= reuse existing collection {name}; no collection/context mutation")
-            continue
-        run([qmd or "qmd", "collection", "add", str(path), "--name", name], dry_run=dry_run)
-        run([qmd or "qmd", "context", "add", f"qmd://{name}", context], dry_run=dry_run)
-
-    index_yml = Path(args.index_yml) if args.index_yml else resolve_index_yml()
-    if index_yml is None:
-        msg = (
-            "warning: qmd index.yml not found; cannot apply README ignore. "
-            f"Pass --index-yml or add collections then re-run. Planned ignore: "
-            f"{PREFERRED_README_IGNORE} (repo COLLECTIONS only)"
-        )
-        print(msg, file=sys.stderr)
-    else:
-        for line in apply_readme_ignore(index_yml, dry_run=dry_run):
-            if line.startswith("error:"):
-                print(line, file=sys.stderr)
-                return 1
-            print(line)
+        print(line)
 
     if args.embed:
+        qmd = resolve_qmd()
+        if qmd is None and not dry_run:
+            print("error: `qmd` not found on PATH; cannot run embed", file=sys.stderr)
+            return 1
         if dry_run:
-            print("+ qmd embed")
-            print("+ qmd update  # after ignore patch so READMEs drop from index")
+            print("+ qmd update  # re-index collections")
+            print("+ qmd embed   # generate vector embeddings")
         else:
             run([qmd or "qmd", "update"], dry_run=False)
             run([qmd or "qmd", "embed"], dry_run=False)
 
     if dry_run:
-        print("\nDry run only. First run qmd_preflight.py to check whether an index is reusable.")
-        print(
-            f"README ignore {PREFERRED_README_IGNORE} would be applied via YAML patch of index.yml "
-            f"for this repo's COLLECTIONS only ({', '.join(sorted(COLLECTION_NAMES))}). "
-            "Other collections in the operator index are untouched. "
-            "Mutation requires --apply --approved-by-user; use --create-missing only when preflight says "
-            "collections are missing. Inspect hooks before approving any mutation. "
-            "(Supporting kebab-case pages: query-pattern.md, pages-wrangler.md, "
-            "precision-retrieval.md, proxy-mcp.md, gh-workflow-notes.md)."
-        )
+        print("\nDry run only. First run qmd_preflight.py to inspect existing state.")
+        print("To apply project-local index configuration:")
+        print("  python scripts/qmd/setup_qmd_collections.py --apply --approved-by-user")
+        print("To also generate vector embeddings:")
+        print("  python scripts/qmd/setup_qmd_collections.py --apply --approved-by-user --embed")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

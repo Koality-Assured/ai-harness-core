@@ -22,13 +22,14 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 | [`cost-layers/validate_cost_layers.py`](./cost-layers/validate_cost_layers.py) | `qmd`, `headroom`, `ast-grep` | validation, dry-run, tokens, cost-layers | Run qmd + Headroom + ast-grep cost-layer dry runs and write a combined report. |
 | [`cost-layers/validate_headroom_compression.py`](./cost-layers/validate_headroom_compression.py) | `headroom`, `qmd` | validation, dry-run, tokens, compression | Dry-run Headroom compression: token savings vs gold-fact accuracy. |
 | [`docs/run_markdownlint.py`](./docs/run_markdownlint.py) | `docs`, `markdown` | markdownlint, lint, markdownlint-cli2, dry-run | Run markdownlint-cli2 over repo Markdown (read-only by default). |
+| [`docs/validate_context_budget.py`](./docs/validate_context_budget.py) | `docs`, `validation`, `cost-layers` | context-budget, tokens, agents-md, ingestibility, ceiling | Validate context budget ceilings and ingestibility rules across repository entry files. |
 | [`docs/validate_router_structure.py`](./docs/validate_router_structure.py) | `docs`, `routing` | router, structure, validation, results-layout | Validate router structure (areas, catalogs, frontmatter, dispatch, results layout). |
 | [`docs/validate_structure_fast.py`](./docs/validate_structure_fast.py) | `docs`, `validation`, `lint` | validate, structure, frontmatter, links, markdown | Fast structural validator for Markdown documents in ai-router. |
 | [`docs/validate_wiki_structure.py`](./docs/validate_wiki_structure.py) | `docs`, `routing` | wiki, structure, validation, results-layout | Validate router wiki structure (areas, catalogs, frontmatter, dispatch, results layout). |
 | [`github/resolve_github_path.py`](./github/resolve_github_path.py) | `github` | blob, main, path, url | Resolve local repo paths to GitHub https blob/tree URLs on main. |
 | [`qmd/qmd_preflight.py`](./qmd/qmd_preflight.py) | `qmd` | preflight, index, onboarding, safety | Inspect reusable qmd state without creating or refreshing an index. |
 | [`qmd/refresh_qmd_index.py`](./qmd/refresh_qmd_index.py) | `qmd` | index, embed, session-end, completion-gate | Refresh an existing local qmd index after explicit user approval. |
-| [`qmd/setup_qmd_collections.py`](./qmd/setup_qmd_collections.py) | `qmd` | index, collections, embed | Set up missing qmd collections only after an explicit, inspected approval. |
+| [`qmd/setup_qmd_collections.py`](./qmd/setup_qmd_collections.py) | `qmd` | index, collections, embed, modular, areas | Set up missing qmd collections only after an explicit, inspected approval. |
 | [`qmd/validate_qmd_retrieval.py`](./qmd/validate_qmd_retrieval.py) | `qmd` | validation, dry-run, tokens | Dry-run qmd retrieval: health, relevance, and token-cost comparison. |
 | [`repos/scaffold_public_repos.py`](./repos/scaffold_public_repos.py) | `repos`, `scaffold`, `github` | scaffold, public-repos, agent-skills, agent-standards, ai-research, wiki-template | Automated scaffolding CLI to initialize the 3 public Koality-Assured ecosystem repositories. |
 | [`routing/generate_routing_index.py`](./routing/generate_routing_index.py) | `routing` | area-map, skill-dispatch, areas.yaml, index | Generate routing/area-map.md and routing/skill-dispatch.md. |
@@ -46,6 +47,7 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 | [`tests/test_qmd_preflight.py`](./tests/test_qmd_preflight.py) | `tests`, `qmd` | qmd, preflight, onboarding | Unit tests for the non-mutating qmd lifecycle preflight. |
 | [`tests/test_skill_graph.py`](./tests/test_skill_graph.py) | `tests`, `routing`, `skills`, `dag` | tests, dag, topological-sort, dependencies, prerequisites | Unit tests for skill dependency DAG resolution, topological ordering, and Schema V2 conventions. |
 | [`tests/test_validate_agent.py`](./tests/test_validate_agent.py) | `tests`, `ai-tooling`, `agents`, `schema-v2` | tests, validate-agent, agents | Unit tests for Schema V2 agent validation. |
+| [`tests/test_validate_context_budget.py`](./tests/test_validate_context_budget.py) | `tests`, `docs`, `validation`, `cost-layers` | tests, validate_context_budget, context-budget, tokens | Unit tests for validate_context_budget.py. |
 | [`tests/test_validate_router_structure.py`](./tests/test_validate_router_structure.py) | `tests`, `docs`, `validation`, `results` | tests, validate_router_structure, results-layout | Unit tests for router structure validator results-layout check. |
 | [`tests/test_validate_skill.py`](./tests/test_validate_skill.py) | `tests`, `ai-tooling`, `skills`, `schema-v2` | tests, validate-skill, skills | Unit tests for Schema V2 skill validation. |
 | [`tests/test_validate_structure_fast.py`](./tests/test_validate_structure_fast.py) | `tests`, `docs`, `validation` | tests, validate_structure_fast, markdown | Unit tests for fast structural validator. |
@@ -58,8 +60,9 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 - **ast-grep:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`
 - **change-history:** `change-history/append_change_history.py`, `change-history/ensure_change_history_quarter.py`
 - **confluence:** `tests/test_confluence_sync.py`
+- **cost-layers:** `docs/validate_context_budget.py`, `tests/test_validate_context_budget.py`
 - **dag:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`
-- **docs:** `docs/run_markdownlint.py`, `docs/validate_router_structure.py`, `docs/validate_structure_fast.py`, `docs/validate_wiki_structure.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
+- **docs:** `docs/run_markdownlint.py`, `docs/validate_context_budget.py`, `docs/validate_router_structure.py`, `docs/validate_structure_fast.py`, `docs/validate_wiki_structure.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
 - **downstream:** `sync/sync_and_push_downstreams.py`
 - **drift:** `tests/test_confluence_sync.py`
 - **export:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`
@@ -82,5 +85,5 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 - **skills:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`, `tests/test_validate_skill.py`
 - **storage-format:** `tests/test_confluence_sync.py`
 - **sync:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`, `tests/test_confluence_sync.py`
-- **tests:** `tests/test_confluence_sync.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pacing.py`, `tests/test_pretty_docs_security.py`, `tests/test_qmd_preflight.py`, `tests/test_skill_graph.py`, `tests/test_validate_agent.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
-- **validation:** `docs/validate_structure_fast.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
+- **tests:** `tests/test_confluence_sync.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pacing.py`, `tests/test_pretty_docs_security.py`, `tests/test_qmd_preflight.py`, `tests/test_skill_graph.py`, `tests/test_validate_agent.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
+- **validation:** `docs/validate_context_budget.py`, `docs/validate_structure_fast.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`

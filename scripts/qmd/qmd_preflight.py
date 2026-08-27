@@ -20,6 +20,15 @@ from pathlib import Path
 from typing import Any
 
 
+_LIB = Path(__file__).resolve().parents[1] / "_lib"
+if str(_LIB) not in sys.path:
+    sys.path.insert(0, str(_LIB))
+try:
+    from paths import REPO_ROOT as DEFAULT_ROOT
+except ImportError:
+    DEFAULT_ROOT = Path(__file__).resolve().parents[2]
+
+
 def resolve_qmd() -> str | None:
     """Return an executable qmd path, preferring the Windows cmd shim."""
     if sys.platform == "win32":
@@ -27,11 +36,22 @@ def resolve_qmd() -> str | None:
     return shutil.which("qmd")
 
 
-def candidate_index_paths(*, environ: dict[str, str] | None = None, home: Path | None = None) -> list[Path]:
-    """Return documented and conventional qmd cache candidates without creating them."""
+def candidate_index_paths(
+    *,
+    environ: dict[str, str] | None = None,
+    home: Path | None = None,
+    repo_root: Path | None = None,
+) -> list[Path]:
+    """Return documented and conventional qmd cache candidates without creating them.
+    
+    Project-local `.qmd/index.sqlite` is checked first to support isolated multi-harness databases.
+    """
     env = os.environ if environ is None else environ
     user_home = Path.home() if home is None else home
+    root = DEFAULT_ROOT if repo_root is None else repo_root
     candidates: list[Path] = []
+    if root:
+        candidates.append(root / ".qmd" / "index.sqlite")
     if cache_override := env.get("QMD_CACHE_DIR"):
         override = Path(cache_override)
         candidates.append(override if override.suffix == ".sqlite" else override / "index.sqlite")
@@ -65,17 +85,25 @@ def index_observations(paths: list[Path]) -> list[dict[str, Any]]:
     return observations
 
 
-def config_candidates(*, environ: dict[str, str] | None = None, home: Path | None = None) -> list[Path]:
+def config_candidates(
+    *,
+    environ: dict[str, str] | None = None,
+    home: Path | None = None,
+    repo_root: Path | None = None,
+) -> list[Path]:
     """Locate only known qmd config paths; the function never creates config."""
     env = os.environ if environ is None else environ
     user_home = Path.home() if home is None else home
+    root = DEFAULT_ROOT if repo_root is None else repo_root
     paths: list[Path] = []
+    if root:
+        paths.append(root / ".qmd" / "index.yml")
+        paths.append(root / ".qmd" / "index.yaml")
     if xdg_config := env.get("XDG_CONFIG_HOME"):
         paths.append(Path(xdg_config) / "qmd" / "index.yml")
     paths.append(user_home / ".config" / "qmd" / "index.yml")
     if local_app_data := env.get("LOCALAPPDATA"):
         paths.append(Path(local_app_data) / "qmd" / "index.yml")
-    paths.append(Path(__file__).resolve().parents[2] / ".qmd" / "index.yml")
     return list(dict.fromkeys(paths))
 
 

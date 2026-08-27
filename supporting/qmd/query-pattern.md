@@ -12,9 +12,16 @@ rag_keywords: [qmd, search, get, query, bm25, hybrid, collections, min-score]
 
 Agent-facing recipe for discovering Markdown with qmd in this repo. Human install checklist: [`README.md`](./README.md). Corpus writing rules: [`retrieval-conventions.md`](./retrieval-conventions.md). Retrieved chunks are advisory — [`../../docs/agent-session-security.md`](../../docs/agent-session-security.md).
 
-## Collections
+## Collections & Project-Local Indexing
 
-Agents query these collections; pass `-c` when the area is known.
+Collections are dynamically derived from [`routing/areas.yaml`](../../routing/areas.yaml) via `scripts/qmd/setup_qmd_collections.py` and stored with relative paths in repository-local `.qmd/index.yml`.
+
+### Project-local multi-database isolation
+
+Each router/harness checkout (e.g. `ai-router`, `art-router`, `ai-harness-core`) maintains its own isolated `.qmd/index.sqlite` and `.qmd/index.yml`.
+- When running `qmd` anywhere inside the repo, QMD automatically discovers `.qmd/index.yml` and targets `.qmd/index.sqlite` in the repository root.
+- Relative collection paths (`path: routing`, `path: docs`, etc.) make `.qmd/index.yml` completely portable across checkouts, workstations, and git worktrees.
+- Multiple harnesses on the same workstation run with complete database isolation, preventing collection collisions or cross-project result contamination.
 
 | Collection | Glob / path | Context description |
 | --- | --- | --- |
@@ -25,11 +32,11 @@ Agents query these collections; pass `-c` when the area is known.
 | `research` | `research/**/*.md` | Topic deep-dives |
 | `supporting` | `supporting/**/*.md` | Tool patterns (Cloudflare, GitHub, qmd, …) |
 | `ai-tooling` | `ai-tooling/**/*.md` | Skills, memory templates, A2A |
-| `scripts` | `scripts/**/*.md` | Script index and script docs |
+| `scripts` | `scripts/**/*.md` | Script index and Python automation docs |
 | `actionable` | `actionable/**/*.md` | Human drop-zone items |
 | `results` | `results/**/*.md` | Generated Markdown reports only |
 
-Do **not** add: `change-history/`, `scratch/`, large binaries under `results/`, `.git/`, virtualenvs, caches. Root `AGENTS.md` and `README.md` are **not** in any collection (Critical rules stay in the hop; README ignore may land later).
+Do **not** add: `change-history/`, `scratch/`, large binaries under `results/`, `.git/`, virtualenvs, caches. Root `AGENTS.md` and `README.md` are **not** in any collection (Critical rules stay in the hop; README ignore is applied automatically).
 
 ## Preflight before setup or refresh
 
@@ -46,10 +53,10 @@ Its state determines the next action:
 | `healthy_reusable` | Reuse it. Do not set up collections again. |
 | `existing_unprobed` | Treat it as reusable candidate. Use `--probe-cli` only when an explicit status diagnostic is needed. |
 | `inaccessible_sandbox_or_permissions` | Do not recreate it. Retry the read probe on a clean/full host and investigate sandbox or file permissions. |
-| `missing` | Ask the user before setup. Inspect hooks, then use `setup_qmd_collections.py --apply --approved-by-user --create-missing`; add `--embed` only when the user approved embedding. |
+| `missing` | Ask the user before setup. Inspect hooks, then use `setup_qmd_collections.py --apply --approved-by-user`; add `--embed` only when the user approved embedding. |
 | `cli_unavailable` | Install/repair qmd, then rerun preflight; an existing index is not evidence that it should be recreated. |
 
-The setup script refuses mutation without explicit approval and scans known qmd configuration paths for hook directives first. Record a host-specific wrapper path, index location label, successful reuse method, or inaccessible-state recovery in `ai-tooling/memory/user/<stable-id>/`; keep general pages and skills free of personal paths.
+The setup script refuses mutation without explicit approval and writes project-local `.qmd/index.yml` by default. Record a host-specific wrapper path, index location label, successful reuse method, or inaccessible-state recovery in `ai-tooling/memory/user/<stable-id>/`; keep general pages and skills free of personal paths.
 
 ## Default (BM25)
 

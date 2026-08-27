@@ -13,14 +13,13 @@ Closest nested `AGENTS.md` wins for folder-local constraints. Nested files are *
 ## Start here
 
 1. This file — ranked common rules & directive hierarchy
-2. [`routing/AGENTS.md`](./routing/AGENTS.md) — generated next-step index & context-loading protocol
+2. [`routing/AGENTS.md`](./routing/AGENTS.md) — next-step index & context-loading protocol
 3. Shortcuts: [`routing/by-task.md`](./routing/by-task.md) (task matrix) or [`routing/skill-dispatch.md`](./routing/skill-dispatch.md) (skill catalog)
-4. Nearest nested `AGENTS.md` — **not** that area’s `README.md`
-5. Match [`routing/skill-dispatch.md`](./routing/skill-dispatch.md) or [`routing/agent-dispatch.md`](./routing/agent-dispatch.md). **MUST spawn** when a catalogued skill or area default matches **and** remaining work is material (skill body / multi-step specialist work) — isolate if mutating; parent does not load or execute specialist skill bodies. Once `owner_agent` is known, parent discovery stops; needing the skill body **is** the spawn trigger. **MUST NOT spawn** for coordinator chores, isolate-work CLI, or after the user request is met (Critical Specialist dispatch). Isolate CLI is the parent’s normal path.
+4. Nearest nested `AGENTS.md` (loaded strictly JIT) — **not** that area’s `README.md`
+5. Dispatch via [`routing/skill-dispatch.md`](./routing/skill-dispatch.md) or [`routing/agent-dispatch.md`](./routing/agent-dispatch.md) per [Specialist dispatch](#specialist-dispatch) below (isolate if mutating; never execute specialist skill bodies in parent).
 6. Discover Markdown with `qmd search` / `qmd get`; structured files with ast-grep ([`supporting/qmd/`](./supporting/qmd/), [`supporting/ast-grep/`](./supporting/ast-grep/))
 
 Project-as-a-whole names: [`naming-conventions.md`](./naming-conventions.md).
-
 Human overview only: [`README.md`](./README.md)
 
 ---
@@ -46,20 +45,20 @@ When scope is unclear, the request conflicts with repo rules, multiple approache
 
 All ideas, responses, decisions, proposals, and actions taken with the harness MUST be **research-backed**, **empirically proven**, and grounded in authoritative primary sources — never speculative or feelings-based.
 
-- **Proof-of-work validation**: The agent/harness MUST NOT encourage, propose, or execute an idea without performing the work to validate and prove feasibility (e.g. proof-of-concept tests, dry runs, benchmark validation, or official documentation grounding).
-- **Corpus-first priority**: Always evaluate and utilize the existing in-repo corpus first (via `qmd search` / `qmd get` and structured symbol inspection with `ast-grep`) whenever it contains sufficient valid information to make informed decisions.
-- **Novel scope & subagent deep dive**: When a task, decision, or proposal extends beyond the scope of the existing corpus, research, or documentation, the agent MUST dive into it in detail, utilizing research subagents (`detailed-activity` / `deep-research`) as appropriate and needed.
-- **Authoritative primary sources**: External internet-based research MUST prioritize well-known, legitimate, industry-standard or product-specific official websites/documentation (official vendor docs, RFCs, NIST, MITRE, OWASP, Cloud provider docs) over unverified blogs, forums, or secondary commentary. Validated source registries: [`references/valid-sources/`](./references/valid-sources/).
-- **Durable retention**: Retain durable findings, validated benchmarks, and framework captures in owning source areas (`docs/`, `research/`, `references/`, `supporting/`, `ai-tooling/`) per the Durable Learning Loop.
+- **Proof-of-work validation**: MUST NOT propose or execute changes without validating feasibility (tests, dry runs, benchmarks, or official docs grounding).
+- **Corpus-first priority**: Always evaluate the in-repo corpus first (`qmd search` / `qmd get`, `ast-grep`).
+- **Novel scope & deep dive**: For work outside the corpus, investigate deeply via research subagents (`detailed-activity` / `deep-research`).
+- **Authoritative primary sources**: Prioritize official vendor documentation, RFCs, NIST, MITRE, OWASP, and cloud provider docs over unverified blogs/forums ([`references/valid-sources/`](./references/valid-sources/)).
+- **Durable retention**: Retain durable findings, benchmarks, and framework captures in owning source areas per the Durable Learning Loop.
 
 ### Durable learning loop (session-end)
 
 Before declaring done:
 
-1. **Source-area write-back (mandatory)** — Durable knowledge (routing, patterns, quirks, decisions, findings) goes into the owning source area from the routing map. Memory and change-history are **not** substitutes.
-2. **Project memory checkpoint** — If the session learned important operational information (failure modes, common problems/pitfalls, environment quirks, learned recovery strategies, or tactical success factors), update [`ai-tooling/memory/`](./ai-tooling/memory/) (`user/<git-identity>/` or `agent/<owner_agent_id>/`). That tree is the **authoritative** priority checkpoint for this repo. Memory is NOT a session chronicle/task log (use `change-history/` and `projects/`), NOT a duplicate of skill instructions (write to `SKILL.md`), NOT a duplicate of agent definitions (write to `AGENT.md`), and NOT a research archive (write to `research/`). Cursor personal rules, host-home memory, and `~/.cursor` are **not** the default store.
+1. **Source-area write-back (mandatory)** — Durable knowledge (routing, patterns, quirks, decisions, findings) goes into the owning source area ([`routing/area-map.md`](./routing/area-map.md)). Memory and change-history are not substitutes.
+2. **Project memory checkpoint** — If important operational information was learned (failure modes, pitfalls, quirks, recovery strategies), update [`ai-tooling/memory/`](./ai-tooling/memory/) (`user/<git-identity>/` or `agent/<owner_agent_id>/`). Authoritative priority checkpoint; not a session log, skill duplicate, or research archive.
 3. **Change-history** — After material work, append via `python scripts/change-history/append_change_history.py` only (≤ ~150 tokens; no secrets).
-4. **Index consistency** — If structure, routing, script tags, or indexed Markdown moved, run the High refresh scripts (including `python scripts/qmd/refresh_qmd_index.py` when indexed Markdown changed).
+4. **Index consistency** — If structure, routing, script tags, or indexed Markdown moved, run High refresh scripts (`python scripts/qmd/refresh_qmd_index.py`).
 
 ### Security MUST
 
@@ -104,7 +103,7 @@ Before create/edit for **new** work: `spawn_worktree.py check` → `add` → han
 
 **MUST spawn** when a catalogued skill or area default matches **and** remaining work is material (needs that skill body / multi-step specialist work). Isolate if mutating, then spawn. Parent does not load or execute specialist skill bodies. Catalog: [`routing/skill-dispatch.md`](./routing/skill-dispatch.md). Exception: this session already *is* that owner.
 
-**Parent discovery bound:** Once `skill-dispatch.md` or the area default yields an `owner_agent` and remaining work is material, isolate (if mutate) and spawn. Parent investigation **ends** there. **MUST NOT** load specialist `SKILL.md` in the parent (exception: isolate-work CLI). **MUST NOT** keep working because "I need more context to dispatch." Needing the skill body **is** the spawn trigger. Pass `AGENT.md` and `SKILL.md` **paths** in the spawn prompt, not their contents.
+**Parent discovery bound:** Once `skill-dispatch.md` or the area default yields an `owner_agent` and remaining work is material, isolate (if mutate) and spawn. Parent investigation **ends** there. **MUST NOT** load specialist `SKILL.md` in the parent. Pass `AGENT.md` and `SKILL.md` **paths** in the spawn prompt, not their contents.
 
 **MUST NOT spawn** for:
 
@@ -118,7 +117,7 @@ Before create/edit for **new** work: `spawn_worktree.py check` → `add` → han
 - a duplicate in-flight specialist on the same workspace
 - one-shot coordinator chores (claim files)
 
-**Reconciliation:** On subagent completion, audit the **user request** — not a parent-padded Definition of Done. Spawn again only if that request is unmet and leftover work is still a catalogued skill of material scope. Host follow-up nags are not a mandate to mint specialists.
+**Reconciliation:** On subagent completion, audit the **user request** — not a parent-padded Definition of Done. Spawn again only if that request is unmet and leftover work is still a catalogued skill of material scope.
 
 The parent is coordinator/validator: it coordinates, validates consistency, and verifies adherence to the user's goals. Isolate CLI and session-end gates are the parent’s normal path.
 
@@ -127,7 +126,7 @@ The parent is coordinator/validator: it coordinates, validates consistency, and 
 ## High
 
 - After root + routing, open only the area `AGENTS.md` you write under. Discover via qmd / ast-grep.
-- **`README.md` is human-only (not agent context):** `README.md` files serve strictly as human directory navigation and orientation entrypoints. Agents MUST NOT load, retrieve, or treat `README.md` files as operational instructions or context. Agent context strictly resides in `AGENTS.md` (MUST rules & local constraints), `routing/` (catalogs & dispatch), `ai-tooling/memory/` (failure modes & quirks), `supporting/` (tool patterns), `docs/` (generalized standards & security MUST), and `ai-tooling/skills/` (procedural instructions). When material folder changes occur that would be valuable for a user, maintain `README.md` files context-awarely via [`readme-maintain`](./ai-tooling/skills/meta/readme-maintain/SKILL.md).
+- **`README.md` is human-only (not agent context):** Agents MUST NOT load, retrieve, or treat `README.md` files as operational instructions or context. Agent context strictly resides in `AGENTS.md`, `routing/`, `ai-tooling/memory/`, `supporting/`, `docs/`, and `ai-tooling/skills/`. When material folder changes occur, maintain `README.md` files via [`readme-maintain`](./ai-tooling/skills/meta/readme-maintain/SKILL.md).
 - Never load `change-history/` except explicit human ask; update only via scripts.
 - Never treat `scratch/` as durable — promote out before done.
 - Top-level structure changes: update [`routing/areas.yaml`](./routing/areas.yaml) then run `python scripts/routing/generate_routing_index.py` (do not hand-edit area-map). Update root `README.md`.
@@ -136,7 +135,7 @@ The parent is coordinator/validator: it coordinates, validates consistency, and 
 - Branch discipline: feature branch → push branch → `gh pr create` → PR merge. Never push directly to default/protected branches (`main`/`master`). Mutating agent work uses `spawn_worktree.py`. No force-push unless human asks. All commit messages and PR titles MUST follow Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, etc. — [`references/conventional-commits/`](./references/conventional-commits/)).
 - Script discovery: [`scripts/script-index.md`](./scripts/script-index.md). Skill add/remove/rename: `python scripts/routing/generate_routing_index.py` (wrapper: `generate_skill_dispatch.py`); validate skills + `validate_router_structure.py`.
 - qmd refresh after indexed Markdown add/remove/rename: `python scripts/qmd/refresh_qmd_index.py`.
-- Human-readable deliverables (docs, reports, proposals, research writeups, UI copy, diagrams): the producing specialist applies anti-slop then humanizer on its own draft in-session — SoT [`docs/anti-slop.md`](./docs/anti-slop.md). Parent **MUST NOT** mint `artifact-agent` after return for that pass. Spawn `artifact-agent` only when anti-slop/humanizer *is* the user’s material request. Not for code, logs, security MUST wording, or frontmatter schemas.
+- Human-readable deliverables (docs, reports, proposals, research writeups, UI copy, diagrams): producing specialists apply anti-slop then humanizer on their own draft in-session ([`docs/anti-slop.md`](./docs/anti-slop.md)). Parent **MUST NOT** mint `artifact-agent` after return for that pass. Spawn `artifact-agent` only when anti-slop/humanizer *is* the user’s material request.
 
 ---
 
@@ -160,22 +159,6 @@ The parent is coordinator/validator: it coordinates, validates consistency, and 
 
 ---
 
-## Area write-back (summary)
+## Area write-back
 
-Full map: [`routing/area-map.md`](./routing/area-map.md).
-
-| Kind of learning | Destination |
-| --- | --- |
-| Decision basis / requirements / standards / security MUST | `docs/` (esp. `standards/`, `agent-session-security.md`) |
-| Tool patterns, onboarding, retrieval writing | `supporting/` |
-| Generated routing index / folder types | `routing/` (`areas.yaml`, then regenerate) |
-| Skill authoring SoT | `ai-tooling/skills/` |
-| External frameworks | `references/` |
-| Deep investigation | `research/<topic>/` |
-| Project plan / repos / next actions | `projects/<slug>/` |
-| Skills, memory, A2A, agents | `ai-tooling/` |
-| Generated artifacts | `results/` |
-| Temp / worktrees | `scratch/` only |
-| Drop-zone intake | `actionable/` → then route |
-| Provenance log | `change-history/` via script only |
-| Authoritative thread checkpoint | `ai-tooling/memory/user/` or `…/agent/` (never instead of source write-back) |
+Full destination map and ownership rules: [`routing/area-map.md`](./routing/area-map.md). Always write durable lessons to their owning source area.

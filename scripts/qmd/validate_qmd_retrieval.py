@@ -20,19 +20,9 @@ from pathlib import Path
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
 from paths import REPO_ROOT as ROOT  # noqa: E402
+from setup_qmd_collections import resolve_collections  # noqa: E402
 
-EXPECTED_COLLECTIONS = [
-    "routing",
-    "docs",
-    "projects",
-    "references",
-    "research",
-    "supporting",
-    "ai-tooling",
-    "scripts",
-    "actionable",
-    "results",
-]
+EXPECTED_COLLECTIONS = [c[0] for c in resolve_collections(ROOT)]
 EXCLUDED_DIRS = ("change-history", "scratch")
 ALWAYS_ALLOWED = [
     ROOT / "AGENTS.md",
@@ -123,7 +113,7 @@ FIXTURES: list[Fixture] = [
         lex="retrieval conventions rag_keywords canonical_id frontmatter",
         vec="how markdown should be written so qmd chunks cleanly",
         expect_any=["supporting/qmd/retrieval-conventions.md"],
-        collection_hint="docs",
+        collection_hint="supporting",
     ),
 ]
 
@@ -504,6 +494,7 @@ def health_checks(qmd: list[str], indexed_files: list[str]) -> list[dict]:
         "routing/AGENTS.md",
         "ai-tooling/skills/isolate-work/",
         "ai-tooling/agents/",
+        "research/agent-harnesses/",
     )
     amb_outside = []
     for h in amb_list:

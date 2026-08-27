@@ -310,6 +310,16 @@ def _check_retired_reviews(errors: list[str], reviews: Path) -> None:
         )
 
 
+def check_context_budget_limits(errors: list[str]) -> None:
+    try:
+        from validate_context_budget import check_context_budgets
+        ok, _, budget_errors = check_context_budgets(ROOT)
+        if not ok:
+            errors.extend(budget_errors)
+    except Exception as exc:
+        err(errors, f"context budget validation failed: {exc}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", action="store_true")
@@ -326,6 +336,7 @@ def main(argv: list[str] | None = None) -> int:
     check_dispatch(errors)
     check_memory(errors)
     check_results_layout(errors)
+    check_context_budget_limits(errors)
     payload = {"ok": not errors, "errors": errors, "warnings": warnings}
     if args.json:
         print(json.dumps(payload, indent=2))
