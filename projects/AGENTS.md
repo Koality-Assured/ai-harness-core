@@ -40,7 +40,7 @@ Ingest simply; do not duplicate skills or paste root Critical — link [`../AGEN
 - Do not store ongoing history here — point at `research/`, `results/`; provenance via change-history scripts.
 - Update `status:` field in YAML frontmatter on status change (do not move directories; eliminates dead relative link churn).
 - Nested `AGENTS.md` only if a subfolder's process truly diverges (`notes/` does).
-- **`notes/`:** human drop for notes that are not initiative specs / not pitches. Created only by human request; one kebab-case Markdown file per concern (dated prefix OK). Not a chronicle, not `research/`, not `docs/` standards, not `actionable/` intake. Promote to `projects/<slug>/` when a note becomes a real initiative.
+- **`notes/`:** human drop for informal thoughts, memos, or things to follow up on that have not yet been established as a formal project or had any real planning done beyond a vague note. Created only by human request; one kebab-case Markdown file per concern (dated prefix OK). Not a chronicle, not `research/`, not `docs/` standards, not `actionable/` intake. Promote to `projects/<slug>/` when a note receives concrete scoping or becomes a real initiative.
 - **`project-prompts/`:** lean follow-up prompts for human-initiated agent runs on incomplete proposals, live OAuth tests, or untested generic skills. Non-authoritative, non-normative, and never used autonomously by agents.
 - If a catalogued skill owns material remaining work, spawn that `owner_agent`. Parent runs isolate CLI; session-end gates stay with the parent. Nested files MUST NOT undo root spawn-if-material.
 

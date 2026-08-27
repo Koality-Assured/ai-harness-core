@@ -22,7 +22,7 @@ areas:
     load: via qmd
     write_back: Durable standards or security docs
   - id: projects
-    purpose: Initiative specs (plan, repos, pointers); plus notes/ for human-requested non-spec notes
+    purpose: Initiative specs (plan, repos, pointers); plus notes/ for non-spec notes and project-prompts/ for situational prompt templates
     default_agent: router
     load: one slug (or one note under notes/)
     write_back: Plan, status, or repo changes

@@ -190,6 +190,7 @@ WIKI_TEMPLATE_KEEP_DOCS_FILES: frozenset[str] = frozenset(
 WIKI_TEMPLATE_KEEP_DOCS_STANDARDS: frozenset[str] = frozenset(
     {
         "context-management.md",
+        "wiki-harness-template.md",
     }
 )
 
@@ -210,6 +211,24 @@ This area is a placeholder in the generic (non-domain-fed) harness clone.
 
 Feed your own domain content here later. Do not ship this instance's security
 corpus, cloud-provider skills, or project/research dumps in the template.
+"""
+
+GENERIC_TEMPLATE_PROJECT_PROMPTS_README = """# Project Prompts
+
+Library of lean, situational prompt templates for human-initiated follow-up agent sessions.
+
+## Purpose & Constraints
+
+- **When to use:** When human operators need a ready-to-use prompt to launch a follow-up agent on an initiative (e.g. executing live cloud/OAuth tests, running newly built generic tooling against live environments, or completing interactive phases).
+- **Non-authoritative:** This folder is strictly advisory and non-normative. It is not an authoritative reference for repository standards or instructions.
+- **Lean:** Prompts contain only task-specific parameters and objective prompts without duplicating wiki structure, rules, or guidance that agents discover on their own.
+- **No autonomous consumption:** Agents must not read or execute files in this directory unless explicitly instructed by the user.
+
+## Prompts Index
+
+| Prompt | Focus Area | Intended Agent |
+|---|---|---|
+| _(Feed situational follow-up prompts here)_ | | |
 """
 
 GENERIC_TEMPLATE_REFERENCES_AGENTS = """# References AGENTS
@@ -425,7 +444,7 @@ def wiki_template_dir_may_contain_kept(rel_dir: str) -> bool:
     if top in WIKI_TEMPLATE_EMPTY_AREAS:
         if len(parts) == 1:
             return True
-        if top == "projects" and parts[1] == "notes" and len(parts) <= 2:
+        if top == "projects" and parts[1] in {"notes", "project-prompts"} and len(parts) <= 2:
             return True
         return False
     return False
@@ -436,6 +455,7 @@ def wiki_template_stub_files() -> dict[str, str]:
     return {
         "docs/standards/AGENTS.md": GENERIC_TEMPLATE_STUB_AGENTS,
         "references/AGENTS.md": GENERIC_TEMPLATE_REFERENCES_AGENTS,
+        "projects/project-prompts/README.md": GENERIC_TEMPLATE_PROJECT_PROMPTS_README,
     }
 
 
@@ -725,7 +745,7 @@ def _keep_ai_tooling(parts: list[str]) -> bool:
         return any(skill_is_kept(p) for p in parts[2:]) or len(parts) == 3
     if len(parts) >= 2 and parts[1] == "memory":
         if parts[-1] in {"AGENTS.md", ".gitkeep"}:
-            if len(parts) >= 4 and parts[2] == "user":
+            if len(parts) >= 5 and parts[2] in {"user", "agent", "model"}:
                 return False
             return True
         return False
@@ -735,7 +755,11 @@ def _keep_ai_tooling(parts: list[str]) -> bool:
 def _keep_empty_area(parts: list[str]) -> bool:
     if parts[-1] == "AGENTS.md":
         return True
+    if parts[-1] == ".gitkeep":
+        return True
     if len(parts) == 2 and parts[0] == "results" and parts[1] == "results-conventions.md":
+        return True
+    if len(parts) == 3 and parts[0] == "projects" and parts[1] == "notes" and parts[2] == "README.md":
         return True
     return False
 
@@ -759,7 +783,7 @@ def _ai_tooling_dir_may_contain_kept(parts: list[str]) -> bool:
                 return False
         return True
     if parts[1] == "memory":
-        if len(parts) >= 4 and parts[2] == "user":
+        if len(parts) >= 4 and parts[2] in {"user", "agent", "model"}:
             return False
         return True
     return False

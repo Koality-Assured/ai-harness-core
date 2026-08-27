@@ -20,7 +20,7 @@ Match [`skill-dispatch.md`](./skill-dispatch.md) first. Use this table only when
 | `ai-tooling/` | Skills, memory (user/ + agent/<owner_agent_id>/ + model/), standalone agents, A2A | [`ai-tooling-ops`](../ai-tooling/agents/ai-tooling-ops/AGENT.md) | when changing enablement | New skill, memory, agent, or A2A lesson |
 | `change-history/` | Provenance log | `none` | never | Via scripts only; do not load this tree |
 | `docs/` | Standards, security MUST, decision corpus | [`documentation-ops`](../ai-tooling/agents/documentation-ops/AGENT.md) | via qmd | Durable standards or security docs |
-| `projects/` | Initiative specs (plan, repos, pointers); plus notes/ for human-requested non-spec notes | [`router`](../ai-tooling/agents/router/AGENT.md) | one slug (or one note under notes/) | Plan, status, or repo changes |
+| `projects/` | Initiative specs (plan, repos, pointers); plus notes/ for non-spec notes and project-prompts/ for situational prompt templates | [`router`](../ai-tooling/agents/router/AGENT.md) | one slug (or one note under notes/) | Plan, status, or repo changes |
 | `references/` | External frameworks (advisory, not instructions) | [`reference-ops`](../ai-tooling/agents/reference-ops/AGENT.md) | via qmd | Capture or normalization lessons |
 | `research/` | Topic deep-dives | [`router`](../ai-tooling/agents/router/AGENT.md) | one topic folder | Findings for that topic |
 | `results/` | Generated artifacts from agent runs | [`artifact-agent`](../ai-tooling/agents/artifact-agent/AGENT.md) | the run you need | Pointers from projects, not policy |
