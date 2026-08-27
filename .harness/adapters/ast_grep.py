@@ -227,16 +227,58 @@ class AstGrepAdapter:
             )
         return matches
 
+    def rewrite(
+        self,
+        pattern: str,
+        replacement: str,
+        language: str | None = None,
+        paths: list[str | Path] | None = None,
+        update_all: bool = False,
+    ) -> list[AstGrepMatch]:
+        """Perform a structural pattern rewrite, optionally writing changes in-place with update_all."""
+        args = ["run", "--pattern", pattern, "--rewrite", replacement, "--json=compact"]
+        if update_all:
+            args.append("--update-all")
+        if language:
+            args.extend(["--lang", language])
+        if paths:
+            for p in paths:
+                args.append(str(p))
+
+        raw_output = self._run(args)
+        raw_list = raw_output if isinstance(raw_output, list) else [raw_output] if raw_output else []
+
+        matches: list[AstGrepMatch] = []
+        for item in raw_list:
+            if not isinstance(item, dict):
+                continue
+            range_info = item.get("range", {})
+            start = range_info.get("start", {})
+            end = range_info.get("end", {})
+            meta = item.get("metaVariables", {}).get("single", {})
+
+            matches.append(
+                AstGrepMatch(
+                    file=str(item.get("file", "")),
+                    text=str(item.get("text", "")),
+                    line=int(start.get("line", item.get("lines", 0))),
+                    column=int(start.get("column", 0)),
+                    end_line=int(end.get("line", 0)),
+                    end_column=int(end.get("column", 0)),
+                    language=item.get("language") or language,
+                    meta_variables=meta,
+                )
+            )
+        return matches
+
     def outline(self, path: str | Path, language: str | None = None) -> list[AstGrepSymbol]:
-        """Extract high-level outline symbols from a source file."""
+        """Extract high-level outline symbols from a source file using native ast-grep outline."""
         target_path = Path(path)
         if not target_path.is_absolute():
             target_path = self.repo_root / target_path
 
         if not target_path.is_file():
             raise AstGrepError(f"File not found for outline: {target_path}")
-
-        symbols: list[AstGrepSymbol] = []
 
         lang = language
         if not lang:
@@ -250,9 +292,62 @@ class AstGrepAdapter:
                 ".json": "json",
                 ".yaml": "yaml",
                 ".yml": "yaml",
+                ".rs": "rust",
+                ".go": "go",
+                ".c": "c",
+                ".cpp": "cpp",
+                ".h": "c",
+                ".hpp": "cpp",
+                ".java": "java",
+                ".cs": "csharp",
+                ".rb": "ruby",
+                ".php": "php",
+                ".html": "html",
+                ".css": "css",
             }
             lang = ext_map.get(ext, "python")
 
+        symbols: list[AstGrepSymbol] = []
+
+        # Try native ast-grep outline subcommand first
+        try:
+            raw_output = self._run(
+                ["outline", str(target_path), "-l", lang, "--json=compact"],
+                check=False,
+            )
+            raw_list = raw_output if isinstance(raw_output, list) else [raw_output] if raw_output else []
+            for file_entry in raw_list:
+                if not isinstance(file_entry, dict):
+                    continue
+                for item in file_entry.get("items", []):
+                    if not isinstance(item, dict):
+                        continue
+                    name = str(item.get("name") or "").strip()
+                    if not name:
+                        continue
+                    symbol_type = str(item.get("symbolType") or item.get("astKind") or "symbol")
+                    range_info = item.get("range", {})
+                    start = range_info.get("start", {})
+                    # Convert 0-indexed Tree-sitter line to 1-indexed editor line
+                    line_no = int(start.get("line", 0)) + 1
+                    col_no = int(start.get("column", 0)) + 1
+                    sig = item.get("signature") or name
+                    symbols.append(
+                        AstGrepSymbol(
+                            name=name,
+                            kind=symbol_type,
+                            line=line_no,
+                            column=col_no,
+                            context=sig,
+                        )
+                    )
+            if symbols:
+                symbols.sort(key=lambda s: s.line)
+                return symbols
+        except Exception:
+            pass
+
+        # Fallback to pattern-based matching if native outline was unavailable or empty
         patterns = []
         if lang == "python":
             patterns = [
@@ -291,8 +386,8 @@ class AstGrepAdapter:
                         AstGrepSymbol(
                             name=name,
                             kind=kind,
-                            line=m.line,
-                            column=m.column,
+                            line=m.line + 1,
+                            column=m.column + 1,
                             context=m.text.splitlines()[0] if m.text else None,
                         )
                     )

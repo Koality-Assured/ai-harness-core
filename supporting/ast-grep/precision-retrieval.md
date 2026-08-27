@@ -74,6 +74,33 @@ To preserve token budget when inspecting and modifying code:
 
 This workflow saves **83%–94%** tokens compared to dumping complete source files into the context window.
 
+## Batch mechanical refactoring (`--rewrite`)
+
+For codebase-wide pattern migrations, API renames, or structural adjustments across many files, use `ast-grep --rewrite` rather than burning hundreds of thousands of LLM generation tokens editing files individually:
+
+```powershell
+# Dry run: preview replacements across repository
+ast-grep run -p 'old_function($$$ARGS)' -r 'new_function($$$ARGS)' -l python scripts
+
+# In-place write: apply transformation across all matching files
+ast-grep run -p 'old_function($$$ARGS)' -r 'new_function($$$ARGS)' -l python scripts --update-all
+```
+
+## Tri-Tier Agent Context Architecture
+
+When executing tasks across structured files, agents must follow the Tri-Tier workflow:
+
+1. **Tier 1: Discovery & Localization**:
+   - Prose / policy search: BM25 via [`qmd`](../qmd/query-pattern.md).
+   - Structural code mapping: `ast-grep outline` or symbol definitions.
+2. **Tier 2: Surgical Ingestion & Mutation**:
+   - Ingest *only* the bounding range (`StartLine`/`EndLine`) of the target function or class to inspect implementation logic before modifying.
+   - Avoid skeleton-only editing (editing from outlines alone without viewing the implementation causes hallucinations and broken invariants).
+   - Apply surgical diff edits or `ast-grep --rewrite` for mechanical bulk updates.
+3. **Tier 3: Inner-Loop Guardrails & Validation**:
+   - Code semantics & security: Standard linters (e.g. Ruff for Python, MyPy/Pyright for types).
+   - Repo metadata invariants: `ast-grep scan` (YAML frontmatter, agent cards, schema checks).
+
 ## What not to use it for
 
 | Need | Use instead |

@@ -26,9 +26,16 @@ Prefer `gh` for github.com / api.github.com access over raw `curl` when authenti
 gh auth status
 gh repo view
 gh pr create --title "…" --body "…"
+gh pr merge <number> --merge --admin
 gh pr checks
+gh pr status
 gh api user
 ```
+
+### CLI quirks & GraphQL deprecations
+
+- **`gh pr view` GraphQL deprecation**: In repositories configured with legacy project cards, running `gh pr view <id>` may fail or output GraphQL deprecation errors regarding `repository.pullRequest.projectCards`. Use `gh pr status` or `git log origin/main..main` or `gh api repos/:owner/:repo/pulls/<id>` to inspect PR status reliably.
+
 
 ## IaC / Actions
 

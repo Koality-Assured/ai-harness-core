@@ -74,7 +74,7 @@ High: session-end gate 2. Agent memory prevents recurring operational traps and 
 
 ## Dry run
 
-Compare the draft against `ai-tooling/memory/README.md` template. `python scripts/docs/validate_wiki_structure.py` validates wiki structure once the file exists.
+Compare the draft against `ai-tooling/memory/README.md` template. `python scripts/docs/validate_router_structure.py` validates router structure once the file exists.
 
 ## Security
 

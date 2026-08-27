@@ -29,5 +29,6 @@ Human index (not agent SoT):
 | [`reference-ops/`](./reference-ops/) | `references/` captures and normalization | standard |
 | [`repo-sync-ops/`](./repo-sync-ops/) | downstream repo sync + public export redaction | standard |
 | [`community-analyst/`](./community-analyst/) | public communities, subreddits, developer forums & OSINT | standard |
+| [`chat-collab-agent/`](./chat-collab-agent/) | Slack workspace governance, Block Kit messaging, webhooks, app manifests | standard |
 
 A2A specifications & schemas: canonical in `AGENT.md` (Schema V2); see also [`../a2a/agent-cards/README.md`](../a2a/agent-cards/README.md).

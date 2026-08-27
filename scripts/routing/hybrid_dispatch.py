@@ -338,12 +338,14 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
         ],
     },
     {
-        "skill": "wiki-structure",
+        "skill": "router-structure",
         "owner_agent": "documentation-ops",
         "patterns": [
+            r"\brouter-structure\b",
+            r"\bvalidate\s+router\s+structure\b",
+            r"\brouter\s+structure\s+check\b",
             r"\bwiki-structure\b",
             r"\bvalidate\s+wiki\s+structure\b",
-            r"\bwiki\s+structure\s+check\b",
         ],
     },
     {

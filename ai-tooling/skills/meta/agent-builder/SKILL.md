@@ -57,7 +57,7 @@ High: parent dispatch depends on stable ids matching `owner_agent` and area defa
 
 ```bash
 python scripts/ai-tooling/validate_agent.py --agent <id>
-python scripts/docs/validate_wiki_structure.py --dry-run
+python scripts/docs/validate_router_structure.py --dry-run
 ```
 
 Fails if AGENT.md Schema V2 frontmatter or required headings are invalid.

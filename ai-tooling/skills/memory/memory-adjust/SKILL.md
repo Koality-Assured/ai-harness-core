@@ -68,7 +68,7 @@ High: session-end gate 2. Stale or missing operational memory leads agents to re
 
 ## Dry run
 
-Open the file and produce a proposed diff in the specialist summary without writing. Validator: `python scripts/docs/validate_wiki_structure.py`.
+Open the file and produce a proposed diff in the specialist summary without writing. Validator: `python scripts/docs/validate_router_structure.py`.
 
 ## Security
 

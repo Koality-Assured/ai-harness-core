@@ -73,5 +73,28 @@
     "max_budget": 24,
     "require_clean_state": true,
     "disallow_destructive": true
+  },
+  "quota_profiles": {
+    "unmetered": {
+      "max_concurrent_subagents": 8,
+      "research_subagent_tier": "inherit",
+      "pacing_delay_sec": 0,
+      "auto_schedule_on_429": false,
+      "description": "Enterprise provisioned throughput (Vertex/Azure PTUs) or uncapped subscriptions."
+    },
+    "standard": {
+      "max_concurrent_subagents": 4,
+      "research_subagent_tier": "flash",
+      "pacing_delay_sec": 1,
+      "auto_schedule_on_429": true,
+      "description": "Platform-native models with standard quotas (e.g. Gemini 3.7 Flash in Antigravity)."
+    },
+    "metered_secondary": {
+      "max_concurrent_subagents": 2,
+      "research_subagent_tier": "flash_lite",
+      "pacing_delay_sec": 3,
+      "auto_schedule_on_429": true,
+      "description": "Secondary/external or quota-capped models (e.g. Claude Opus in Antigravity) with 5h rolling windows."
+    }
   }
 }

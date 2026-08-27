@@ -24,7 +24,7 @@ Prove a skill is well-formed and that its documented dry-run command is safe. Af
 
 ## When not to use
 
-Implementing the skill (`skill-builder`). Running the skill's real mutating workflow. Wiki-wide structure (`wiki-structure`).
+Implementing the skill (`skill-builder`). Running the skill's real mutating workflow. Router-wide structure (`router-structure`).
 
 ## Criticality
 
@@ -32,7 +32,7 @@ High for any new skill going into the catalog. A skill that cannot dry-run is no
 
 ## Source of truth
 
-- [`ai-tooling/skills/skill-conventions.md`](..\..\skill-conventions.md)
+- [`ai-tooling/skills/skill-conventions.md`](../../skill-conventions.md)
 - `python scripts/ai-tooling/validate_skill.py`
 - The target skill's **Dry run** section
 

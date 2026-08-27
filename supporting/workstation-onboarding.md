@@ -67,7 +67,7 @@ Confirm each required tool is on `PATH`. If you use `gh`, it should already be a
 
 Repo validators exist; run them when you need a check:
 
-- `python scripts/docs/validate_wiki_structure.py`
+- `python scripts/docs/validate_router_structure.py`
 - `python scripts/cost-layers/validate_cost_layers.py` (or the per-layer scripts under `scripts/cost-layers/`)
 
 ## Related

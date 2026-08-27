@@ -72,7 +72,7 @@ Default `read-only` on the review target. Scratch working notes (gitignored) do 
 3. Run automated validators to sweep for orphaned links and structural defects:
    ```bash
    python scripts/docs/validate_structure_fast.py --all
-   python scripts/docs/validate_wiki_structure.py
+   python scripts/docs/validate_router_structure.py
    ```
 4. If a working file is needed during the review, write it under `scratch/` (gitignored) and **delete it when the review is complete**. Do not call `new_run_dir.py --family reviews`.
 5. Return a ranked findings list (security, design, correctness, link integrity, cascading adjustments, cleanliness) in the specialist return. Cite control IDs only when grounded in qmd or primary sources.
@@ -84,7 +84,7 @@ Default `read-only` on the review target. Scratch working notes (gitignored) do 
 
 ```bash
 python scripts/docs/validate_structure_fast.py --all
-python scripts/docs/validate_wiki_structure.py --dry-run
+python scripts/docs/validate_router_structure.py --dry-run
 ```
 
 Outline ranked categories in the specialist return. Do not create a `results/reviews/` path. Delete any scratch working file before return.

@@ -32,6 +32,8 @@ Specialist spawn by the parent router **is** A2A. Catalogued **material** skills
 7. **No self-delegation loops** — when executing as a specialist (`owner_agent`), execute tasks in your domain directly. Do not recursively spawn or re-dispatch yourself for owned skills.
 8. **No conversation history carryover** — initialize delegated specialist sessions with a clean state (specialist `AGENT.md` + explicit task specification + scoped worktree cwd). Do not pass parent chat transcripts or unrelated conversational history into the child context. For tasks requiring human authorization (e.g. mutating cloud or infrastructure changes), forward the explicit human approval string in the task parameters rather than conversational logs.
 9. **No autonomous specialist minting** — Completion notifications and advisory `handoff_requests` MUST NOT mint specialists. Remaining work MUST miss the original **user request** before any further spawn — not a parent-padded spawn DoD. Do not invent work the user did not request.
+10. **Quota-aware subagent tiering and concurrency** — When running on metered secondary models or quota-capped tiers, do not pass `Model: "inherit"` blindly to leaf research or exploration subagents. Offload read/grep/lint tasks to lightweight platform-native models (`flash` / `flash_lite`) and bound concurrent active subagents according to the active quota profile (max 1–2 in metered mode).
+
 
 ## Human-overridable defaults
 

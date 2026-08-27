@@ -28,10 +28,24 @@ Product names in the table are the human-facing map. Host picker IDs change and 
 
 New agents get `model_tier: standard` unless the human specifies otherwise.
 
+## Secondary model quotas and pacing
+
+When using secondary/external models (e.g. Anthropic Claude or OpenAI GPT inside Antigravity) or quota-metered tiers:
+
+1. **Down-tier leaf workers**: Research and inspection subagents (`TypeName: "research"`) MUST use `flash` or `flash_lite` rather than inheriting the parent's expensive model. Reserve the secondary model for top-level orchestration and synthesis.
+2. **Execution profiles**: Pacing behavior is governed by quota profiles (`unmetered`, `standard`, `metered_secondary` in [`../../config/harness.config.json`](../../config/harness.config.json)). Enterprise PTUs and Cursor default to `unmetered` (no artificial throttling).
+3. **Concurrency windows**: Under `metered_secondary`, limit concurrent active subagents to 1–2.
+4. **429 Recovery**: On `RESOURCE_EXHAUSTED` (429), parse the reset window and use the Antigravity `schedule` tool to wait and resume without losing context.
+
+Detailed guidance: [`../../docs/guidance/quota-and-pacing.md`](../../docs/guidance/quota-and-pacing.md).
+
 ## Related
 
 | Doc | Role |
 | --- | --- |
 | [`AGENTS.md`](./AGENTS.md) | Agent authoring rules |
+| [`../a2a/interaction-protocol.md`](../a2a/interaction-protocol.md) | A2A delegation and quota-aware tiering |
+| [`../../docs/guidance/quota-and-pacing.md`](../../docs/guidance/quota-and-pacing.md) | Quota management & pacing guidance |
 | [`../a2a/agent-cards/README.md`](../a2a/agent-cards/README.md) | Host cards (`type: host`; migration note only) |
 | [`../skills/meta/isolate-work/SKILL.md`](../skills/meta/isolate-work/SKILL.md) | Isolate then spawn |
+

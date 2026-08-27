@@ -22,6 +22,7 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 | [`cost-layers/validate_cost_layers.py`](./cost-layers/validate_cost_layers.py) | `qmd`, `headroom`, `ast-grep` | validation, dry-run, tokens, cost-layers | Run qmd + Headroom + ast-grep cost-layer dry runs and write a combined report. |
 | [`cost-layers/validate_headroom_compression.py`](./cost-layers/validate_headroom_compression.py) | `headroom`, `qmd` | validation, dry-run, tokens, compression | Dry-run Headroom compression: token savings vs gold-fact accuracy. |
 | [`docs/run_markdownlint.py`](./docs/run_markdownlint.py) | `docs`, `markdown` | markdownlint, lint, markdownlint-cli2, dry-run | Run markdownlint-cli2 over repo Markdown (read-only by default). |
+| [`docs/validate_router_structure.py`](./docs/validate_router_structure.py) | `docs`, `routing` | router, structure, validation, results-layout | Validate router structure (areas, catalogs, frontmatter, dispatch, results layout). |
 | [`docs/validate_structure_fast.py`](./docs/validate_structure_fast.py) | `docs`, `validation`, `lint` | validate, structure, frontmatter, links, markdown | Fast structural validator for Markdown documents in ai-router. |
 | [`docs/validate_wiki_structure.py`](./docs/validate_wiki_structure.py) | `docs`, `routing` | wiki, structure, validation, results-layout | Validate router wiki structure (areas, catalogs, frontmatter, dispatch, results layout). |
 | [`github/resolve_github_path.py`](./github/resolve_github_path.py) | `github` | blob, main, path, url | Resolve local repo paths to GitHub https blob/tree URLs on main. |
@@ -45,12 +46,14 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 | [`tests/test_hybrid_dispatch.py`](./tests/test_hybrid_dispatch.py) | `tests`, `routing`, `ai-tooling` | tests, hybrid-dispatch, bm25, ambiguity-gate, schema-v2 | Unit tests for 3-Tier Hybrid Dispatch Pipeline and Schema V2 Indexing. |
 | [`tests/test_model_memory.py`](./tests/test_model_memory.py) | `tests`, `ai-tooling`, `memory` | tests, model-memory, model-capability-memory | Unit tests for scripts/ai-tooling/model_memory.py. |
 | [`tests/test_new_run_dir.py`](./tests/test_new_run_dir.py) | `tests`, `results` | tests, new_run_dir, families | Unit tests for results run-directory scaffold. |
+| [`tests/test_pacing.py`](./tests/test_pacing.py) | `tests`, `pacing`, `quota`, `routing` | tests, pacing, quota-management | Unit tests for adaptive quota management and pacing helper. |
 | [`tests/test_pretty_docs_security.py`](./tests/test_pretty_docs_security.py) | `tests`, `security`, `github` | tests, href, github-paths | Stdlib unit tests for href allow-list and GitHub path helpers. |
 | [`tests/test_public_llm_admin.py`](./tests/test_public_llm_admin.py) | `tests`, `llm`, `admin` | tests, public-llm-admin, openai, anthropic, gemini | Unit tests for scripts/llm/public_llm_admin.py. |
 | [`tests/test_qmd_preflight.py`](./tests/test_qmd_preflight.py) | `tests`, `qmd` | qmd, preflight, onboarding | Unit tests for the non-mutating qmd lifecycle preflight. |
 | [`tests/test_scaffold_public_repos.py`](./tests/test_scaffold_public_repos.py) | `tests`, `repos`, `scaffold` | tests, scaffold_public_repos, agent-skills, agent-standards, ai-research, wiki-template | Unit tests for public ecosystem repositories scaffolding automation. |
 | [`tests/test_skill_graph.py`](./tests/test_skill_graph.py) | `tests`, `routing`, `skills`, `dag` | tests, dag, topological-sort, dependencies, prerequisites | Unit tests for skill dependency DAG resolution, topological ordering, and Schema V2 conventions. |
 | [`tests/test_validate_agent.py`](./tests/test_validate_agent.py) | `tests`, `ai-tooling`, `agents`, `schema-v2` | tests, validate-agent, agents | Unit tests for Schema V2 agent validation. |
+| [`tests/test_validate_router_structure.py`](./tests/test_validate_router_structure.py) | `tests`, `docs`, `validation`, `results` | tests, validate_router_structure, results-layout | Unit tests for router structure validator results-layout check. |
 | [`tests/test_validate_skill.py`](./tests/test_validate_skill.py) | `tests`, `ai-tooling`, `skills`, `schema-v2` | tests, validate-skill, skills | Unit tests for Schema V2 skill validation. |
 | [`tests/test_validate_structure_fast.py`](./tests/test_validate_structure_fast.py) | `tests`, `docs`, `validation` | tests, validate_structure_fast, markdown | Unit tests for fast structural validator. |
 | [`tests/test_validate_wiki_structure.py`](./tests/test_validate_wiki_structure.py) | `tests`, `docs`, `validation`, `results` | tests, validate_wiki_structure, results-layout | Unit tests for wiki structure validator results-layout check. |
@@ -65,7 +68,7 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 - **cloud:** `tests/test_cloud_admin.py`
 - **core:** `tests/test_harness_core.py`
 - **dag:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`
-- **docs:** `docs/run_markdownlint.py`, `docs/validate_structure_fast.py`, `docs/validate_wiki_structure.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
+- **docs:** `docs/run_markdownlint.py`, `docs/validate_router_structure.py`, `docs/validate_structure_fast.py`, `docs/validate_wiki_structure.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
 - **downstream:** `sync/sync_and_push_downstreams.py`
 - **drive:** `tests/test_google_suite.py`
 - **export:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`
@@ -81,15 +84,17 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 - **llm:** `tests/test_public_llm_admin.py`
 - **markdown:** `docs/run_markdownlint.py`
 - **memory:** `ai-tooling/model_memory.py`, `tests/test_model_memory.py`
+- **pacing:** `tests/test_pacing.py`
 - **qmd:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `qmd/qmd_preflight.py`, `qmd/refresh_qmd_index.py`, `qmd/setup_qmd_collections.py`, `qmd/validate_qmd_retrieval.py`, `tests/test_qmd_preflight.py`
+- **quota:** `tests/test_pacing.py`
 - **redaction:** `tests/test_google_suite.py`
 - **repos:** `repos/scaffold_public_repos.py`, `tests/test_scaffold_public_repos.py`
-- **results:** `tests/test_new_run_dir.py`, `tests/test_validate_wiki_structure.py`
-- **routing:** `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `docs/validate_wiki_structure.py`, `routing/generate_routing_index.py`, `routing/generate_script_index.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `routing/resolve_skill_graph.py`, `routing/spawn_worktree.py`, `tests/test_generate_routing_index.py`, `tests/test_hybrid_dispatch.py`, `tests/test_skill_graph.py`
+- **results:** `tests/test_new_run_dir.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_wiki_structure.py`
+- **routing:** `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `docs/validate_router_structure.py`, `docs/validate_wiki_structure.py`, `routing/generate_routing_index.py`, `routing/generate_script_index.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `routing/resolve_skill_graph.py`, `routing/spawn_worktree.py`, `tests/test_generate_routing_index.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pacing.py`, `tests/test_skill_graph.py`
 - **scaffold:** `repos/scaffold_public_repos.py`, `tests/test_scaffold_public_repos.py`
 - **schema-v2:** `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
 - **security:** `sync/sync_public_repos.py`, `tests/test_google_suite.py`, `tests/test_pretty_docs_security.py`
 - **skills:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`, `tests/test_validate_skill.py`
 - **sync:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`
-- **tests:** `tests/test_cloud_admin.py`, `tests/test_generate_routing_index.py`, `tests/test_google_suite.py`, `tests/test_harness_core.py`, `tests/test_hybrid_dispatch.py`, `tests/test_model_memory.py`, `tests/test_new_run_dir.py`, `tests/test_pretty_docs_security.py`, `tests/test_public_llm_admin.py`, `tests/test_qmd_preflight.py`, `tests/test_scaffold_public_repos.py`, `tests/test_skill_graph.py`, `tests/test_validate_agent.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
-- **validation:** `docs/validate_structure_fast.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
+- **tests:** `tests/test_cloud_admin.py`, `tests/test_generate_routing_index.py`, `tests/test_google_suite.py`, `tests/test_harness_core.py`, `tests/test_hybrid_dispatch.py`, `tests/test_model_memory.py`, `tests/test_new_run_dir.py`, `tests/test_pacing.py`, `tests/test_pretty_docs_security.py`, `tests/test_public_llm_admin.py`, `tests/test_qmd_preflight.py`, `tests/test_scaffold_public_repos.py`, `tests/test_skill_graph.py`, `tests/test_validate_agent.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
+- **validation:** `docs/validate_structure_fast.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`

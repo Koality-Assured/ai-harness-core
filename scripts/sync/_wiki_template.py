@@ -70,7 +70,7 @@ WIKI_TEMPLATE_KEEP_SKILLS: frozenset[str] = frozenset(
         "skill-builder",
         "skill-dry-run",
         "sync-downstream-repos",
-        "wiki-structure",
+        "router-structure",
     }
 )
 
@@ -90,6 +90,7 @@ WIKI_TEMPLATE_DROP_SKILLS: frozenset[str] = frozenset(
 WIKI_TEMPLATE_DROP_AGENTS: frozenset[str] = frozenset(
     {
         "cloud-operator",
+        "cloud-admin-agent",
         "assessment-agent",
     }
 )
@@ -131,6 +132,14 @@ WIKI_TEMPLATE_KEEP_SCRIPT_DIRS: frozenset[str] = frozenset(
 WIKI_TEMPLATE_DEST_EXCLUDE_RELS: frozenset[str] = frozenset(
     {
         "scripts/tests/test_sync_public_repos.py",
+        "scripts/tests/test_scaffold_public_repos.py",
+        "scripts/tests/test_cloud_admin.py",
+        "scripts/tests/test_google_suite.py",
+        "scripts/tests/test_public_llm_admin.py",
+        "scripts/tests/test_new_run_dir.py",
+        "scripts/tests/test_harness_core.py",
+        "scripts/tests/test_model_memory.py",
+        "scripts/tests/test_generate_routing_index.py",
     }
 )
 

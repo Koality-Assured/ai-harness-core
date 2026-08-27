@@ -40,3 +40,4 @@ Match [`skill-dispatch.md`](./skill-dispatch.md) first. Use this table only when
 | `supporting/headroom/` | [`router-maintenance`](../ai-tooling/agents/router-maintenance/AGENT.md) |
 | `supporting/ast-grep/` | [`router-maintenance`](../ai-tooling/agents/router-maintenance/AGENT.md) |
 | `supporting/powershell/` | [`router-maintenance`](../ai-tooling/agents/router-maintenance/AGENT.md) |
+| `supporting/slack/` | [`chat-collab-agent`](../ai-tooling/agents/chat-collab-agent/AGENT.md) |

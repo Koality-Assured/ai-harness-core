@@ -134,7 +134,7 @@ The parent is coordinator/validator: it coordinates, validates consistency, and 
 - Durable corrections land in the owning source area before done (same as Critical learning loop).
 - External checkouts: follow *that* repo’s `AGENTS.md` / `CLAUDE.md`.
 - Branch discipline: feature branch → push branch → `gh pr create` → PR merge. Never push directly to default/protected branches (`main`/`master`). Mutating agent work uses `spawn_worktree.py`. No force-push unless human asks. All commit messages and PR titles MUST follow Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, etc. — [`references/conventional-commits/`](./references/conventional-commits/)).
-- Script discovery: [`scripts/script-index.md`](./scripts/script-index.md). Skill add/remove/rename: `python scripts/routing/generate_routing_index.py` (wrapper: `generate_skill_dispatch.py`); validate skills + `validate_wiki_structure.py`.
+- Script discovery: [`scripts/script-index.md`](./scripts/script-index.md). Skill add/remove/rename: `python scripts/routing/generate_routing_index.py` (wrapper: `generate_skill_dispatch.py`); validate skills + `validate_router_structure.py`.
 - qmd refresh after indexed Markdown add/remove/rename: `python scripts/qmd/refresh_qmd_index.py`.
 - Human-readable deliverables (docs, reports, proposals, research writeups, UI copy, diagrams): the producing specialist applies anti-slop then humanizer on its own draft in-session — SoT [`docs/anti-slop.md`](./docs/anti-slop.md). Parent **MUST NOT** mint `artifact-agent` after return for that pass. Spawn `artifact-agent` only when anti-slop/humanizer *is* the user’s material request. Not for code, logs, security MUST wording, or frontmatter schemas.
 

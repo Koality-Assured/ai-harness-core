@@ -75,4 +75,4 @@ Human index (not agent SoT):
 | [`sync-downstream-repos/`](./meta/sync-downstream-repos/) | repo-sync-ops | mutate |
 | [`tabler-dashboard/`](./reporting/tabler-dashboard/) | artifact-agent | mutate |
 | [`threat-model/`](./reporting/threat-model/) | assessment-agent | mutate |
-| [`wiki-structure/`](./meta/wiki-structure/) | documentation-ops | read-only |
+| [`router-structure/`](./meta/router-structure/) | documentation-ops | read-only |

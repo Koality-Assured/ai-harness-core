@@ -48,8 +48,10 @@ Markdown BM25 / prose discovery (`qmd-usage`). Compressing bulky tool dumps (`he
 2. Extract facts: `python scripts/cost-layers/extract_ast_facts.py --areas scripts,agent-cards,skills-frontmatter --dry-run`.
 3. Prefer the `ast-grep` binary (not deprecated `sg`). Override with env `AST_GREP` if PATH is messy.
 4. CLI: `ast-grep outline` (Python symbols), `ast-grep run -k` (JSON `-k pair`; YAML `-k block_mapping_pair`), `ast-grep scan -c sgconfig.yml`.
-5. Markdown: pipe the `---` frontmatter block on stdin (`ast-grep run --stdin -l yaml -k block_mapping_pair`). Not a custom tree-sitter / Markdown language DLL.
-6. PowerShell: single-quote any `$` patterns. For Python in this repo prefer `ast-grep outline scripts -l python` — typed `def` lines often miss a naive `def $NAME($$$ARGS):` pattern.
+5. Mechanical batch refactoring: use `ast-grep run -p '<pattern>' -r '<replacement>' --update-all` across target paths rather than burning LLM tokens across individual file rewrites.
+6. Tri-Tier workflow: Use `ast-grep outline` to discover line ranges; fetch only target lines (`StartLine`/`EndLine`) for inspection; delegate code semantics/security to standard linters (Ruff/MyPy).
+7. Markdown: pipe the `---` frontmatter block on stdin (`ast-grep run --stdin -l yaml -k block_mapping_pair`). Not a custom tree-sitter / Markdown language DLL.
+8. PowerShell: single-quote any `$` patterns. For Python in this repo prefer `ast-grep outline scripts -l python` — typed `def` lines often miss a naive `def $NAME($$$ARGS):` pattern.
 
 ## Dry run
 

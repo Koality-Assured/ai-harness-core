@@ -48,12 +48,12 @@ High for pages that agents will retrieve. Missing frontmatter or vague filenames
 3. One `#` title; `##` as chunk units; first sentence of each `##` orients a lone chunk.
 4. Link Critical security; do not copy org/studio names into generalized standards.
 5. Add a row to `docs/README.md` when it is a new durable page.
-6. `python scripts/docs/validate_wiki_structure.py` for frontmatter coverage.
-7. After drafting human-readable prose, apply [`anti-slop`](..\..\reporting\anti-slop\SKILL.md) then [`humanizer`](..\..\reporting\humanizer\SKILL.md) in this session — do not re-spawn artifact-agent for a quality pass on your own draft. Skip out-of-scope surfaces (security MUST wording, frontmatter schemas).
+6. `python scripts/docs/validate_router_structure.py` for frontmatter coverage.
+7. After drafting human-readable prose, apply [`anti-slop`](../../reporting/anti-slop/SKILL.md) then [`humanizer`](../../reporting/humanizer/SKILL.md) in this session — do not re-spawn artifact-agent for a quality pass on your own draft. Skip out-of-scope surfaces (security MUST wording, frontmatter schemas).
 
 ## Dry run
 
-Draft frontmatter + outline in chat or under `scratch/`, then `python scripts/docs/validate_wiki_structure.py --dry-run` after a worktree write. Do not leave drafts only in scratch if they are meant to be SoT.
+Draft frontmatter + outline in chat or under `scratch/`, then `python scripts/docs/validate_router_structure.py --dry-run` after a worktree write. Do not leave drafts only in scratch if they are meant to be SoT.
 
 ## Security
 

@@ -76,3 +76,5 @@ nested_defaults:
     default_agent: router-maintenance
   - path: supporting/powershell
     default_agent: router-maintenance
+  - path: supporting/slack
+    default_agent: chat-collab-agent

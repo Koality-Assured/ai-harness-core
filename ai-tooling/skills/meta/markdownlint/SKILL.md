@@ -4,8 +4,8 @@ name: markdownlint
 description: >-
   Lint and fix Markdown with markdownlint-cli2 (MD001 and related rules) via
   the repo wrapper. Use when running markdown lint, markdownlint, cli2, or
-  clearing MD### findings on the wiki/corpus. Do not use to author docs
-  (doc-builder), validate wiki layout (wiki-structure), or encode style rules
+  clearing MD### findings on the corpus. Do not use to author docs
+  (doc-builder), validate router layout (router-structure), or encode style rules
   in AGENTS.md.
 owner_agent: documentation-ops
 rank: high
@@ -25,7 +25,7 @@ Markdown quality pass on the corpus: run markdownlint / markdownlint-cli2, inter
 
 ## When not to use
 
-Authoring durable pages (`doc-builder`). Structure/catalog checks (`wiki-structure`). Encoding heading/list style minutiae in `AGENTS.md` — the linter owns style. Classic `markdownlint-cli` (v1) — this repo uses cli2 via the wrapper.
+Authoring durable pages (`doc-builder`). Structure/catalog checks (`router-structure`). Encoding heading/list style minutiae in `AGENTS.md` — the linter owns style. Classic `markdownlint-cli` (v1) — this repo uses cli2 via the wrapper.
 
 ## Criticality
 
