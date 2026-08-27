@@ -39,7 +39,7 @@ Medium: keep short and actionable; do not pad. Exec is **not** the only artifact
 - `python scripts/results/build_document.py --type executive --sections <dir> --out results/reports/executive/<topic>/<YYYY-MM-DD>/`
 - Stakeholder view: [`foundation-site`](../foundation-site/SKILL.md) → `index.html`
 - [`supporting/foundation/agent-site-package.md`](../../../../supporting/foundation/agent-site-package.md)
-- Cross-repo file links in artifacts: [`github-paths`](..\..\git\github-paths\SKILL.md)
+- Cross-repo file links in artifacts: [`github-paths`](../../git/github-paths/SKILL.md)
 
 ## Isolation
 
@@ -53,7 +53,7 @@ Medium: keep short and actionable; do not pad. Exec is **not** the only artifact
 4. `python scripts/results/build_document.py --type executive --sections <dir> --out results/reports/executive/<topic>/<YYYY-MM-DD>/` (optional `--title`, `--html`, `--manifest`).
 5. **`report.html` MUST be structured HTML** (headings, lists, tables as real elements — not a Markdown dump). Prefer assembler HTML when available.
 6. Stakeholder view is Foundation **`index.html`** via [`foundation-site`](../foundation-site/SKILL.md) (designed page: tables, callouts, XY grid — success check in that skill). Optional Tabler dashboard only for stats cards.
-7. Links to the threat model or other repo files in exec MD/HTML **MUST** be GitHub `blob/main` / `tree/main` URLs ([`github-paths`](..\..\git\github-paths\SKILL.md)) — not `../` relatives or local OS paths.
+7. Links to the threat model or other repo files in exec MD/HTML **MUST** be GitHub `blob/main` / `tree/main` URLs ([`github-paths`](../../git/github-paths/SKILL.md)) — not `../` relatives or local OS paths.
 8. After drafting, apply [`anti-slop`](../anti-slop/SKILL.md) then [`humanizer`](../humanizer/SKILL.md) in this session — do not re-spawn artifact-agent for a quality pass. Skip out-of-scope surfaces (code, logs, schemas).
 
 ## Dry run

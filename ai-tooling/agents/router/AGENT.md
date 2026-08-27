@@ -47,8 +47,6 @@ delegation_targets:
 - ai-tooling-ops
 - artifact-agent
 - as-code-agent
-- assessment-agent
-- cloud-operator
 - detailed-activity
 - documentation-ops
 - git-fast-operator

@@ -80,7 +80,6 @@ Generated from dest `ai-tooling/skills/*/SKILL.md` frontmatter after wiki-templa
 | [`sync-downstream-repos`](../ai-tooling/skills/sync-downstream-repos/SKILL.md) | [`repo-sync-ops`](../ai-tooling/agents/repo-sync-ops/AGENT.md) | `high` | `mutate` | Synchronize sanitized downstream repositories and export directories with automatic credential redaction and audit logging. Use when exporting skills, standards, research, or the generic wiki/harness template (ai-harness-core) to public downstream repos or validating export safety. Do not use for internal branch merges. |
 | [`sync-downstream-repos`](../ai-tooling/skills/sync-downstream-repos/SKILL.md) | [`repo-sync-ops`](../ai-tooling/agents/repo-sync-ops/AGENT.md) | `high` | `mutate` | Synchronize sanitized downstream repositories and export directories with automatic credential redaction and audit logging. Use when exporting skills, standards, research, or the generic wiki/harness template (ai-harness-core) to public downstream repos or validating export safety. Do not use for internal branch merges. |
 | [`wiki-structure`](../ai-tooling/skills/wiki-structure/SKILL.md) | [`documentation-ops`](../ai-tooling/agents/documentation-ops/AGENT.md) | `high` | `read-only` | Validate router wiki structure over time (areas, AGENTS.md, catalogs, frontmatter, qmd exclusions, dispatch). Use when checking structure drift, after adding areas/skills/agents, or on a maintenance pass. Do not use to author new docs (doc-builder). |
-| [`wiki-structure`](../ai-tooling/skills/wiki-structure/SKILL.md) | [`documentation-ops`](../ai-tooling/agents/documentation-ops/AGENT.md) | `high` | `read-only` | Validate router wiki structure over time (areas, AGENTS.md, catalogs, frontmatter, qmd exclusions, dispatch). Use when checking structure drift, after adding areas/skills/agents, or on a maintenance pass. Do not use to author new docs (doc-builder). |
 
 ## Composite skill prerequisites and failure policies
 
@@ -153,5 +152,4 @@ Generated from dest `ai-tooling/skills/*/SKILL.md` frontmatter after wiki-templa
 | [`skill-dry-run`](../ai-tooling/skills/skill-dry-run/SKILL.md) | — | — | — | — | `abort_and_rollback` |
 | [`sync-downstream-repos`](../ai-tooling/skills/sync-downstream-repos/SKILL.md) | [`isolate-work`](../ai-tooling/skills/meta/isolate-work/SKILL.md) | — | — | — | `abort_and_rollback` |
 | [`sync-downstream-repos`](../ai-tooling/skills/sync-downstream-repos/SKILL.md) | [`isolate-work`](../ai-tooling/skills/meta/isolate-work/SKILL.md) | — | — | — | `abort_and_rollback` |
-| [`wiki-structure`](../ai-tooling/skills/wiki-structure/SKILL.md) | — | — | — | — | `abort_and_rollback` |
 | [`wiki-structure`](../ai-tooling/skills/wiki-structure/SKILL.md) | — | — | — | — | `abort_and_rollback` |

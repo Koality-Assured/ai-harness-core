@@ -205,8 +205,11 @@ def collect_agent_rows() -> list[dict[str, Any]]:
     return rows
 
 
-def write_agent_dispatch(*, now: str, rows: list[dict[str, Any]] | None = None) -> int:
-    rows = collect_agent_rows() if rows is None else rows
+def render_agent_dispatch(repo_root: Path, *, now: str, rows: list[dict[str, Any]] | None = None) -> str:
+    """Return agent-dispatch.md generated from ``repo_root/ai-tooling/agents/*/AGENT.md``."""
+    if rows is None:
+        rows = [load_agent_record(p) for p in agent_paths(repo_root)]
+    rows.sort(key=lambda r: str(r.get("agent_id", "")))
     lines = [
         "---",
         "doc_kind: routing_map",
@@ -259,7 +262,13 @@ def write_agent_dispatch(*, now: str, rows: list[dict[str, Any]] | None = None) 
         )
 
     lines.append("")
-    AGENT_DISPATCH.write_text("\n".join(lines), encoding="utf-8")
+    return "\n".join(lines)
+
+
+def write_agent_dispatch(*, now: str, rows: list[dict[str, Any]] | None = None) -> int:
+    rows = collect_agent_rows() if rows is None else rows
+    content = render_agent_dispatch(ROOT, now=now, rows=rows)
+    AGENT_DISPATCH.write_text(content, encoding="utf-8")
     return len(rows)
 
 

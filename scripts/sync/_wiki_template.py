@@ -18,7 +18,7 @@ for _p in (_LIB, _ROUTING):
 
 from md import load_skill_record, skill_paths  # noqa: E402
 from areas import AreasYamlError  # noqa: E402
-from generate_routing_index import render_area_map  # noqa: E402
+from generate_routing_index import render_agent_dispatch, render_area_map  # noqa: E402
 from generate_script_index import render_script_index  # noqa: E402
 
 WIKI_TEMPLATE_MODE = "wiki_template"
@@ -140,6 +140,12 @@ WIKI_TEMPLATE_DEST_EXCLUDE_RELS: frozenset[str] = frozenset(
         "scripts/tests/test_harness_core.py",
         "scripts/tests/test_model_memory.py",
         "scripts/tests/test_generate_routing_index.py",
+        "scripts/tests/test_slack_ops.py",
+        "scripts/tests/test_slack_app_manifest.py",
+        "scripts/tests/test_confluence_admin.py",
+        "scripts/tests/test_confluence_app_manifest.py",
+        "scripts/tests/test_confluence_ops.py",
+        "scripts/tests/test_confluence_webhook.py",
     }
 )
 
@@ -367,6 +373,7 @@ def is_wiki_template_rel_kept(rel: str) -> bool:
         if top == "routing" and len(parts) == 2 and parts[1] in {
             "skill-dispatch.md",
             "area-map.md",
+            "agent-dispatch.md",
         }:
             return False
         return True
@@ -437,10 +444,19 @@ def wiki_template_post_copy_files(dest_root: Path) -> dict[str, str]:
     files = dict(wiki_template_stub_files())
     files["routing/skill-dispatch.md"] = render_dest_skill_dispatch(dest_root)
     files["routing/area-map.md"] = render_dest_area_map(dest_root)
+    files["routing/agent-dispatch.md"] = render_dest_agent_dispatch(dest_root)
     files["scripts/script-index.md"] = render_dest_script_index(dest_root)
     files["README.md"] = GENERIC_TEMPLATE_README
     files[".github/workflows/ci.yml"] = GENERIC_TEMPLATE_CI
     return files
+
+
+def render_dest_agent_dispatch(dest_root: Path) -> str:
+    """Build agent-dispatch.md from dest ai-tooling/agents (kept agents only)."""
+    try:
+        return render_agent_dispatch(dest_root, now="export")
+    except Exception:
+        return ""
 
 
 def render_dest_area_map(dest_root: Path) -> str:
@@ -497,7 +513,61 @@ def wiki_template_prune_dest_leftovers(dest_root: Path) -> list[str]:
         else:
             target.unlink()
         pruned.append(name)
+
+    # Prune excluded test files and specific rels
+    for rel in sorted(WIKI_TEMPLATE_DEST_EXCLUDE_RELS):
+        target = dest_root / rel
+        if target.exists():
+            if target.is_file():
+                target.unlink()
+            elif target.is_dir():
+                shutil.rmtree(target)
+            pruned.append(rel)
+
+    # Prune dropped agents
+    agents_root = dest_root / "ai-tooling" / "agents"
+    if agents_root.is_dir():
+        for agent_dir in sorted(agents_root.iterdir()):
+            if agent_dir.is_dir() and (agent_dir.name in WIKI_TEMPLATE_DROP_AGENTS or not agent_is_kept(agent_dir.name)):
+                shutil.rmtree(agent_dir)
+                pruned.append(f"ai-tooling/agents/{agent_dir.name}")
+
+    # Prune dropped skills
+    skills_root = dest_root / "ai-tooling" / "skills"
+    if skills_root.is_dir():
+        for family_dir in sorted(skills_root.iterdir()):
+            if family_dir.is_dir():
+                for skill_dir in sorted(family_dir.iterdir()):
+                    if skill_dir.is_dir() and not skill_is_kept(skill_dir.name):
+                        shutil.rmtree(skill_dir)
+                        pruned.append(f"ai-tooling/skills/{family_dir.name}/{skill_dir.name}")
+
     return pruned
+
+
+def wiki_template_sanitize_file_content(rel: str, raw_text: str) -> str:
+    """Sanitize file contents for wiki template export (e.g. drop unkept delegation targets)."""
+    parts = _posix_parts(rel)
+    if len(parts) >= 3 and parts[0] == "ai-tooling" and parts[1] == "agents" and parts[-1] == "AGENT.md":
+        lines = raw_text.splitlines()
+        out: list[str] = []
+        in_delegation_targets = False
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith("delegation_targets:"):
+                in_delegation_targets = True
+                out.append(line)
+                continue
+            if in_delegation_targets:
+                if stripped.startswith("- "):
+                    target_agent = stripped[2:].strip().strip("'\"")
+                    if target_agent in WIKI_TEMPLATE_DROP_AGENTS or not agent_is_kept(target_agent):
+                        continue
+                elif stripped and not stripped.startswith("#"):
+                    in_delegation_targets = False
+            out.append(line)
+        return "\n".join(out) + ("\n" if raw_text.endswith("\n") else "")
+    return raw_text
 
 
 def render_dest_skill_dispatch(dest_root: Path) -> str:

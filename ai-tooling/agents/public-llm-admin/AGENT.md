@@ -46,7 +46,7 @@ Specialist for public AI vendor tenant administration, developer workspace parti
 
 ## Read first
 
-- Assigned `SKILL.md` ([`public-llm-admin`](..\..\skills\admin\public-llm-admin\SKILL.md))
+- Assigned `SKILL.md` ([`public-llm-admin`](../../skills/admin/public-llm-admin/SKILL.md))
 - [`docs/guidance/ai-platform-anthropic-claude.md`](../../../docs/guidance/ai-platform-anthropic-claude.md)
 - [`docs/guidance/ai-platform-openai-chatgpt.md`](../../../docs/guidance/ai-platform-openai-chatgpt.md)
 - [`docs/guidance/ai-platform-google-gemini.md`](../../../docs/guidance/ai-platform-google-gemini.md)

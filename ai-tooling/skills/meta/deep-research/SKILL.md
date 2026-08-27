@@ -50,7 +50,7 @@ High when invoked: all findings must be empirical and research-backed per [`docs
 4. Gather primary sources; note dates/URLs; compress bulky pages (Headroom/summarize).
 5. Write a modular research note with citations and open questions for the orchestrator.
 6. Do not dump whole corpora into the parent return.
-7. After drafting the research note, apply [`anti-slop`](..\..\reporting\anti-slop\SKILL.md) then [`humanizer`](..\..\reporting\humanizer\SKILL.md) in this session — do not re-spawn artifact-agent for a quality pass on your own draft. Skip out-of-scope surfaces (code, logs, schemas).
+7. After drafting the research note, apply [`anti-slop`](../../reporting/anti-slop/SKILL.md) then [`humanizer`](../../reporting/humanizer/SKILL.md) in this session — do not re-spawn artifact-agent for a quality pass on your own draft. Skip out-of-scope surfaces (code, logs, schemas).
 
 ## Dry run
 

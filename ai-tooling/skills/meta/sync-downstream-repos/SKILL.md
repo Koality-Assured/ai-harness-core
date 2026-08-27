@@ -41,7 +41,7 @@ High: Public repositories must never receive private credentials, internal file 
 
 - [`scripts/sync/sync_public_repos.py`](../../../../scripts/sync/sync_public_repos.py)
 - [`docs/agent-session-security.md`](../../../../docs/agent-session-security.md)
-- [`ai-tooling/skills/skill-conventions.md`](..\..\skill-conventions.md)
+- [`ai-tooling/skills/skill-conventions.md`](../../skill-conventions.md)
 - [`ai-tooling/skills/isolate-work/SKILL.md`](../isolate-work/SKILL.md)
 
 ## Isolation

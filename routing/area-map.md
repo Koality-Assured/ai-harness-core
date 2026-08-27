@@ -17,7 +17,7 @@ Match [`skill-dispatch.md`](./skill-dispatch.md) first. Use this table only when
 | Area | Purpose | Default agent | Load | Write-back |
 | --- | --- | --- | --- | --- |
 | `actionable/` | Human drop zone; claim then promote to the owning area | [`router`](../ai-tooling/agents/router/AGENT.md) | when claiming | After promoting into the home area |
-| `ai-tooling/` | Skills, memory (user/ + agent/<owner_agent_id>/), standalone agents, A2A | [`ai-tooling-ops`](../ai-tooling/agents/ai-tooling-ops/AGENT.md) | when changing enablement | New skill, memory, agent, or A2A lesson |
+| `ai-tooling/` | Skills, memory (user/ + agent/<owner_agent_id>/ + model/), standalone agents, A2A | [`ai-tooling-ops`](../ai-tooling/agents/ai-tooling-ops/AGENT.md) | when changing enablement | New skill, memory, agent, or A2A lesson |
 | `change-history/` | Provenance log | `none` | never | Via scripts only; do not load this tree |
 | `docs/` | Standards, security MUST, decision corpus | [`documentation-ops`](../ai-tooling/agents/documentation-ops/AGENT.md) | via qmd | Durable standards or security docs |
 | `projects/` | Initiative specs (plan, repos, pointers); plus notes/ for human-requested non-spec notes | [`router`](../ai-tooling/agents/router/AGENT.md) | one slug (or one note under notes/) | Plan, status, or repo changes |
@@ -41,3 +41,5 @@ Match [`skill-dispatch.md`](./skill-dispatch.md) first. Use this table only when
 | `supporting/ast-grep/` | [`router-maintenance`](../ai-tooling/agents/router-maintenance/AGENT.md) |
 | `supporting/powershell/` | [`router-maintenance`](../ai-tooling/agents/router-maintenance/AGENT.md) |
 | `supporting/slack/` | [`chat-collab-agent`](../ai-tooling/agents/chat-collab-agent/AGENT.md) |
+| `supporting/google/` | [`google-suite-operator`](../ai-tooling/agents/google-suite-operator/AGENT.md) |
+| `supporting/confluence/` | [`docs-collab-agent`](../ai-tooling/agents/docs-collab-agent/AGENT.md) |

@@ -38,6 +38,7 @@ from _wiki_template import (  # noqa: E402
     wiki_template_dir_may_contain_kept,
     wiki_template_post_copy_files,
     wiki_template_prune_dest_leftovers,
+    wiki_template_sanitize_file_content,
 )
 
 
@@ -509,6 +510,7 @@ class SyncEngine:
         src_file: Path,
         dest_file: Path,
         result: RepoSyncResult,
+        mode: str | None = None,
     ) -> None:
         result.files_scanned += 1
         is_binary = False
@@ -534,6 +536,8 @@ class SyncEngine:
             return
 
         display_rel = src_file.relative_to(self.source_root).as_posix()
+        if mode == WIKI_TEMPLATE_MODE:
+            raw_text = wiki_template_sanitize_file_content(display_rel, raw_text)
         self._sync_text_payload(dest_file, raw_text, display_rel, result)
 
     def sync_repo(self, repo_name: str) -> RepoSyncResult:
@@ -563,10 +567,11 @@ class SyncEngine:
             result.errors.append(f"Source directory does not exist: {src_dir}")
             return result
 
+        mode = mapping.get("mode")
         for src_file in sorted(self._walk_source_files(src_dir, mapping)):
             rel_to_src = src_file.relative_to(src_dir)
             dest_file = dst_dir / rel_to_src
-            self._sync_one_file(src_file, dest_file, result)
+            self._sync_one_file(src_file, dest_file, result, mode=mode)
 
         if mapping.get("mode") == WIKI_TEMPLATE_MODE:
             for rel, content in wiki_template_post_copy_files(dst_dir).items():

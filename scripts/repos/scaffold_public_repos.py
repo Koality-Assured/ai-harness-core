@@ -365,8 +365,12 @@ agent-skills = "tools.validator:main"
         "title": "AgentSkillFrontmatter",
         "description": "Schema for SKILL.md YAML frontmatter metadata in agent skills.",
         "type": "object",
-        "required": ["name", "description", "version"],
+        "required": ["name", "description"],
         "properties": {
+            "schema_version": {
+                "type": "string",
+                "description": "Schema version (e.g. '2.0.0')."
+            },
             "name": {
                 "type": "string",
                 "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
@@ -376,6 +380,24 @@ agent-skills = "tools.validator:main"
                 "type": "string",
                 "minLength": 10,
                 "description": "Clear explanation of what the skill does and when the agent should activate it."
+            },
+            "owner_agent": {
+                "type": "string",
+                "description": "Specialist agent ID owning this skill."
+            },
+            "rank": {
+                "type": "string",
+                "enum": ["critical", "high", "medium", "low"],
+                "description": "Directive severity rank."
+            },
+            "isolation": {
+                "type": "string",
+                "enum": ["mutate", "read-only"],
+                "description": "Isolation mode required."
+            },
+            "on_failure": {
+                "type": "string",
+                "description": "Failure lifecycle policy."
             },
             "version": {
                 "type": "string",
@@ -390,6 +412,19 @@ agent-skills = "tools.validator:main"
             "author": {
                 "type": "string",
                 "description": "Author or organization name."
+            },
+            "prerequisites": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "List of external binary tools required on PATH."
+            },
+            "dependencies": {
+                "type": "object",
+                "description": "Dependency DAG relationships."
+            },
+            "contracts": {
+                "type": "object",
+                "description": "Inputs and outputs contract specification."
             },
             "tool_dependencies": {
                 "type": "array",
@@ -618,7 +653,7 @@ def validate_all_skills(base_dir: Path) -> Tuple[int, int]:
         print(f"Error: skills directory not found at {skills_dir}", file=sys.stderr)
         return 0, 1
 
-    skill_files = list(skills_dir.glob("*/SKILL.md"))
+    skill_files = sorted(skills_dir.rglob("SKILL.md"))
     if not skill_files:
         print(f"No skills found in {skills_dir}")
         return 0, 0
@@ -725,7 +760,7 @@ class TestSkillsAndSchemas(unittest.TestCase):
 
     def test_bundled_skills_conform_to_schema(self):
         skill_schema = self.schemas_dir / "skill.schema.json"
-        skill_files = list(self.skills_dir.glob("*/SKILL.md"))
+        skill_files = sorted(self.skills_dir.rglob("SKILL.md"))
         self.assertGreaterEqual(len(skill_files), 2, "Should have at least 2 bundled skills")
 
         for sf in skill_files:
@@ -2091,14 +2126,19 @@ if __name__ == "__main__":
 
     files["tests/test_standards.py"] = '''"""Unit tests verifying security standards structure."""
 
+import sys
 import unittest
 from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_ROOT))
+
 from tools.validator import validate_standard_file
 
 
 class TestSecurityStandards(unittest.TestCase):
     def setUp(self):
-        self.root = Path(__file__).resolve().parents[1]
+        self.root = _ROOT
         self.standards_dir = self.root / "standards"
 
     def test_standards_directory_exists(self):

@@ -7,7 +7,7 @@ areas:
     load: when claiming
     write_back: After promoting into the home area
   - id: ai-tooling
-    purpose: Skills, memory (user/ + agent/<owner_agent_id>/), standalone agents, A2A
+    purpose: Skills, memory (user/ + agent/<owner_agent_id>/ + model/), standalone agents, A2A
     default_agent: ai-tooling-ops
     load: when changing enablement
     write_back: New skill, memory, agent, or A2A lesson
@@ -78,3 +78,7 @@ nested_defaults:
     default_agent: router-maintenance
   - path: supporting/slack
     default_agent: chat-collab-agent
+  - path: supporting/google
+    default_agent: google-suite-operator
+  - path: supporting/confluence
+    default_agent: docs-collab-agent

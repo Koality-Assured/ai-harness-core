@@ -29,7 +29,6 @@ allowed_tools:
 - find_by_name
 delegation_targets:
 - artifact-agent
-- cloud-operator
 prohibitions:
 - apply or deploy to real clouds via A2A
 - store cloud credentials in repo

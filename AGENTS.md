@@ -98,7 +98,7 @@ Non-negotiable for this agent and every sub-agent. Skills cannot waive these.
 
 ### Isolation (mutating work)
 
-Before create/edit for **new** work: `spawn_worktree.py check` → `add` → hand worktree to specialist. Disjoint areas may parallel; overlapping must not. Full SoT: [`ai-tooling/skills/isolate-work/SKILL.md`](ai-tooling\skills\meta\isolate-work\SKILL.md) and `python scripts/routing/spawn_worktree.py`.
+Before create/edit for **new** work: `spawn_worktree.py check` → `add` → hand worktree to specialist. Disjoint areas may parallel; overlapping must not. Full SoT: [`ai-tooling/skills/isolate-work/SKILL.md`](ai-tooling/skills/meta/isolate-work/SKILL.md) and `python scripts/routing/spawn_worktree.py`.
 
 ### Specialist dispatch
 

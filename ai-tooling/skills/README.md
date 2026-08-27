@@ -76,3 +76,13 @@ Human index (not agent SoT):
 | [`tabler-dashboard/`](./reporting/tabler-dashboard/) | artifact-agent | mutate |
 | [`threat-model/`](./reporting/threat-model/) | assessment-agent | mutate |
 | [`router-structure/`](./meta/router-structure/) | documentation-ops | read-only |
+| [`slack-message/`](./slack/slack-message/) | chat-collab-agent | mutate |
+| [`slack-webhook/`](./slack/slack-webhook/) | chat-collab-agent | mutate |
+| [`slack-app-manage/`](./slack/slack-app-manage/) | chat-collab-agent | mutate |
+| [`slack-admin/`](./slack/slack-admin/) | chat-collab-agent | mutate |
+| [`confluence-doc-manage/`](./confluence/confluence-doc-manage/) | docs-collab-agent | mutate |
+| [`confluence-admin/`](./confluence/confluence-admin/) | docs-collab-agent | mutate |
+| [`confluence-app-manage/`](./confluence/confluence-app-manage/) | docs-collab-agent | mutate |
+| [`confluence-webhook/`](./confluence/confluence-webhook/) | docs-collab-agent | mutate |
+
+
