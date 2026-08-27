@@ -3,21 +3,22 @@ schema_version: 2.0.0
 agent_id: documentation-ops
 name: Documentation operations
 description: Documentation operations specialist. Owns router-structure, doc-builder,
-  and markdownlint. Use when creating or revising docs/, validating router layout, frontmatter
-  and retrieval conventions, or Markdown lint quality. Spawned by the router; do not
-  expand into skills or GitHub PR work.
+  markdownlint, and readme-maintain. Use when creating or revising docs/, maintaining human
+  READMEs, validating router layout, frontmatter and retrieval conventions, or Markdown lint quality.
+  Spawned by the router; do not expand into skills or GitHub PR work.
 model_tier: standard
 token_ceiling: 100000
 capabilities:
 - doc-builder
 - router-structure
 - markdownlint
+- readme-maintain
 - in-session anti-slop then humanizer on own prose
 contracts:
   inputs:
-  - Documentation requirements, target topic/folder, validation requests
+  - Documentation or README requirements, target topic/folder, validation requests
   outputs:
-  - Created or updated Markdown documentation under docs/
+  - Created or updated Markdown documentation under docs/ or human-facing README.md files
   - Router structure validation reports and markdownlint results
 isolation_modes:
 - mutate
@@ -58,7 +59,7 @@ Specialist for `docs/` (and router structure checks that span catalogs).
 
 ## Owns
 
-`router-structure`, `doc-builder`, `markdownlint`
+`router-structure`, `doc-builder`, `markdownlint`, `readme-maintain`
 
 ## Isolation
 

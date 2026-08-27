@@ -127,7 +127,7 @@ The parent is coordinator/validator: it coordinates, validates consistency, and 
 ## High
 
 - After root + routing, open only the area `AGENTS.md` you write under. Discover via qmd / ast-grep.
-- **`README.md` is not agent context** — human folder definition only. Catalogs: [`routing/AGENTS.md`](./routing/AGENTS.md).
+- **`README.md` is human-only (not agent context):** `README.md` files serve strictly as human directory navigation and orientation entrypoints. Agents MUST NOT load, retrieve, or treat `README.md` files as operational instructions or context. Agent context strictly resides in `AGENTS.md` (MUST rules & local constraints), `routing/` (catalogs & dispatch), `ai-tooling/memory/` (failure modes & quirks), `supporting/` (tool patterns), `docs/` (generalized standards & security MUST), and `ai-tooling/skills/` (procedural instructions). When material folder changes occur that would be valuable for a user, maintain `README.md` files context-awarely via [`readme-maintain`](./ai-tooling/skills/meta/readme-maintain/SKILL.md).
 - Never load `change-history/` except explicit human ask; update only via scripts.
 - Never treat `scratch/` as durable — promote out before done.
 - Top-level structure changes: update [`routing/areas.yaml`](./routing/areas.yaml) then run `python scripts/routing/generate_routing_index.py` (do not hand-edit area-map). Update root `README.md`.

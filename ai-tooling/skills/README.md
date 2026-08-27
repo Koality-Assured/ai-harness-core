@@ -47,6 +47,7 @@ Human index (not agent SoT):
 | [`humanizer/`](./reporting/humanizer/) | artifact-agent | mutate |
 | [`isolate-work/`](./meta/isolate-work/) | router | mutate |
 | [`markdownlint/`](./meta/markdownlint/) | documentation-ops | mutate |
+| [`readme-maintain/`](./meta/readme-maintain/) | documentation-ops | mutate |
 | [`memory-adjust/`](./memory/memory-adjust/) | ai-tooling-ops | mutate |
 | [`memory-cleanup/`](./memory/memory-cleanup/) | ai-tooling-ops | mutate |
 | [`memory-create/`](./memory/memory-create/) | ai-tooling-ops | mutate |
