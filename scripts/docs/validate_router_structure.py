@@ -214,23 +214,26 @@ def check_memory(errors: list[str]) -> None:
     mem = ROOT / "ai-tooling" / "memory"
     user = mem / "user"
     agent = mem / "agent"
+    model = mem / "model"
     if not user.is_dir():
         err(errors, "missing ai-tooling/memory/user/")
     if not agent.is_dir():
         err(errors, "missing ai-tooling/memory/agent/")
+    if not model.is_dir():
+        err(errors, "missing ai-tooling/memory/model/")
     for flat in sorted(mem.glob("*.md")):
         if flat.name in {"README.md", "AGENTS.md"}:
             continue
         err(
             errors,
             f"{flat.relative_to(ROOT).as_posix()}: thread files must live under "
-            "memory/user/<git-identity>/ or memory/agent/<owner_agent_id>/",
+            "memory/user/<git-identity>/, memory/agent/<owner_agent_id>/, or memory/model/<model-family>/",
         )
     for path in sorted(mem.rglob("*.md")):
         if path.name in {"README.md", "AGENTS.md"}:
             continue
         rel = path.relative_to(mem).as_posix()
-        if not (rel.startswith("user/") or rel.startswith("agent/")):
+        if not (rel.startswith("user/") or rel.startswith("agent/") or rel.startswith("model/")):
             continue
         text = path.read_text(encoding="utf-8")
         if "**Status:**" not in text:
