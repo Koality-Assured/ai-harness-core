@@ -33,6 +33,7 @@ This repo expects a real CPython, Node for qmd, and the cost-layer CLIs. Optiona
 | Google Workspace APIs | optional (google-suite) | current | Drive, Gmail, Docs & Workspace Admin | [`google/google-suite-patterns.md`](./google/google-suite-patterns.md) |
 | Mermaid CLI (`mmdc`) | optional | 10+ | Offline diagram render | [`mermaid/agent-diagram-notes.md`](./mermaid/agent-diagram-notes.md) |
 | Docker / Noir | optional | — | Attack-surface inventory | Wrapper only. [`noir/agent-scan.md`](./noir/agent-scan.md) |
+| Web distillation (`trafilatura`, `readability-lxml`, `markdownify`, `httpx`) | required | current | Local HTML distillation & prompt injection defense | `pip install trafilatura readability-lxml markdownify httpx`. Used by `scripts/research/local_webfetch.py`. |
 
 Use the vendor’s installer. `--version` is enough to confirm.
 

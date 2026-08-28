@@ -85,5 +85,6 @@ Human index (not agent SoT):
 | [`confluence-admin/`](./confluence/confluence-admin/) | docs-collab-agent | mutate |
 | [`confluence-app-manage/`](./confluence/confluence-app-manage/) | docs-collab-agent | mutate |
 | [`confluence-webhook/`](./confluence/confluence-webhook/) | docs-collab-agent | mutate |
+| [`local-webfetch/`](./research/local-webfetch/) | detailed-activity | read-only |
 
 

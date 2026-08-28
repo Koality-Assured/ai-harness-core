@@ -1,7 +1,7 @@
-"""Run qmd + Headroom + ast-grep cost-layer dry runs and write a combined report.
+"""Run qmd + Headroom + ast-grep + prompt-caching + webfetch cost-layer dry runs and write a combined report.
 
-tags: [qmd, headroom, ast-grep]
-routing_hints: [validation, dry-run, tokens, cost-layers]
+tags: [qmd, headroom, ast-grep, cost-layers, research]
+routing_hints: [validation, dry-run, tokens, cost-layers, prompt-caching, webfetch]
 """
 
 from __future__ import annotations
@@ -64,6 +64,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--skip-qmd", action="store_true")
     parser.add_argument("--skip-headroom", action="store_true")
     parser.add_argument("--skip-ast-grep", action="store_true")
+    parser.add_argument("--skip-prompt-caching", action="store_true", help="Skip prompt cache invariance linter")
+    parser.add_argument("--skip-webfetch", action="store_true", help="Skip local webfetch distillation benchmark")
     args = parser.parse_args(argv)
 
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -73,12 +75,16 @@ def main(argv: list[str] | None = None) -> int:
     qmd_dir = out / "qmd"
     hr_dir = out / "headroom"
     ast_dir = out / "ast-grep"
+    pc_dir = out / "prompt-caching"
+    wf_dir = out / "webfetch"
 
     results: dict = {
         "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "qmd": None,
         "headroom": None,
         "ast_grep": None,
+        "prompt_caching": None,
+        "webfetch": None,
     }
     exit_code = 0
 
@@ -114,22 +120,42 @@ def main(argv: list[str] | None = None) -> int:
         if code != 0:
             exit_code = 1
 
+    if not args.skip_prompt_caching:
+        extra = ["--out", str(pc_dir.relative_to(ROOT)).replace("\\", "/"), "--json"]
+        print("running cost-layers/validate_prompt_caching.py...", flush=True)
+        code, payload = run_script("cost-layers/validate_prompt_caching.py", extra)
+        results["prompt_caching"] = payload
+        if code != 0:
+            exit_code = 1
+
+    if not args.skip_webfetch:
+        extra = ["--dry-run"]
+        print("running research/local_webfetch.py distillation benchmark...", flush=True)
+        code, payload = run_script("research/local_webfetch.py", extra)
+        results["webfetch"] = payload
+        wf_dir.mkdir(parents=True, exist_ok=True)
+        (wf_dir / "summary.json").write_text(json.dumps(payload.get("summary") or {}, indent=2), encoding="utf-8")
+        if code != 0:
+            exit_code = 1
+
     qmd_findings = (results.get("qmd") or {}).get("summary") or {}
     hr_findings = (results.get("headroom") or {}).get("summary") or {}
     ast_findings = (results.get("ast_grep") or {}).get("summary") or {}
+    pc_findings = (results.get("prompt_caching") or {}).get("summary") or {}
+    wf_summary = (results.get("webfetch") or {}).get("summary") or {}
 
     lines = [
         "---",
         "doc_kind: result",
         "canonical_id: cost-layer-dry-run",
         "purpose: [process]",
-        "topics: [qmd, headroom, ast-grep, tokens]",
+        "topics: [qmd, headroom, ast-grep, prompt-caching, webfetch, tokens]",
         f"generated_at_utc: {results['generated_at_utc']}",
         "---",
         "",
-        "# Cost-layer dry-run (qmd + Headroom + ast-grep)",
+        "# Cost-layer dry-run (qmd + Headroom + ast-grep + prompt-caching + webfetch)",
         "",
-        "Combined validation of retrieval context savings (qmd), tool-dump compression (Headroom), and ast-grep precision retrieval plus structural-fact survival versus reading source files / uncompressed originals directly.",
+        "Combined validation of retrieval context savings (qmd), tool-dump compression (Headroom), ast-grep precision retrieval, prompt cache prefix invariance, and local web distillation token reduction versus uncompressed originals.",
         "",
         "## How to re-run",
         "",
@@ -138,7 +164,7 @@ def main(argv: list[str] | None = None) -> int:
         "# default: results/cost-layers/combined/<YYYY-MM-DD>/",
         "```",
         "",
-        "Add `--hybrid` to include slow `qmd query`. `--skip-ast-grep` skips the structural layer. Reports: `qmd/report.md`, `headroom/report.md`, `ast-grep/report.md`.",
+        "Add `--hybrid` to include slow `qmd query`. Flags: `--skip-ast-grep`, `--skip-prompt-caching`, `--skip-webfetch`. Reports: `qmd/report.md`, `headroom/report.md`, `ast-grep/report.md`, `prompt-caching/report.md`.",
         "",
         "## qmd",
         "",
@@ -155,6 +181,19 @@ def main(argv: list[str] | None = None) -> int:
         f"- Exit: **{results['ast_grep']['exit_code'] if results['ast_grep'] else 'skipped'}**",
         f"- Failed fixtures: {ast_findings.get('failed') or []}",
         "",
+        "## Prompt Cache Invariance",
+        "",
+        f"- Exit: **{results['prompt_caching']['exit_code'] if results['prompt_caching'] else 'skipped'}**",
+        f"- Violations: {pc_findings.get('violations_count', 0)}",
+        f"- Audited files: {pc_findings.get('files_checked', 0)}",
+        "",
+        "## Web Distillation (local_webfetch)",
+        "",
+        f"- Exit: **{results['webfetch']['exit_code'] if results['webfetch'] else 'skipped'}**",
+        f"- Extractor: `{wf_summary.get('extractor', 'n/a')}`",
+        f"- Token reduction: **{wf_summary.get('reduction_pct', 0)}%** (Saved {wf_summary.get('est_tokens_saved', 0)} tokens)",
+        f"- Gold fact accuracy: **{wf_summary.get('gold_accuracy_pct', 0)}%** ({wf_summary.get('gold_facts_retained', 0)}/{wf_summary.get('gold_facts_total', 0)})",
+        "",
         "## Combined findings",
         "",
     ]
@@ -164,6 +203,13 @@ def main(argv: list[str] | None = None) -> int:
         lines.append(f"- (headroom) {finding}")
     for finding in ast_findings.get("findings") or []:
         lines.append(f"- (ast-grep) {finding}")
+    for finding in pc_findings.get("findings") or []:
+        lines.append(f"- (prompt-caching) {finding}")
+    if wf_summary:
+        lines.append(
+            f"- (webfetch) Distillation achieved {wf_summary.get('reduction_pct')}% token reduction with {wf_summary.get('gold_accuracy_pct')}% gold fact retention using {wf_summary.get('extractor')}."
+        )
+
     lines += [
         "",
         "## Patterns / adjustments",
@@ -174,6 +220,8 @@ def main(argv: list[str] | None = None) -> int:
         "- Headroom JSON arrays compress well (~70%+). Search-style dumps may drop path-only markers; keep gold facts in match text. Short compile listings may not trigger the log compressor.",
         "- Headroom savings do not apply to hosts that do not route through the proxy unless BYOK, custom base URL, or MCP compress.",
         "- ast-grep is precision retrieval + a structural oracle, not a third compressor. YAML frontmatter uses `-k block_mapping_pair` (JSON uses `-k pair`).",
+        "- Prompt cache invariance ensures system prompt headers remain byte-stable across calls, preserving provider KV-cache hits (saving 90% input costs).",
+        "- Local web distillation purifies raw external HTML into clean Markdown, neutralizing hidden prompt injections and stripping boilerplate (navbars, tracking pixels, ads).",
         "- Re-index after new Markdown or qmd health `docs_index_current` fails.",
         "- Root “Ambiguity gate” cited from isolation docs/skills is expected, not index leakage.",
         "",

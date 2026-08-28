@@ -56,6 +56,7 @@ WIKI_TEMPLATE_KEEP_SKILLS: frozenset[str] = frozenset(
         "headroom",
         "humanizer",
         "isolate-work",
+        "local-webfetch",
         "markdownlint",
         "memory-adjust",
         "memory-cleanup",

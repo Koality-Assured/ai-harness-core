@@ -19,8 +19,9 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 | [`change-history/ensure_change_history_quarter.py`](./change-history/ensure_change_history_quarter.py) | `change-history` | provenance, scaffold | Ensure change-history year/quarter entries file exists. |
 | [`cost-layers/extract_ast_facts.py`](./cost-layers/extract_ast_facts.py) | `qmd`, `headroom`, `ast-grep` | structural-facts, outline, cost-layers | Extract structural facts via ast-grep outline/kind JSON (not full files). |
 | [`cost-layers/validate_ast_grep.py`](./cost-layers/validate_ast_grep.py) | `qmd`, `headroom`, `ast-grep` | validation, dry-run, tokens, structural-facts | Dry-run ast-grep precision retrieval and Headroom structural-fact survival. |
-| [`cost-layers/validate_cost_layers.py`](./cost-layers/validate_cost_layers.py) | `qmd`, `headroom`, `ast-grep` | validation, dry-run, tokens, cost-layers | Run qmd + Headroom + ast-grep cost-layer dry runs and write a combined report. |
+| [`cost-layers/validate_cost_layers.py`](./cost-layers/validate_cost_layers.py) | `qmd`, `headroom`, `ast-grep`, `cost-layers`, `research` | validation, dry-run, tokens, cost-layers, prompt-caching, webfetch | Run qmd + Headroom + ast-grep + prompt-caching + webfetch cost-layer dry runs and write a combined report. |
 | [`cost-layers/validate_headroom_compression.py`](./cost-layers/validate_headroom_compression.py) | `headroom`, `qmd` | validation, dry-run, tokens, compression | Dry-run Headroom compression: token savings vs gold-fact accuracy. |
+| [`cost-layers/validate_prompt_caching.py`](./cost-layers/validate_prompt_caching.py) | `cost-layers`, `routing`, `agents` | prompt-caching, invariance, validation, dry-run, kv-cache | Validate prompt cache invariance across agent definitions and system instructions. |
 | [`docs/run_markdownlint.py`](./docs/run_markdownlint.py) | `docs`, `markdown` | markdownlint, lint, markdownlint-cli2, dry-run | Run markdownlint-cli2 over repo Markdown (read-only by default). |
 | [`docs/validate_context_budget.py`](./docs/validate_context_budget.py) | `docs`, `validation`, `cost-layers` | context-budget, tokens, agents-md, ingestibility, ceiling | Validate context budget ceilings and ingestibility rules across repository entry files. |
 | [`docs/validate_router_structure.py`](./docs/validate_router_structure.py) | `docs`, `routing` | router, structure, validation, results-layout | Validate router structure (areas, catalogs, frontmatter, dispatch, results layout). |
@@ -59,13 +60,13 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 ## By tag
 
 - **3lo:** `tests/test_confluence_oauth.py`
-- **agents:** `ai-tooling/validate_agent.py`, `tests/test_validate_agent.py`
+- **agents:** `ai-tooling/validate_agent.py`, `cost-layers/validate_prompt_caching.py`, `tests/test_validate_agent.py`
 - **ai-tooling:** `ai-tooling/model_memory.py`, `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `tests/test_hybrid_dispatch.py`, `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
 - **ast-grep:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`
 - **bi-directionality:** `tests/test_confluence_oddities_and_drift.py`
 - **change-history:** `change-history/append_change_history.py`, `change-history/ensure_change_history_quarter.py`
 - **confluence:** `tests/test_confluence_mcp_server.py`, `tests/test_confluence_oauth.py`, `tests/test_confluence_oddities_and_drift.py`, `tests/test_confluence_sync.py`
-- **cost-layers:** `docs/validate_context_budget.py`, `tests/test_validate_context_budget.py`
+- **cost-layers:** `cost-layers/validate_cost_layers.py`, `cost-layers/validate_prompt_caching.py`, `docs/validate_context_budget.py`, `tests/test_validate_context_budget.py`
 - **dag:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`
 - **docs:** `docs/run_markdownlint.py`, `docs/validate_context_budget.py`, `docs/validate_router_structure.py`, `docs/validate_structure_fast.py`, `docs/validate_wiki_structure.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
 - **downstream:** `sync/sync_and_push_downstreams.py`
@@ -86,8 +87,9 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 - **qmd:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `qmd/qmd_preflight.py`, `qmd/refresh_qmd_index.py`, `qmd/setup_qmd_collections.py`, `qmd/validate_qmd_retrieval.py`, `tests/test_qmd_preflight.py`
 - **quota:** `tests/test_pacing.py`
 - **repos:** `repos/scaffold_public_repos.py`
+- **research:** `cost-layers/validate_cost_layers.py`
 - **results:** `tests/test_validate_router_structure.py`, `tests/test_validate_wiki_structure.py`
-- **routing:** `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `docs/validate_router_structure.py`, `docs/validate_wiki_structure.py`, `routing/generate_routing_index.py`, `routing/generate_script_index.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `routing/resolve_skill_graph.py`, `routing/spawn_worktree.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pacing.py`, `tests/test_skill_graph.py`
+- **routing:** `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `cost-layers/validate_prompt_caching.py`, `docs/validate_router_structure.py`, `docs/validate_wiki_structure.py`, `routing/generate_routing_index.py`, `routing/generate_script_index.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `routing/resolve_skill_graph.py`, `routing/spawn_worktree.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pacing.py`, `tests/test_skill_graph.py`
 - **scaffold:** `repos/scaffold_public_repos.py`
 - **schema-v2:** `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
 - **security:** `sync/sync_public_repos.py`, `tests/test_pretty_docs_security.py`

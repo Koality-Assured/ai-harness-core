@@ -2,10 +2,11 @@
 schema_version: 2.0.0
 agent_id: detailed-activity
 name: Detailed activity
-description: Antagonistic review, deep research, vendor intelligence, and model benchmark specialist. Owns antagonistic-review,
-  deep-research, ai-vendor-updates, and benchlm-lookup. Use for ranked findings on PRs, docs, plans, commits, or diffs returned
-  to the orchestrator (not results/reviews/), foundational value vs. bloat/friction audits, frontier AI vendor updates/briefings,
-  and BenchLM model performance/pricing queries. Spawned by the router; recommendations return to the orchestrating agent.
+description: Antagonistic review, deep research, vendor intelligence, model benchmark, and local web distillation specialist.
+  Owns antagonistic-review, deep-research, ai-vendor-updates, benchlm-lookup, and local-webfetch. Use for ranked findings
+  on PRs, docs, plans, commits, or diffs returned to the orchestrator (not results/reviews/), foundational value vs. bloat/friction audits,
+  frontier AI vendor updates/briefings, BenchLM model performance/pricing queries, and local web content distillation.
+  Spawned by the router; recommendations return to the orchestrating agent.
 model_tier: high
 token_ceiling: 150000
 capabilities:
@@ -13,6 +14,7 @@ capabilities:
 - deep-research
 - ai-vendor-updates
 - benchlm-lookup
+- local-webfetch
 - ranked findings
 - foundational value vs bloat/friction audit
 - recommendations to orchestrator
@@ -49,7 +51,7 @@ quirks:
 - Deep-research / vendor briefings may land under results/research/ and results/reports/vendor-briefings/
 - model_tier high — spawn with current host native high band
 - Dedicated rewrite/detect asks go to artifact-agent
-last_verified: '2026-08-25'
+last_verified: '2026-08-28'
 ---
 
 # Detailed activity
@@ -68,7 +70,7 @@ Specialist for antagonistic review (ranked findings returned to the orchestrator
 
 ## Owns
 
-`antagonistic-review`, `deep-research`, `ai-vendor-updates`, `benchlm-lookup`
+`antagonistic-review`, `deep-research`, `ai-vendor-updates`, `benchlm-lookup`, `local-webfetch`
 
 ## Isolation
 

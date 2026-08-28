@@ -44,6 +44,7 @@ SKILL_FAMILIES = {
     "meta",
     "model-memory-operate",
     "reporting",
+    "research",
     "slack",
 }
 
