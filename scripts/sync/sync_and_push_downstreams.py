@@ -29,7 +29,23 @@ from sync_public_repos import (  # noqa: E402
 )
 
 DOWNSTREAM_REPOS = list(DEFAULT_REPO_MAPPINGS.keys())
-SKILL_FAMILIES = {"admin", "aws", "azure", "community", "cost-layers", "gcp", "git", "google", "memory", "meta", "reporting"}
+SKILL_FAMILIES = {
+    "admin",
+    "aws",
+    "azure",
+    "community",
+    "confluence",
+    "cost-layers",
+    "gcp",
+    "git",
+    "google",
+    "harness-review",
+    "memory",
+    "meta",
+    "model-memory-operate",
+    "reporting",
+    "slack",
+}
 
 
 @dataclasses.dataclass

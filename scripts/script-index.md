@@ -40,6 +40,9 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 | [`routing/spawn_worktree.py`](./routing/spawn_worktree.py) | `routing`, `isolation` | worktree, branch, concurrency, claims | Spawn, list, and remove isolated git worktrees for concurrent agent work. |
 | [`sync/sync_and_push_downstreams.py`](./sync/sync_and_push_downstreams.py) | `sync`, `git`, `export`, `downstream` | sync-and-push, update-downstreams, multi-repo-publish, downstream-repo-update | Automated synchronization, sanitation, commit, and push engine for public downstream repositories. |
 | [`sync/sync_public_repos.py`](./sync/sync_public_repos.py) | `sync`, `security`, `export` | sync, redaction, multi-repo, export, sanitize, wiki-template | Multi-repo synchronization and sanitization/redaction engine for public exports. |
+| [`tests/test_confluence_mcp_server.py`](./tests/test_confluence_mcp_server.py) | `tests`, `confluence`, `mcp`, `jsonrpc`, `tools` | — | Unit tests for Confluence Model Context Protocol (MCP) server. |
+| [`tests/test_confluence_oauth.py`](./tests/test_confluence_oauth.py) | `tests`, `confluence`, `oauth`, `3lo`, `tokens` | — | Unit tests for Confluence OAuth 2.0 (3LO) authorization and Cloud ID discovery. |
+| [`tests/test_confluence_oddities_and_drift.py`](./tests/test_confluence_oddities_and_drift.py) | `tests`, `confluence`, `oddities`, `drift`, `bi-directionality`, `storage-format` | tests, confluence-sync, confluence-drift, confluence-oddities | Comprehensive test suite for Confluence oddities, formatting edge cases, and bi-directional drift reconciliation. |
 | [`tests/test_confluence_sync.py`](./tests/test_confluence_sync.py) | `tests`, `confluence`, `sync`, `drift`, `storage-format` | tests, confluence-sync, confluence-drift | Unit and integration tests for Confluence knowledge-space sync and bi-directional drift reconciliation. |
 | [`tests/test_hybrid_dispatch.py`](./tests/test_hybrid_dispatch.py) | `tests`, `routing`, `ai-tooling` | tests, hybrid-dispatch, bm25, ambiguity-gate, schema-v2 | Unit tests for 3-Tier Hybrid Dispatch Pipeline and Schema V2 Indexing. |
 | [`tests/test_pacing.py`](./tests/test_pacing.py) | `tests`, `pacing`, `quota`, `routing` | tests, pacing, quota-management | Unit tests for adaptive quota management and pacing helper. |
@@ -55,24 +58,30 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 
 ## By tag
 
+- **3lo:** `tests/test_confluence_oauth.py`
 - **agents:** `ai-tooling/validate_agent.py`, `tests/test_validate_agent.py`
 - **ai-tooling:** `ai-tooling/model_memory.py`, `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `tests/test_hybrid_dispatch.py`, `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
 - **ast-grep:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`
+- **bi-directionality:** `tests/test_confluence_oddities_and_drift.py`
 - **change-history:** `change-history/append_change_history.py`, `change-history/ensure_change_history_quarter.py`
-- **confluence:** `tests/test_confluence_sync.py`
+- **confluence:** `tests/test_confluence_mcp_server.py`, `tests/test_confluence_oauth.py`, `tests/test_confluence_oddities_and_drift.py`, `tests/test_confluence_sync.py`
 - **cost-layers:** `docs/validate_context_budget.py`, `tests/test_validate_context_budget.py`
 - **dag:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`
 - **docs:** `docs/run_markdownlint.py`, `docs/validate_context_budget.py`, `docs/validate_router_structure.py`, `docs/validate_structure_fast.py`, `docs/validate_wiki_structure.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
 - **downstream:** `sync/sync_and_push_downstreams.py`
-- **drift:** `tests/test_confluence_sync.py`
+- **drift:** `tests/test_confluence_oddities_and_drift.py`, `tests/test_confluence_sync.py`
 - **export:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`
 - **git:** `sync/sync_and_push_downstreams.py`
 - **github:** `github/resolve_github_path.py`, `repos/scaffold_public_repos.py`, `tests/test_pretty_docs_security.py`
 - **headroom:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`
 - **isolation:** `routing/spawn_worktree.py`
+- **jsonrpc:** `tests/test_confluence_mcp_server.py`
 - **lint:** `docs/validate_structure_fast.py`
 - **markdown:** `docs/run_markdownlint.py`
+- **mcp:** `tests/test_confluence_mcp_server.py`
 - **memory:** `ai-tooling/model_memory.py`
+- **oauth:** `tests/test_confluence_oauth.py`
+- **oddities:** `tests/test_confluence_oddities_and_drift.py`
 - **pacing:** `tests/test_pacing.py`
 - **qmd:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `qmd/qmd_preflight.py`, `qmd/refresh_qmd_index.py`, `qmd/setup_qmd_collections.py`, `qmd/validate_qmd_retrieval.py`, `tests/test_qmd_preflight.py`
 - **quota:** `tests/test_pacing.py`
@@ -83,7 +92,9 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 - **schema-v2:** `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
 - **security:** `sync/sync_public_repos.py`, `tests/test_pretty_docs_security.py`
 - **skills:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`, `tests/test_validate_skill.py`
-- **storage-format:** `tests/test_confluence_sync.py`
+- **storage-format:** `tests/test_confluence_oddities_and_drift.py`, `tests/test_confluence_sync.py`
 - **sync:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`, `tests/test_confluence_sync.py`
-- **tests:** `tests/test_confluence_sync.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pacing.py`, `tests/test_pretty_docs_security.py`, `tests/test_qmd_preflight.py`, `tests/test_skill_graph.py`, `tests/test_validate_agent.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
+- **tests:** `tests/test_confluence_mcp_server.py`, `tests/test_confluence_oauth.py`, `tests/test_confluence_oddities_and_drift.py`, `tests/test_confluence_sync.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pacing.py`, `tests/test_pretty_docs_security.py`, `tests/test_qmd_preflight.py`, `tests/test_skill_graph.py`, `tests/test_validate_agent.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
+- **tokens:** `tests/test_confluence_oauth.py`
+- **tools:** `tests/test_confluence_mcp_server.py`
 - **validation:** `docs/validate_context_budget.py`, `docs/validate_structure_fast.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`

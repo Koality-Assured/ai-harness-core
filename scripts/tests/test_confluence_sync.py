@@ -316,6 +316,54 @@ document_type: "standard"
         self.assertEqual(len(drift_recs), 1)
         self.assertEqual(drift_recs[0].drift_status, "CONFLICT")
 
+    def test_scaffold_ia_hierarchy(self) -> None:
+        engine = ConfluenceSyncEngine(
+            workspace="koality-assured",
+            space_key="SEC",
+            source_root=self.root,
+            dry_run=True,
+        )
+        parent_map = engine.scaffold_ia()
+        self.assertIn("Home", parent_map)
+        self.assertIn("Documentation/Standards", parent_map)
+        self.assertIn("Documentation/Guidelines", parent_map)
+        self.assertIn("Get Security Help", parent_map)
+        self.assertIn("Teams", parent_map)
+        self.assertIn("Programs", parent_map)
+        self.assertIn("Governance", parent_map)
+
+    def test_publish_with_ia_scaffolding_hierarchy(self) -> None:
+        docs_dir = self.root / "docs" / "standards"
+        docs_dir.mkdir(parents=True, exist_ok=True)
+        sample_doc = docs_dir / "cloud-sec.md"
+        sample_doc.write_text(
+            """---
+title: "Cloud Security Standard"
+document_type: "standard"
+parent_path: "Documentation/Standards"
+---
+
+# Cloud Security Standard Content
+""",
+            encoding="utf-8",
+        )
+
+        state_file = self.root / "results" / "confluence_sync_state.json"
+        engine = ConfluenceSyncEngine(
+            workspace="koality-assured",
+            space_key="SEC",
+            state_file=state_file,
+            source_root=self.root,
+            dry_run=True,
+        )
+
+        plan = engine.plan_publish()
+        res = engine.execute_publish(plan, scaffold_ia=True)
+        self.assertEqual(res["created"], 1)
+        self.assertIn("parent_id_map", res)
+        self.assertEqual(res["results"][0]["parent_path"], "Documentation/Standards")
+        self.assertTrue(bool(res["results"][0]["parent_id"]))
+
     def test_synthetic_corpus_generator(self) -> None:
         synth_dir = self.root / "synthetic_test_docs"
         files = generate_synthetic_corpus(synth_dir)

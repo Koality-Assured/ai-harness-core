@@ -13,6 +13,7 @@ scratch/**
 *.pem
 *.key
 credentials.json
+.*oauth_token*.json
 secrets/
 
 # OS / editor

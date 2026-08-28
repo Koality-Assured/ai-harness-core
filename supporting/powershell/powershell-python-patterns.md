@@ -91,3 +91,14 @@ Mutation scripts that rebuild or touch shared indexes (such as `python scripts/q
 - Run the inspection preflight first (`python scripts/qmd/qmd_preflight.py`).
 - If refresh is genuinely required, pass `--approved-by-user` explicitly.
 
+### Pattern I: Script execution policy and npm global shims (`qmd.ps1` vs `qmd.cmd`)
+
+When running npm global CLI tools like `qmd` directly inside Windows PowerShell:
+- PowerShell resolves `.ps1` before `.cmd` in `PATH`. On default Windows configurations where `ExecutionPolicy` is undefined / `Restricted`, invoking `qmd` triggers `PSSecurityException: File C:\...\qmd.ps1 cannot be loaded because running scripts is disabled on this system`.
+- **One-time user fix (no elevation required)**:
+  ```powershell
+  Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
+  ```
+- **CLI / script fallback**: Call `qmd.cmd` explicitly (e.g. `qmd.cmd search "<query>"`), invoke via `node.exe`, or use repo Python tools which implement `resolve_qmd()` to prefer `qmd.cmd` / `node.exe`.
+
+
