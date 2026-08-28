@@ -1,18 +1,18 @@
 # Koality-Assured AI Harness Core
 
-Generic wiki harness template. Clone this tree, then feed your own domain
+Generic AI harness template. Clone this tree, then feed your own domain
 topic (standards, references, skills, projects) without inheriting another
 instance's security corpus.
 
 ## Mission Statement
 
-Ship a reusable, non-domain-fed wiki/harness so future domain routers can
+Ship a reusable, non-domain-fed harness so future domain routers can
 plug in their own topic. The Python engine under `.harness/` stays part of
 the template; it is not the whole product.
 
 ## Architecture Overview
 
-The public export is a full wiki tree (same top-level areas as the private
+The public export is a full harness tree (same top-level areas as the private
 harness), not a flattened Python package:
 
 ```
@@ -23,7 +23,7 @@ scripts/                  # routing, qmd, cost-layers, change-history, sync
 supporting/               # qmd, ast-grep, headroom, github, powershell
 docs/                     # session security, anti-slop, portable harness standards
 .harness/                 # embeddable engine (kept as .harness/, not harness/)
-references/               # tooling families only (conventional-commits, markdown)
+references/               # tooling families only (conventional-commits, markdown, valid-sources)
 actionable/ projects/ research/ results/ scratch/ change-history/
 ```
 

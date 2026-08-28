@@ -31,14 +31,21 @@ except ImportError:
     def resolve_repo_root(override: str | Path | None = None) -> Path:
         return Path(override).resolve() if override else DEFAULT_ROOT
 
-from _wiki_template import (  # noqa: E402
+from _harness_template import (  # noqa: E402
+    HARNESS_TEMPLATE_ALLOWED_DOT_DIRS,
+    HARNESS_TEMPLATE_MODE,
+    harness_template_dir_may_contain_kept,
+    harness_template_post_copy_files,
+    harness_template_prune_dest_leftovers,
+    harness_template_sanitize_file_content,
+    is_harness_template_rel_kept,
     WIKI_TEMPLATE_ALLOWED_DOT_DIRS,
-    WIKI_TEMPLATE_MODE,
-    is_wiki_template_rel_kept,
-    wiki_template_dir_may_contain_kept,
-    wiki_template_post_copy_files,
-    wiki_template_prune_dest_leftovers,
-    wiki_template_sanitize_file_content,
+    HARNESS_TEMPLATE_MODE,
+    is_harness_template_rel_kept,
+    harness_template_dir_may_contain_kept,
+    harness_template_post_copy_files,
+    harness_template_prune_dest_leftovers,
+    harness_template_sanitize_file_content,
 )
 
 
@@ -71,8 +78,8 @@ DEFAULT_REPO_MAPPINGS: dict[str, dict[str, str]] = {
     "ai-harness-core": {
         "source_subpath": ".",
         "dest_subpath": ".",
-        "description": "Generic wiki harness template export",
-        "mode": WIKI_TEMPLATE_MODE,
+        "description": "Generic harness template export",
+        "mode": HARNESS_TEMPLATE_MODE,
     },
 }
 
@@ -453,11 +460,11 @@ class SyncEngine:
                 if d in EXCLUDED_NAMES:
                     continue
                 if d.startswith("."):
-                    if not (mode == WIKI_TEMPLATE_MODE and d in WIKI_TEMPLATE_ALLOWED_DOT_DIRS):
+                    if not (mode == HARNESS_TEMPLATE_MODE and d in WIKI_TEMPLATE_ALLOWED_DOT_DIRS):
                         continue
-                if mode == WIKI_TEMPLATE_MODE:
+                if mode == HARNESS_TEMPLATE_MODE:
                     child_rel = f"{rel_root}/{d}" if rel_root else d
-                    if not wiki_template_dir_may_contain_kept(child_rel):
+                    if not harness_template_dir_may_contain_kept(child_rel):
                         continue
                 pruned.append(d)
             dirs[:] = pruned
@@ -466,9 +473,9 @@ class SyncEngine:
                 if f in EXCLUDED_NAMES or any(f.endswith(ext) for ext in EXCLUDED_EXTENSIONS):
                     continue
                 src_file = root_path / f
-                if mode == WIKI_TEMPLATE_MODE:
+                if mode == HARNESS_TEMPLATE_MODE:
                     rel = src_file.relative_to(src_dir).as_posix()
-                    if not is_wiki_template_rel_kept(rel):
+                    if not is_harness_template_rel_kept(rel):
                         continue
                 collected.append(src_file)
         return collected
@@ -536,8 +543,8 @@ class SyncEngine:
             return
 
         display_rel = src_file.relative_to(self.source_root).as_posix()
-        if mode == WIKI_TEMPLATE_MODE:
-            raw_text = wiki_template_sanitize_file_content(display_rel, raw_text)
+        if mode == HARNESS_TEMPLATE_MODE:
+            raw_text = harness_template_sanitize_file_content(display_rel, raw_text)
         self._sync_text_payload(dest_file, raw_text, display_rel, result)
 
     def sync_repo(self, repo_name: str) -> RepoSyncResult:
@@ -573,13 +580,13 @@ class SyncEngine:
             dest_file = dst_dir / rel_to_src
             self._sync_one_file(src_file, dest_file, result, mode=mode)
 
-        if mapping.get("mode") == WIKI_TEMPLATE_MODE:
-            for rel, content in wiki_template_post_copy_files(dst_dir).items():
+        if mapping.get("mode") == HARNESS_TEMPLATE_MODE:
+            if not self.dry_run:
+                harness_template_prune_dest_leftovers(dst_dir)
+            for rel, content in harness_template_post_copy_files(dst_dir, source_root=src_dir).items():
                 dest_file = dst_dir / rel
                 result.files_scanned += 1
                 self._sync_text_payload(dest_file, content, rel, result)
-            if not self.dry_run:
-                wiki_template_prune_dest_leftovers(dst_dir)
 
         return result
 

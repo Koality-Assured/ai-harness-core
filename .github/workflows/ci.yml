@@ -1,4 +1,4 @@
-name: Wiki harness template CI
+name: Harness template CI
 
 on:
   push:

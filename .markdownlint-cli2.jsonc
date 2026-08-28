@@ -4,7 +4,7 @@
 //
 // Waivers & Pruned Rules (keep structural defaults MD001, MD025, MD041):
 // - Cosmetic whitespace/blank-line rules pruned: MD009, MD010, MD012, MD031, MD032, MD033, MD036.
-// - MD013: wiki uses nested headings, tables, long AGENTS.md rows; length is not a quality signal.
+// - MD013: harness uses nested headings, tables, long AGENTS.md rows; length is not a quality signal.
 // - MD041/MD025 front_matter_title "": YAML --- front matter is common; avoid title-vs-H1 false positives.
 // - noInlineConfig: references that document <!-- markdownlint-* --> must not re-enable rules mid-file.
 // - references/** MD034: capture pages cite upstream URLs (auto-fix wraps in <> when applied).

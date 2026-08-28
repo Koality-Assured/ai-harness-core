@@ -26,7 +26,7 @@ Project skills for this router live in domain family subdirectories: `ai-tooling
 - `git/`: Git basics, GitHub workflow, and GitHub path resolution.
 - `reporting/`: Code reviews, executive/proposal reports, corpus drafting, anti-slop, humanizer, diagrams, dashboards, and threat models.
 - `admin/`: Cloud organization and public LLM workspace administration.
-- `meta/`: Agent/skill/script builders, wiki structure, isolate-work, and validation tools.
+- `meta/`: Agent/skill/script builders, harness structure, isolate-work, and validation tools.
 - `community/`: Public community analysis, OSINT, sentiment, and registry maintenance.
 
 Do **not** put router skills in `~/.cursor/skills-cursor/` (Cursor internals) or `.cursor/skills/` (native auto-invoke would run them in the parent). The parent must only see the generated catalog [`../../routing/skill-dispatch.md`](../../routing/skill-dispatch.md) and then spawn the `owner_agent` when remaining work is material to the original user request. Parent discovery stops when that `owner_agent` is known — do not load specialist `SKILL.md` to dispatch. Exception: isolate-work is executed in-parent because that session is the owner (`router`); the parent loads that `SKILL.md` for the CLI.

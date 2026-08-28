@@ -22,10 +22,11 @@ Ingest simply; do not duplicate skills or paste root Critical — link [`../AGEN
 
 ## Current families
 
-Tooling families only. Domain reference families are fed later when this
+Tooling and validation families only. Domain reference families are fed later when this
 template is cloned for a topic.
 
 | Folder | Topic |
 | --- | --- |
 | `conventional-commits/` | Commit / PR conventions |
 | `markdown/` | markdownlint library + cli2 (rules, config, invoke) |
+| `valid-sources/` | Authoritative primary sources allowlist |

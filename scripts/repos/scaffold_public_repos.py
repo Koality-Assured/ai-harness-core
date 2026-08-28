@@ -22,7 +22,7 @@ sys.path.insert(0, str(_LIB))
 if str(_SYNC) not in sys.path:
     sys.path.insert(0, str(_SYNC))
 from paths import REPO_ROOT, resolve_repo_root  # noqa: E402
-from _wiki_template import (  # noqa: E402
+from _harness_template import (  # noqa: E402
     GENERIC_TEMPLATE_CI,
     GENERIC_TEMPLATE_README,
     GENERIC_TEMPLATE_REFERENCES_AGENTS,

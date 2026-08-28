@@ -1,4 +1,4 @@
-# Generic wiki harness template
+# Generic harness template
 
 This area is a placeholder in the generic (non-domain-fed) harness clone.
 

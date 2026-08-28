@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "extractor": "trafilatura",
+  "chars_raw": 2321,
+  "chars_distilled": 530,
+  "est_tokens_raw": 580,
+  "est_tokens_distilled": 132,
+  "est_tokens_saved": 448,
+  "reduction_pct": 77.2,
+  "gold_facts_total": 4,
+  "gold_facts_retained": 4,
+  "gold_accuracy_pct": 100.0,
+  "injections_neutralized": false,
+  "neutralized_list": [],
+  "distilled_preview": "# High-Throughput Token Routing Architecture\n\nThe routing engine evaluates model latency, token pricing, and task complexity across heterogeneous LLM providers.\n\n## Key Performance Metrics\n\nProduction benchmarks demonstrate that prompt prefix caching achieves a **90% cost reduction** on repeated sys..."
+}

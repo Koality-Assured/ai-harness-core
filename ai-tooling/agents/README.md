@@ -9,7 +9,7 @@ Human index (not agent SoT):
 | Agent | Role | Tier |
 | --- | --- | --- |
 | [`router/`](./router/) | Parent: classify, isolate, spawn | standard |
-| [`documentation-ops/`](./documentation-ops/) | docs + wiki structure | standard |
+| [`documentation-ops/`](./documentation-ops/) | docs + harness structure | standard |
 | [`github-ops/`](./github-ops/) | gh / PRs / branch discipline | standard |
 | [`router-maintenance/`](./router-maintenance/) | worktrees, routing maps, scratch, Headroom, ast-grep | standard |
 | [`qmd-ops/`](./qmd-ops/) | qmd search + efficiency dry runs | standard |
@@ -18,10 +18,7 @@ Human index (not agent SoT):
 | [`script-ops/`](./script-ops/) | tagged Python under scripts/ | standard |
 | [`detailed-activity/`](./detailed-activity/) | antagonistic review + deep research | high |
 | [`artifact-agent/`](./artifact-agent/) | diagrams + modular documents; default `results/` | standard |
-| [`assessment-agent/`](./assessment-agent/) | STRIDE threat models | standard |
 | [`as-code-agent/`](./as-code-agent/) | Terraform/Pulumi/Ansible/Kyverno/Rego drafts | high |
-| [`cloud-operator/`](./cloud-operator/) | AWS/GCP/Azure read, authorized write, logs | standard |
-| [`cloud-admin-agent/`](./cloud-admin-agent/) | Multi-cloud organization admin & landing zone provisioning | standard |
 | [`public-llm-admin/`](./public-llm-admin/) | Public LLM workspace admin, ZDR audit & API key governance | standard |
 | [`google-suite-operator/`](./google-suite-operator/) | Google Workspace resources: Drive, Gmail, Docs, Metadata | standard |
 | [`google-suite-admin/`](./google-suite-admin/) | Google Workspace domain admin, OU hierarchy, DLP, ZDR audit | standard |

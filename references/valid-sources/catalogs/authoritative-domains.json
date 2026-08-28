@@ -1,0 +1,259 @@
+{
+  "version": 1,
+  "last_updated": "2026-08-25",
+  "description": "Normalized catalog of authoritative primary domains and portals for agent empirical research and source validation.",
+  "categories": [
+    "cloud-infrastructure",
+    "ai-platforms",
+    "security-standards",
+    "identity-access",
+    "devops-software"
+  ],
+  "domains": [
+    {
+      "domain": "docs.aws.amazon.com",
+      "entity": "Amazon Web Services",
+      "category": "cloud-infrastructure",
+      "tier": "Tier 1",
+      "url": "https://docs.aws.amazon.com/"
+    },
+    {
+      "domain": "learn.microsoft.com",
+      "entity": "Microsoft (Azure, Entra, Windows)",
+      "category": "cloud-infrastructure",
+      "tier": "Tier 1",
+      "url": "https://learn.microsoft.com/"
+    },
+    {
+      "domain": "cloud.google.com",
+      "entity": "Google Cloud",
+      "category": "cloud-infrastructure",
+      "tier": "Tier 1",
+      "url": "https://cloud.google.com/docs"
+    },
+    {
+      "domain": "developers.cloudflare.com",
+      "entity": "Cloudflare",
+      "category": "cloud-infrastructure",
+      "tier": "Tier 1",
+      "url": "https://developers.cloudflare.com/"
+    },
+    {
+      "domain": "developer.hashicorp.com",
+      "entity": "HashiCorp (Terraform, Vault)",
+      "category": "cloud-infrastructure",
+      "tier": "Tier 1",
+      "url": "https://developer.hashicorp.com/"
+    },
+    {
+      "domain": "kubernetes.io",
+      "entity": "Kubernetes",
+      "category": "cloud-infrastructure",
+      "tier": "Tier 1",
+      "url": "https://kubernetes.io/docs/"
+    },
+    {
+      "domain": "docs.anthropic.com",
+      "entity": "Anthropic",
+      "category": "ai-platforms",
+      "tier": "Tier 1",
+      "url": "https://docs.anthropic.com/"
+    },
+    {
+      "domain": "platform.openai.com",
+      "entity": "OpenAI",
+      "category": "ai-platforms",
+      "tier": "Tier 1",
+      "url": "https://platform.openai.com/docs/"
+    },
+    {
+      "domain": "ai.google.dev",
+      "entity": "Google AI / Gemini",
+      "category": "ai-platforms",
+      "tier": "Tier 1",
+      "url": "https://ai.google.dev/docs"
+    },
+    {
+      "domain": "deepmind.google",
+      "entity": "Google DeepMind",
+      "category": "ai-platforms",
+      "tier": "Tier 1",
+      "url": "https://deepmind.google/"
+    },
+    {
+      "domain": "docs.mistral.ai",
+      "entity": "Mistral AI",
+      "category": "ai-platforms",
+      "tier": "Tier 1",
+      "url": "https://docs.mistral.ai/"
+    },
+    {
+      "domain": "llama.com",
+      "entity": "Meta (Llama)",
+      "category": "ai-platforms",
+      "tier": "Tier 1",
+      "url": "https://www.llama.com/docs/"
+    },
+    {
+      "domain": "benchlm.ai",
+      "entity": "BenchLM (LLM Benchmarks & Pricing)",
+      "category": "ai-platforms",
+      "tier": "Tier 3",
+      "url": "https://benchlm.ai/"
+    },
+    {
+      "domain": "nist.gov",
+      "entity": "National Institute of Standards and Technology",
+      "category": "security-standards",
+      "tier": "Tier 1",
+      "url": "https://www.nist.gov/"
+    },
+    {
+      "domain": "csrc.nist.gov",
+      "entity": "NIST Computer Security Resource Center",
+      "category": "security-standards",
+      "tier": "Tier 1",
+      "url": "https://csrc.nist.gov/"
+    },
+    {
+      "domain": "attack.mitre.org",
+      "entity": "MITRE ATT&CK",
+      "category": "security-standards",
+      "tier": "Tier 1",
+      "url": "https://attack.mitre.org/"
+    },
+    {
+      "domain": "atlas.mitre.org",
+      "entity": "MITRE ATLAS",
+      "category": "security-standards",
+      "tier": "Tier 1",
+      "url": "https://atlas.mitre.org/"
+    },
+    {
+      "domain": "cwe.mitre.org",
+      "entity": "MITRE CWE",
+      "category": "security-standards",
+      "tier": "Tier 1",
+      "url": "https://cwe.mitre.org/"
+    },
+    {
+      "domain": "cve.mitre.org",
+      "entity": "MITRE CVE",
+      "category": "security-standards",
+      "tier": "Tier 1",
+      "url": "https://cve.mitre.org/"
+    },
+    {
+      "domain": "owasp.org",
+      "entity": "OWASP Foundation",
+      "category": "security-standards",
+      "tier": "Tier 1",
+      "url": "https://owasp.org/"
+    },
+    {
+      "domain": "genai.owasp.org",
+      "entity": "OWASP GenAI Security Project",
+      "category": "security-standards",
+      "tier": "Tier 1",
+      "url": "https://genai.owasp.org/"
+    },
+    {
+      "domain": "cisecurity.org",
+      "entity": "Center for Internet Security",
+      "category": "security-standards",
+      "tier": "Tier 1",
+      "url": "https://www.cisecurity.org/"
+    },
+    {
+      "domain": "cisa.gov",
+      "entity": "Cybersecurity and Infrastructure Security Agency",
+      "category": "security-standards",
+      "tier": "Tier 1",
+      "url": "https://www.cisa.gov/"
+    },
+    {
+      "domain": "developer.okta.com",
+      "entity": "Okta",
+      "category": "identity-access",
+      "tier": "Tier 1",
+      "url": "https://developer.okta.com/docs/"
+    },
+    {
+      "domain": "datatracker.ietf.org",
+      "entity": "Internet Engineering Task Force (IETF)",
+      "category": "identity-access",
+      "tier": "Tier 1",
+      "url": "https://datatracker.ietf.org/"
+    },
+    {
+      "domain": "openid.net",
+      "entity": "OpenID Foundation",
+      "category": "identity-access",
+      "tier": "Tier 1",
+      "url": "https://openid.net/"
+    },
+    {
+      "domain": "docs.github.com",
+      "entity": "GitHub",
+      "category": "devops-software",
+      "tier": "Tier 1",
+      "url": "https://docs.github.com/"
+    },
+    {
+      "domain": "docs.gitlab.com",
+      "entity": "GitLab",
+      "category": "devops-software",
+      "tier": "Tier 1",
+      "url": "https://docs.gitlab.com/"
+    },
+    {
+      "domain": "git-scm.com",
+      "entity": "Git SCM",
+      "category": "devops-software",
+      "tier": "Tier 1",
+      "url": "https://git-scm.com/doc"
+    },
+    {
+      "domain": "docs.python.org",
+      "entity": "Python Software Foundation",
+      "category": "devops-software",
+      "tier": "Tier 1",
+      "url": "https://docs.python.org/3/"
+    },
+    {
+      "domain": "go.dev",
+      "entity": "Go (Google)",
+      "category": "devops-software",
+      "tier": "Tier 1",
+      "url": "https://go.dev/doc/"
+    },
+    {
+      "domain": "doc.rust-lang.org",
+      "entity": "Rust Foundation",
+      "category": "devops-software",
+      "tier": "Tier 1",
+      "url": "https://doc.rust-lang.org/"
+    },
+    {
+      "domain": "docs.docker.com",
+      "entity": "Docker",
+      "category": "devops-software",
+      "tier": "Tier 1",
+      "url": "https://docs.docker.com/"
+    },
+    {
+      "domain": "developer.atlassian.com",
+      "entity": "Atlassian Developer (Confluence & Jira APIs / Forge)",
+      "category": "devops-software",
+      "tier": "Tier 1",
+      "url": "https://developer.atlassian.com/"
+    },
+    {
+      "domain": "support.atlassian.com",
+      "entity": "Atlassian Support & Administration",
+      "category": "devops-software",
+      "tier": "Tier 1",
+      "url": "https://support.atlassian.com/"
+    }
+  ]
+}

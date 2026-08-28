@@ -8,7 +8,7 @@ generator: scripts/routing/generate_script_index.py
 
 # Script index
 
-Generated from dest `scripts/` after wiki-template export (kept trees only). Do not hand-edit — run `python scripts/routing/generate_script_index.py` from the dest checkout after feeding scripts.
+Generated from dest `scripts/` after harness-template export (kept trees only). Do not hand-edit — run `python scripts/routing/generate_script_index.py` from the dest checkout after feeding scripts.
 
 | Script | Tags | Hints | Summary |
 | --- | --- | --- | --- |
@@ -26,13 +26,17 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 | [`docs/validate_context_budget.py`](./docs/validate_context_budget.py) | `docs`, `validation`, `cost-layers` | context-budget, tokens, agents-md, ingestibility, ceiling | Validate context budget ceilings and ingestibility rules across repository entry files. |
 | [`docs/validate_router_structure.py`](./docs/validate_router_structure.py) | `docs`, `routing` | router, structure, validation, results-layout | Validate router structure (areas, catalogs, frontmatter, dispatch, results layout). |
 | [`docs/validate_structure_fast.py`](./docs/validate_structure_fast.py) | `docs`, `validation`, `lint` | validate, structure, frontmatter, links, markdown | Fast structural validator for Markdown documents in ai-router. |
-| [`docs/validate_wiki_structure.py`](./docs/validate_wiki_structure.py) | `docs`, `routing` | wiki, structure, validation, results-layout | Validate router wiki structure (areas, catalogs, frontmatter, dispatch, results layout). |
 | [`github/resolve_github_path.py`](./github/resolve_github_path.py) | `github` | blob, main, path, url | Resolve local repo paths to GitHub https blob/tree URLs on main. |
 | [`qmd/qmd_preflight.py`](./qmd/qmd_preflight.py) | `qmd` | preflight, index, onboarding, safety | Inspect reusable qmd state without creating or refreshing an index. |
 | [`qmd/refresh_qmd_index.py`](./qmd/refresh_qmd_index.py) | `qmd` | index, embed, session-end, completion-gate | Refresh an existing local qmd index after explicit user approval. |
 | [`qmd/setup_qmd_collections.py`](./qmd/setup_qmd_collections.py) | `qmd` | index, collections, embed, modular, areas | Set up missing qmd collections only after an explicit, inspected approval. |
 | [`qmd/validate_qmd_retrieval.py`](./qmd/validate_qmd_retrieval.py) | `qmd` | validation, dry-run, tokens | Dry-run qmd retrieval: health, relevance, and token-cost comparison. |
 | [`repos/scaffold_public_repos.py`](./repos/scaffold_public_repos.py) | `repos`, `scaffold`, `github` | scaffold, public-repos, agent-skills, agent-standards, ai-research, wiki-template | Automated scaffolding CLI to initialize the 3 public Koality-Assured ecosystem repositories. |
+| [`research/ai_vendor_briefing.py`](./research/ai_vendor_briefing.py) | `research`, `intelligence`, `briefing` | vendor-updates, flash-briefing, ai-vendors, primary-sources | Fetch, analyze, and synthesize AI vendor updates into flash briefings. |
+| [`research/benchlm_lookup.py`](./research/benchlm_lookup.py) | `research`, `benchmarks`, `pricing`, `models` | benchlm, llm-benchmarks, model-pricing, price-performance, speed | Query, filter, and compare LLM benchmarks, pricing, and speed from BenchLM. |
+| [`research/community_analyzer.py`](./research/community_analyzer.py) | `research`, `communities`, `socials`, `analysis`, `osint` | community-analyzer, subreddits, forums, sentiment, troubleshooting, osint | Community analyzer utility for querying, scoring, and synthesizing developer communities. |
+| [`research/local_webfetch.py`](./research/local_webfetch.py) | `research`, `web`, `distillation`, `cost-layers` | webfetch, markdown, scrape, sanitize | Local Python web distillation utility for clean, boilerplate-free Markdown. |
+| [`research/manage_social_registry.py`](./research/manage_social_registry.py) | `research`, `communities`, `socials`, `registry`, `maintenance` | social-registry, manage-communities, rubric-scoring, validate | Manage, score, and validate the community reliability catalog. |
 | [`routing/generate_routing_index.py`](./routing/generate_routing_index.py) | `routing` | area-map, skill-dispatch, areas.yaml, index | Generate routing/area-map.md and routing/skill-dispatch.md. |
 | [`routing/generate_script_index.py`](./routing/generate_script_index.py) | `routing` | script-discovery, index | Generate scripts/script-index.md from Python docstring tags. |
 | [`routing/generate_skill_dispatch.py`](./routing/generate_skill_dispatch.py) | `routing`, `ai-tooling` | skills, dispatch, catalog | Generate routing/skill-dispatch.md from skill frontmatter. |
@@ -41,10 +45,6 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 | [`routing/spawn_worktree.py`](./routing/spawn_worktree.py) | `routing`, `isolation` | worktree, branch, concurrency, claims | Spawn, list, and remove isolated git worktrees for concurrent agent work. |
 | [`sync/sync_and_push_downstreams.py`](./sync/sync_and_push_downstreams.py) | `sync`, `git`, `export`, `downstream` | sync-and-push, update-downstreams, multi-repo-publish, downstream-repo-update | Automated synchronization, sanitation, commit, and push engine for public downstream repositories. |
 | [`sync/sync_public_repos.py`](./sync/sync_public_repos.py) | `sync`, `security`, `export` | sync, redaction, multi-repo, export, sanitize, wiki-template | Multi-repo synchronization and sanitization/redaction engine for public exports. |
-| [`tests/test_confluence_mcp_server.py`](./tests/test_confluence_mcp_server.py) | `tests`, `confluence`, `mcp`, `jsonrpc`, `tools` | — | Unit tests for Confluence Model Context Protocol (MCP) server. |
-| [`tests/test_confluence_oauth.py`](./tests/test_confluence_oauth.py) | `tests`, `confluence`, `oauth`, `3lo`, `tokens` | — | Unit tests for Confluence OAuth 2.0 (3LO) authorization and Cloud ID discovery. |
-| [`tests/test_confluence_oddities_and_drift.py`](./tests/test_confluence_oddities_and_drift.py) | `tests`, `confluence`, `oddities`, `drift`, `bi-directionality`, `storage-format` | tests, confluence-sync, confluence-drift, confluence-oddities | Comprehensive test suite for Confluence oddities, formatting edge cases, and bi-directional drift reconciliation. |
-| [`tests/test_confluence_sync.py`](./tests/test_confluence_sync.py) | `tests`, `confluence`, `sync`, `drift`, `storage-format` | tests, confluence-sync, confluence-drift | Unit and integration tests for Confluence knowledge-space sync and bi-directional drift reconciliation. |
 | [`tests/test_hybrid_dispatch.py`](./tests/test_hybrid_dispatch.py) | `tests`, `routing`, `ai-tooling` | tests, hybrid-dispatch, bm25, ambiguity-gate, schema-v2 | Unit tests for 3-Tier Hybrid Dispatch Pipeline and Schema V2 Indexing. |
 | [`tests/test_pacing.py`](./tests/test_pacing.py) | `tests`, `pacing`, `quota`, `routing` | tests, pacing, quota-management | Unit tests for adaptive quota management and pacing helper. |
 | [`tests/test_pretty_docs_security.py`](./tests/test_pretty_docs_security.py) | `tests`, `security`, `github` | tests, href, github-paths | Stdlib unit tests for href allow-list and GitHub path helpers. |
@@ -55,48 +55,49 @@ Generated from dest `scripts/` after wiki-template export (kept trees only). Do 
 | [`tests/test_validate_router_structure.py`](./tests/test_validate_router_structure.py) | `tests`, `docs`, `validation`, `results` | tests, validate_router_structure, results-layout | Unit tests for router structure validator results-layout check. |
 | [`tests/test_validate_skill.py`](./tests/test_validate_skill.py) | `tests`, `ai-tooling`, `skills`, `schema-v2` | tests, validate-skill, skills | Unit tests for Schema V2 skill validation. |
 | [`tests/test_validate_structure_fast.py`](./tests/test_validate_structure_fast.py) | `tests`, `docs`, `validation` | tests, validate_structure_fast, markdown | Unit tests for fast structural validator. |
-| [`tests/test_validate_wiki_structure.py`](./tests/test_validate_wiki_structure.py) | `tests`, `docs`, `validation`, `results` | tests, validate_wiki_structure, results-layout | Unit tests for wiki structure validator results-layout check. |
 
 ## By tag
 
-- **3lo:** `tests/test_confluence_oauth.py`
 - **agents:** `ai-tooling/validate_agent.py`, `cost-layers/validate_prompt_caching.py`, `tests/test_validate_agent.py`
 - **ai-tooling:** `ai-tooling/model_memory.py`, `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `tests/test_hybrid_dispatch.py`, `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
+- **analysis:** `research/community_analyzer.py`
 - **ast-grep:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`
-- **bi-directionality:** `tests/test_confluence_oddities_and_drift.py`
+- **benchmarks:** `research/benchlm_lookup.py`
+- **briefing:** `research/ai_vendor_briefing.py`
 - **change-history:** `change-history/append_change_history.py`, `change-history/ensure_change_history_quarter.py`
-- **confluence:** `tests/test_confluence_mcp_server.py`, `tests/test_confluence_oauth.py`, `tests/test_confluence_oddities_and_drift.py`, `tests/test_confluence_sync.py`
-- **cost-layers:** `cost-layers/validate_cost_layers.py`, `cost-layers/validate_prompt_caching.py`, `docs/validate_context_budget.py`, `tests/test_validate_context_budget.py`
+- **communities:** `research/community_analyzer.py`, `research/manage_social_registry.py`
+- **cost-layers:** `cost-layers/validate_cost_layers.py`, `cost-layers/validate_prompt_caching.py`, `docs/validate_context_budget.py`, `research/local_webfetch.py`, `tests/test_validate_context_budget.py`
 - **dag:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`
-- **docs:** `docs/run_markdownlint.py`, `docs/validate_context_budget.py`, `docs/validate_router_structure.py`, `docs/validate_structure_fast.py`, `docs/validate_wiki_structure.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
+- **distillation:** `research/local_webfetch.py`
+- **docs:** `docs/run_markdownlint.py`, `docs/validate_context_budget.py`, `docs/validate_router_structure.py`, `docs/validate_structure_fast.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`
 - **downstream:** `sync/sync_and_push_downstreams.py`
-- **drift:** `tests/test_confluence_oddities_and_drift.py`, `tests/test_confluence_sync.py`
 - **export:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`
 - **git:** `sync/sync_and_push_downstreams.py`
 - **github:** `github/resolve_github_path.py`, `repos/scaffold_public_repos.py`, `tests/test_pretty_docs_security.py`
 - **headroom:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`
+- **intelligence:** `research/ai_vendor_briefing.py`
 - **isolation:** `routing/spawn_worktree.py`
-- **jsonrpc:** `tests/test_confluence_mcp_server.py`
 - **lint:** `docs/validate_structure_fast.py`
+- **maintenance:** `research/manage_social_registry.py`
 - **markdown:** `docs/run_markdownlint.py`
-- **mcp:** `tests/test_confluence_mcp_server.py`
 - **memory:** `ai-tooling/model_memory.py`
-- **oauth:** `tests/test_confluence_oauth.py`
-- **oddities:** `tests/test_confluence_oddities_and_drift.py`
+- **models:** `research/benchlm_lookup.py`
+- **osint:** `research/community_analyzer.py`
 - **pacing:** `tests/test_pacing.py`
+- **pricing:** `research/benchlm_lookup.py`
 - **qmd:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `qmd/qmd_preflight.py`, `qmd/refresh_qmd_index.py`, `qmd/setup_qmd_collections.py`, `qmd/validate_qmd_retrieval.py`, `tests/test_qmd_preflight.py`
 - **quota:** `tests/test_pacing.py`
+- **registry:** `research/manage_social_registry.py`
 - **repos:** `repos/scaffold_public_repos.py`
-- **research:** `cost-layers/validate_cost_layers.py`
-- **results:** `tests/test_validate_router_structure.py`, `tests/test_validate_wiki_structure.py`
-- **routing:** `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `cost-layers/validate_prompt_caching.py`, `docs/validate_router_structure.py`, `docs/validate_wiki_structure.py`, `routing/generate_routing_index.py`, `routing/generate_script_index.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `routing/resolve_skill_graph.py`, `routing/spawn_worktree.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pacing.py`, `tests/test_skill_graph.py`
+- **research:** `cost-layers/validate_cost_layers.py`, `research/ai_vendor_briefing.py`, `research/benchlm_lookup.py`, `research/community_analyzer.py`, `research/local_webfetch.py`, `research/manage_social_registry.py`
+- **results:** `tests/test_validate_router_structure.py`
+- **routing:** `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `cost-layers/validate_prompt_caching.py`, `docs/validate_router_structure.py`, `routing/generate_routing_index.py`, `routing/generate_script_index.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `routing/resolve_skill_graph.py`, `routing/spawn_worktree.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pacing.py`, `tests/test_skill_graph.py`
 - **scaffold:** `repos/scaffold_public_repos.py`
 - **schema-v2:** `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
 - **security:** `sync/sync_public_repos.py`, `tests/test_pretty_docs_security.py`
 - **skills:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`, `tests/test_validate_skill.py`
-- **storage-format:** `tests/test_confluence_oddities_and_drift.py`, `tests/test_confluence_sync.py`
-- **sync:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`, `tests/test_confluence_sync.py`
-- **tests:** `tests/test_confluence_mcp_server.py`, `tests/test_confluence_oauth.py`, `tests/test_confluence_oddities_and_drift.py`, `tests/test_confluence_sync.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pacing.py`, `tests/test_pretty_docs_security.py`, `tests/test_qmd_preflight.py`, `tests/test_skill_graph.py`, `tests/test_validate_agent.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
-- **tokens:** `tests/test_confluence_oauth.py`
-- **tools:** `tests/test_confluence_mcp_server.py`
-- **validation:** `docs/validate_context_budget.py`, `docs/validate_structure_fast.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`, `tests/test_validate_wiki_structure.py`
+- **socials:** `research/community_analyzer.py`, `research/manage_social_registry.py`
+- **sync:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`
+- **tests:** `tests/test_hybrid_dispatch.py`, `tests/test_pacing.py`, `tests/test_pretty_docs_security.py`, `tests/test_qmd_preflight.py`, `tests/test_skill_graph.py`, `tests/test_validate_agent.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`
+- **validation:** `docs/validate_context_budget.py`, `docs/validate_structure_fast.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`
+- **web:** `research/local_webfetch.py`

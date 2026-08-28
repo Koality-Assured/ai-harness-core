@@ -1,0 +1,9 @@
+{
+  "pass": true,
+  "files_checked": 22,
+  "violations_count": 0,
+  "failed": [],
+  "findings": [
+    "All prompt definitions maintain static byte prefix stability."
+  ]
+}

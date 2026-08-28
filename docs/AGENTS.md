@@ -42,7 +42,7 @@ When authoring or maintaining area `AGENTS.md` files, define:
 | --- | --- |
 | `standards/` | Generalized reusable standards |
 | `guidance/` | Repeatable operational playbooks and how-to guides |
-| `standards/wiki-harness-template.md` | Generic template vs this fed instance (`ai-harness-core`) |
+| `standards/harness-template.md` | Generic template vs this fed instance (`ai-harness-core`) |
 | `agent-session-security.md` | Critical session security MUST |
 | `anti-slop.md` | Deliverable prose/UI quality (anti-slop + humanizer) |
 | `README.md` | Human folder index only |

@@ -1,0 +1,111 @@
+{
+  "generated_at_utc": "2026-08-28T18:41:06Z",
+  "token_method_est": "chars/4",
+  "fixtures": [
+    {
+      "id": "json_tool_array",
+      "kind": "json",
+      "ok": true,
+      "chars_before": 42321,
+      "chars_after": 5225,
+      "est_tokens_before": 10580,
+      "est_tokens_after": 1306,
+      "headroom_tokens_before": 8177,
+      "headroom_tokens_after": 2276,
+      "headroom_tokens_saved": 5901,
+      "compression_ratio": 0.721658309893604,
+      "transforms_applied": [
+        "router:protected:user_message",
+        "router:smart_crusher:0.12"
+      ],
+      "direct_review": {
+        "gold_total": 2,
+        "gold_found": 2,
+        "missing": [],
+        "accuracy_pct": 100.0
+      },
+      "compressed_accuracy": {
+        "gold_total": 2,
+        "gold_found": 2,
+        "missing": [],
+        "accuracy_pct": 100.0
+      },
+      "accuracy_vs_direct": 100.0,
+      "detect_backend_note": "default"
+    },
+    {
+      "id": "build_log",
+      "kind": "log",
+      "ok": true,
+      "chars_before": 30691,
+      "chars_after": 30691,
+      "est_tokens_before": 7673,
+      "est_tokens_after": 7673,
+      "headroom_tokens_before": 11676,
+      "headroom_tokens_after": 11676,
+      "headroom_tokens_saved": 0,
+      "compression_ratio": 0.0,
+      "transforms_applied": [
+        "router:protected:user_message"
+      ],
+      "direct_review": {
+        "gold_total": 1,
+        "gold_found": 1,
+        "missing": [],
+        "accuracy_pct": 100.0
+      },
+      "compressed_accuracy": {
+        "gold_total": 1,
+        "gold_found": 1,
+        "missing": [],
+        "accuracy_pct": 100.0
+      },
+      "accuracy_vs_direct": 100.0,
+      "detect_backend_note": "default"
+    },
+    {
+      "id": "grep_hits",
+      "kind": "search",
+      "ok": true,
+      "chars_before": 5328,
+      "chars_after": 4856,
+      "est_tokens_before": 1332,
+      "est_tokens_after": 1214,
+      "headroom_tokens_before": 1984,
+      "headroom_tokens_after": 1866,
+      "headroom_tokens_saved": 118,
+      "compression_ratio": 0.059475806451612906,
+      "transforms_applied": [
+        "router:protected:user_message",
+        "router:excluded:lossless_search"
+      ],
+      "direct_review": {
+        "gold_total": 2,
+        "gold_found": 2,
+        "missing": [],
+        "accuracy_pct": 100.0
+      },
+      "compressed_accuracy": {
+        "gold_total": 2,
+        "gold_found": 2,
+        "missing": [],
+        "accuracy_pct": 100.0
+      },
+      "accuracy_vs_direct": 100.0,
+      "detect_backend_note": "default"
+    }
+  ],
+  "savings_summary": {
+    "mean_ratio_pct": 26.0,
+    "total_tokens_saved": 6019,
+    "perfect_accuracy": 3,
+    "fixture_count": 3
+  },
+  "findings": [
+    "`json_tool_array` saved 5901 tokens (72.2%).",
+    "`build_log` saved 0 tokens (0.0%).",
+    "`grep_hits` saved 118 tokens (5.9%).",
+    "This measures compression quality, not Cursor-hosted billing. Provider savings require traffic through the proxy or MCP compress.",
+    "Windows may log a Magika/ONNX detect-backend warning; compression still ran."
+  ]
+}
