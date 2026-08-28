@@ -1,0 +1,70 @@
+{
+  "catalog_id": "prompt-engineering-techniques-v1",
+  "version": "2026.08",
+  "description": "Taxonomy of prompt engineering and context optimization techniques with empirical reliability and cost impact ratings.",
+  "techniques": [
+    {
+      "id": "PE-01",
+      "name": "XML/Semantic Delimiting",
+      "category": "Structuring",
+      "reliability_score": "High",
+      "token_cost_impact": "Neutral (+1-2%)",
+      "description": "Encapsulates instructions, context, rules, and user data within explicit markup tags.",
+      "recommendation": "Adopt across all system prompts and dynamic context injections."
+    },
+    {
+      "id": "PE-02",
+      "name": "Prefix Cache Invariance",
+      "category": "Cost Optimization",
+      "reliability_score": "High",
+      "token_cost_impact": "Massive Savings (50-90% discount on cache hits)",
+      "description": "Maintains static byte-stable prefixes for instructions and schemas, avoiding dynamic mid-prefix timestamps or volatile variables.",
+      "recommendation": "Mandatory standard for agent harness design."
+    },
+    {
+      "id": "PE-03",
+      "name": "Subagent Down-Tiering",
+      "category": "Routing & Execution",
+      "reliability_score": "High",
+      "token_cost_impact": "Substantial Savings (70-85% quota reduction)",
+      "description": "Delegates leaf inspection, search, and validation tasks to fast/flash models while reserving frontier reasoning for synthesis.",
+      "recommendation": "Standard harness rule for all exploratory subagents."
+    },
+    {
+      "id": "PE-04",
+      "name": "Few-Shot Anchoring",
+      "category": "Reasoning & Alignment",
+      "reliability_score": "High",
+      "token_cost_impact": "Minor Increase (+5-15% initial prompt tokens)",
+      "description": "Provides 2-3 canonical input/output examples to anchor expected behavior without verbose negative rule lists.",
+      "recommendation": "Use for complex transformations, DSLs, or strict schema outputs."
+    },
+    {
+      "id": "PE-05",
+      "name": "Chain-of-Thought (CoT) Scratchpads",
+      "category": "Reasoning & Alignment",
+      "reliability_score": "High",
+      "token_cost_impact": "Moderate Increase (+10-30% output tokens)",
+      "description": "Prompts the model to plan or reason through constraints in a dedicated scratchpad before emitting final deliverables.",
+      "recommendation": "Use for non-trivial architecture, refactoring, and multi-constraint generation."
+    },
+    {
+      "id": "PE-06",
+      "name": "Agnostic Web Distillation",
+      "category": "Retrieval & Ingestion",
+      "reliability_score": "High",
+      "token_cost_impact": "Massive Savings (75-90% reduction vs raw HTML)",
+      "description": "Processes URLs through readability/markdown extractors to strip DOM boilerplate, navbars, and tracking noise prior to context ingestion.",
+      "recommendation": "Mandatory for external documentation and research fetches."
+    },
+    {
+      "id": "PE-07",
+      "name": "Lossy Syntax Stripping ('Caveman' Prompting)",
+      "category": "Anti-Pattern",
+      "reliability_score": "Extremely Low / Dangerous",
+      "token_cost_impact": "Negligible (<8% token reduction)",
+      "description": "Deliberately removes natural language articles, grammar, and sentence structure in an attempt to compress token counts.",
+      "recommendation": "Strictly forbidden. Impairs reasoning, increases token perplexity, and breaks code syntax."
+    }
+  ]
+}

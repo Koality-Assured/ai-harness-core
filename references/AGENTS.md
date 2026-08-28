@@ -29,4 +29,5 @@ template is cloned for a topic.
 | --- | --- |
 | `conventional-commits/` | Commit / PR conventions |
 | `markdown/` | markdownlint library + cli2 (rules, config, invoke) |
+| `prompt-engineering/` | Prompt engineering principles, cache optimization, and structured framing |
 | `valid-sources/` | Authoritative primary sources allowlist |

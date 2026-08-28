@@ -183,6 +183,7 @@ HARNESS_TEMPLATE_KEEP_REFERENCE_FAMILIES: frozenset[str] = frozenset(
     {
         "conventional-commits",
         "markdown",
+        "prompt-engineering",
         "valid-sources",
     }
 )
@@ -288,6 +289,7 @@ template is cloned for a topic.
 | --- | --- |
 | `conventional-commits/` | Commit / PR conventions |
 | `markdown/` | markdownlint library + cli2 (rules, config, invoke) |
+| `prompt-engineering/` | Prompt engineering principles, cache optimization, and structured framing |
 | `valid-sources/` | Authoritative primary sources allowlist |
 """
 
@@ -361,7 +363,7 @@ ai-harness-core/
 │   ├── agent-session-security.md
 │   ├── anti-slop.md
 │   └── standards/            # context-management.md, harness-template.md
-├── references/               # Universal tooling families (conventional-commits, markdown, valid-sources)
+├── references/               # Universal tooling families (conventional-commits, markdown, prompt-engineering, valid-sources)
 └── actionable/ projects/ research/ results/ scratch/ change-history/ # Managed lifecycle zones
 ```
 

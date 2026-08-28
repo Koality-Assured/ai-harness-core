@@ -68,7 +68,7 @@ ai-harness-core/
 │   ├── agent-session-security.md
 │   ├── anti-slop.md
 │   └── standards/            # context-management.md, harness-template.md
-├── references/               # Universal tooling families (conventional-commits, markdown, valid-sources)
+├── references/               # Universal tooling families (conventional-commits, markdown, prompt-engineering, valid-sources)
 └── actionable/ projects/ research/ results/ scratch/ change-history/ # Managed lifecycle zones
 ```
 
