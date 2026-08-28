@@ -39,7 +39,13 @@ Ingest as simply as possible: concise, deduplicated, progressive disclosure via 
 
 ### Ambiguity gate
 
-When scope is unclear, the request conflicts with repo rules, multiple approaches carry material tradeoffs, or you are unsure which area/skill/script applies — **stop and surface the ambiguity**. Minor choices inside a clearly scoped task do not require a stop.
+When instructions, human prompts, or scope are ambiguous, underspecified, contradictory, or open to conflicting interpretations — **stop and seek clarity from the human** rather than guessing or proceeding on unverified assumptions. Surface material tradeoffs or routing uncertainty before executing. Minor tactical choices inside a clearly scoped task do not require a stop.
+
+### Root-cause problem solving (no workarounds)
+
+When diagnosing, fixing, or correcting errors, failures, or bugs in tools, scripts, or systems, agents MUST identify and resolve the genuine underlying root cause.
+- **No superficial workarounds**: MUST NOT conceal, bypass, mask, or work around the actual problem (e.g. silencing linters without fixing violations, suppressing errors, disabling assertions, skipping failing tests, hardcoding dummy values, or routing around broken tooling with ad-hoc hacks).
+- **Unavoidable upstream issues**: If a defect originates from an external/upstream dependency that cannot be fixed immediately, agents MUST explicitly surface the root cause to the user, document the exact failure in operational memory, and record bounded mitigation rather than silently working around it.
 
 ### Empirical grounding and research-backed standard
 
@@ -55,8 +61,8 @@ All ideas, responses, decisions, proposals, and actions taken with the harness M
 
 Before declaring done:
 
-1. **Source-area write-back (mandatory)** — Durable knowledge (routing, patterns, quirks, decisions, findings) goes into the owning source area ([`routing/area-map.md`](./routing/area-map.md)). Memory and change-history are not substitutes.
-2. **Project memory checkpoint** — If important operational information was learned (failure modes, pitfalls, quirks, recovery strategies), update [`ai-tooling/memory/`](./ai-tooling/memory/) (`user/<git-identity>/` or `agent/<owner_agent_id>/`). Authoritative priority checkpoint; not a session log, skill duplicate, or research archive.
+1. **Source-area write-back (mandatory)** — Durable knowledge (routing, patterns, quirks, decisions, findings) goes into the owning source area ([`routing/area-map.md`](./routing/area-map.md)). Proven methodologies, successful tool usage recipes, and verified configurations belong in [`supporting/`](./supporting/) (`supporting/<tool>/`). Memory and change-history are not substitutes.
+2. **Project memory checkpoint** — Whenever encountering an unexpected error, failure mode, tooling pitfall, or environment quirk in tools/scripts, record the problem and learned recovery strategy in [`ai-tooling/memory/`](./ai-tooling/memory/) (`user/<git-identity>/` or `agent/<owner_agent_id>/`) so recurring mistakes are avoided across sessions. Authoritative priority checkpoint; not a session log, skill duplicate, or research archive.
 3. **Change-history** — After material work, append via `python scripts/change-history/append_change_history.py` only (≤ ~150 tokens; no secrets).
 4. **Index consistency** — If structure, routing, script tags, or indexed Markdown moved, run High refresh scripts (`python scripts/qmd/refresh_qmd_index.py`).
 

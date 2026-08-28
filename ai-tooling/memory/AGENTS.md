@@ -15,7 +15,7 @@ Ingest simply; do not duplicate skills or paste root Critical — link [`../../A
 ## Rules
 
 - This tree is the **authoritative** project memory store for any AI agent — not `~/.cursor`, host-home memory, Documents, or Cursor personal rules as the default.
-- **Core Purpose:** Agent memory stores operational knowledge, common problems/pitfalls, environment quirks, and learned recovery strategies to ensure an agent's future success.
+- **Core Purpose:** Agent memory stores operational knowledge, unexpected errors/exceptions encountered in tools and scripts, failure modes, environment quirks, and learned recovery strategies to ensure an agent's future success and prevent recurring issues across sessions.
 - **What Memory IS NOT:**
   - NOT a session work log or chronicle of completed PRs/features (belongs in `change-history/`).
   - NOT a project task tracker (belongs in `projects/<slug>/`).
