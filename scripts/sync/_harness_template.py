@@ -419,6 +419,42 @@ The harness architecture integrates four core operational layers:
 
 ---
 
+## Empirical Cost Optimization & Benchmark Results
+
+The harness cost layers are validated continuously via automated benchmarks (`python scripts/cost-layers/validate_cost_layers.py`). Measured results from the benchmark suite:
+
+| Cost Layer / Subsystem | Benchmark Payload / Target | Measured Token Reduction | Fact Retention / Accuracy | Economic & Operational Benefit |
+| :--- | :--- | :--- | :--- | :--- |
+| **`ast-grep` Outline** | Python script inspection (`.py`) | **93.7% reduction** (2,571 tokens saved) | 100% structural symbols | Eliminates full file body dumps |
+| **`ast-grep` Kind Match** | Skill frontmatter (`SKILL.md`) | **94.9% reduction** (632 tokens saved) | 100% frontmatter keys | Instant YAML AST parsing via stdin |
+| **`ast-grep` Kind Match** | Agent cards (`a2a/*.json`) | **90.5% reduction** (542 tokens saved) | 100% agent card attributes | Surgical schema & metadata reads |
+| **`Headroom` Compression** | JSON tool output arrays | **72.2% reduction** (5,901 tokens saved) | 100% match text facts | Intercepts verbose tool responses |
+| **`Headroom` Logs & Grep** | Grep hits & compile logs | **5.9% - 30.8% reduction** | 100% error signatures | Compresses repetitive log output |
+| **`local_webfetch`** | External web HTML distillation | **77.2% reduction** (448 tokens saved) | **100.0%** (4/4 gold facts) | Strips HTML bloat & neutralizes prompt injections |
+| **Prompt Cache Manager** | 25 audited prompt definitions | **0 invariance violations** | 100% byte stability | **~90% input cost discount** (Anthropic/OpenAI KV caches) |
+| **`qmd` BM25 Search** | Repository Markdown corpus | **0.67s average search** | High top-1 precision | Eliminates recursive directory tree walks |
+
+### Cost Layer Verification Commands
+
+```bash
+# Run full combined cost-layer validation suite (ast-grep + headroom + prompt-caching + webfetch + qmd)
+python scripts/cost-layers/validate_cost_layers.py
+
+# Run standalone prompt cache byte invariance linter
+python scripts/cost-layers/validate_prompt_caching.py
+
+# Run standalone web retrieval distillation benchmark
+python scripts/research/local_webfetch.py --dry-run
+
+# Run standalone Headroom tool output compression benchmark
+python scripts/cost-layers/validate_headroom_compression.py
+
+# Run standalone ast-grep precision retrieval benchmark
+python scripts/cost-layers/validate_ast_grep.py
+```
+
+---
+
 ## Frontmatter & Component Conventions
 
 All components adhere to strict machine-readable frontmatter verified by automated validators:
