@@ -1,0 +1,44 @@
+# Cursor indexing and context ignore file
+# Excludes non-source artifacts, large datasets, and transient files from automatic codebase embeddings
+
+# Scratch and transient worktrees
+scratch/**
+!scratch/AGENTS.md
+!scratch/README.md
+
+# Tooling and build caches
+.cache/
+.pytest_cache/
+.mypy_cache/
+node_modules/
+__pycache__/
+*.pyc
+
+# Local environments and secrets
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+secrets/
+
+# Large binaries and reports in results
+results/**/*.pptx
+results/**/*.docx
+results/**/*.xlsx
+results/**/*.pdf
+results/**/*.zip
+
+# Large reference raw dumps
+references/**/*.pdf
+references/**/*.zip
+references/**/*.xlsx
+references/**/*.xml
+**/enterprise-attack*.json
+!**/catalogs/*.json
+**/*STIX*
+**/ATLAS-*.yaml
+
+# Local qmd databases (keep index.yml)
+.qmd/*.sqlite
+.qmd/*.db

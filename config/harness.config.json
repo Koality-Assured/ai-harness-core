@@ -74,6 +74,29 @@
     "require_clean_state": true,
     "disallow_destructive": true
   },
+  "subagents": {
+    "isolate_parent_context": true,
+    "clean_slate_required": true,
+    "prohibit_transcript_forwarding": true,
+    "enforce_selective_retrieval": true,
+    "host_adapters": {
+      "claude": {
+        "settings_path": ".claude/settings.json",
+        "rules_entry": "CLAUDE.md"
+      },
+      "cursor": {
+        "rules_dir": ".cursor/rules",
+        "ignore_path": ".cursorignore"
+      },
+      "openai_copilot": {
+        "instructions_path": ".github/copilot-instructions.md"
+      },
+      "antigravity": {
+        "rules_entry": "GEMINI.md",
+        "root_agents": "AGENTS.md"
+      }
+    }
+  },
   "quota_profiles": {
     "unmetered": {
       "max_concurrent_subagents": 8,

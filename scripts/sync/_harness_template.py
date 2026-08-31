@@ -30,6 +30,9 @@ WIKI_TEMPLATE_ALLOWED_DOT_DIRS = HARNESS_TEMPLATE_ALLOWED_DOT_DIRS
 HARNESS_TEMPLATE_ROOT_FILES: frozenset[str] = frozenset(
     {
         "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".cursorignore",
         "naming-conventions.md",
         ".gitignore",
         ".markdownlint-cli2.jsonc",

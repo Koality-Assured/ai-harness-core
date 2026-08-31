@@ -82,3 +82,7 @@ nested_defaults:
     default_agent: google-suite-operator
   - path: supporting/confluence
     default_agent: docs-collab-agent
+  - path: supporting/benchmarks
+    default_agent: benchmark-agent
+  - path: ai-tooling/skills/benchmarks
+    default_agent: benchmark-agent

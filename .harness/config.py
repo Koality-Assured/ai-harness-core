@@ -147,6 +147,29 @@ class A2AConfig:
 
 
 @dataclass
+class HostAdaptersConfig:
+    """Project-level configuration paths for multi-vendor host adapters."""
+
+    claude_settings: str = ".claude/settings.json"
+    claude_rules: str = "CLAUDE.md"
+    cursor_rules_dir: str = ".cursor/rules"
+    cursor_ignore: str = ".cursorignore"
+    copilot_instructions: str = ".github/copilot-instructions.md"
+    gemini_rules: str = "GEMINI.md"
+
+
+@dataclass
+class SubagentsConfig:
+    """Subagent context isolation and boundary configuration."""
+
+    isolate_parent_context: bool = True
+    clean_slate_required: bool = True
+    prohibit_transcript_forwarding: bool = True
+    enforce_selective_retrieval: bool = True
+    host_adapters: HostAdaptersConfig = field(default_factory=HostAdaptersConfig)
+
+
+@dataclass
 class HarnessConfig:
     """Root configuration model for the .harness engine."""
 
@@ -155,6 +178,7 @@ class HarnessConfig:
     adapters: AdaptersConfig = field(default_factory=AdaptersConfig)
     cache: CacheConfig = field(default_factory=CacheConfig)
     a2a: A2AConfig = field(default_factory=A2AConfig)
+    subagents: SubagentsConfig = field(default_factory=SubagentsConfig)
     repo_root: Path = field(default_factory=Path.cwd)
 
     def to_dict(self) -> dict[str, Any]:
@@ -301,6 +325,27 @@ def _build_a2a(data: dict[str, Any] | None) -> A2AConfig:
     )
 
 
+def _build_subagents(data: dict[str, Any] | None) -> SubagentsConfig:
+    if not data:
+        return SubagentsConfig()
+    adapters_data = data.get("host_adapters", {})
+    host_adapters = HostAdaptersConfig(
+        claude_settings=str(adapters_data.get("claude", {}).get("settings_path", ".claude/settings.json")),
+        claude_rules=str(adapters_data.get("claude", {}).get("rules_entry", "CLAUDE.md")),
+        cursor_rules_dir=str(adapters_data.get("cursor", {}).get("rules_dir", ".cursor/rules")),
+        cursor_ignore=str(adapters_data.get("cursor", {}).get("ignore_path", ".cursorignore")),
+        copilot_instructions=str(adapters_data.get("openai_copilot", {}).get("instructions_path", ".github/copilot-instructions.md")),
+        gemini_rules=str(adapters_data.get("antigravity", {}).get("rules_entry", "GEMINI.md")),
+    )
+    return SubagentsConfig(
+        isolate_parent_context=bool(data.get("isolate_parent_context", True)),
+        clean_slate_required=bool(data.get("clean_slate_required", True)),
+        prohibit_transcript_forwarding=bool(data.get("prohibit_transcript_forwarding", True)),
+        enforce_selective_retrieval=bool(data.get("enforce_selective_retrieval", True)),
+        host_adapters=host_adapters,
+    )
+
+
 def load_harness_config(
     config_path: Path | str | None = None,
     repo_root: Path | str | None = None,
@@ -331,6 +376,7 @@ def load_harness_config(
             adapters = _build_adapters(content.get("adapters"))
             cache = _build_cache(content.get("cache"))
             a2a = _build_a2a(content.get("a2a"))
+            subagents = _build_subagents(content.get("subagents"))
 
             cfg = HarnessConfig(
                 version=version,
@@ -338,6 +384,7 @@ def load_harness_config(
                 adapters=adapters,
                 cache=cache,
                 a2a=a2a,
+                subagents=subagents,
                 repo_root=resolved_root,
             )
             val_errors = cfg.validate()

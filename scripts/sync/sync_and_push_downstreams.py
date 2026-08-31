@@ -33,6 +33,7 @@ SKILL_FAMILIES = {
     "admin",
     "aws",
     "azure",
+    "benchmarks",
     "community",
     "confluence",
     "cost-layers",

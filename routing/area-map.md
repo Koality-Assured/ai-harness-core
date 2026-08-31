@@ -43,3 +43,5 @@ Match [`skill-dispatch.md`](./skill-dispatch.md) first. Use this table only when
 | `supporting/slack/` | [`chat-collab-agent`](../ai-tooling/agents/chat-collab-agent/AGENT.md) |
 | `supporting/google/` | [`google-suite-operator`](../ai-tooling/agents/google-suite-operator/AGENT.md) |
 | `supporting/confluence/` | [`docs-collab-agent`](../ai-tooling/agents/docs-collab-agent/AGENT.md) |
+| `supporting/benchmarks/` | [`benchmark-agent`](../ai-tooling/agents/benchmark-agent/AGENT.md) |
+| `ai-tooling/skills/benchmarks/` | [`benchmark-agent`](../ai-tooling/agents/benchmark-agent/AGENT.md) |

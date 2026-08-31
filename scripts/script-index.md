@@ -45,11 +45,13 @@ Generated from dest `scripts/` after harness-template export (kept trees only). 
 | [`routing/spawn_worktree.py`](./routing/spawn_worktree.py) | `routing`, `isolation` | worktree, branch, concurrency, claims | Spawn, list, and remove isolated git worktrees for concurrent agent work. |
 | [`sync/sync_and_push_downstreams.py`](./sync/sync_and_push_downstreams.py) | `sync`, `git`, `export`, `downstream` | sync-and-push, update-downstreams, multi-repo-publish, downstream-repo-update | Automated synchronization, sanitation, commit, and push engine for public downstream repositories. |
 | [`sync/sync_public_repos.py`](./sync/sync_public_repos.py) | `sync`, `security`, `export` | sync, redaction, multi-repo, export, sanitize, wiki-template | Multi-repo synchronization and sanitization/redaction engine for public exports. |
+| [`tests/test_benchmarks.py`](./tests/test_benchmarks.py) | `tests`, `benchmarks`, `cost-layers`, `agents`, `retrieval`, `fleet` | tests, test-benchmarks, cost-estimator, fleet-benchmark, mrr | Unit tests for empirical benchmarking and cost estimation tooling. |
 | [`tests/test_hybrid_dispatch.py`](./tests/test_hybrid_dispatch.py) | `tests`, `routing`, `ai-tooling` | tests, hybrid-dispatch, bm25, ambiguity-gate, schema-v2 | Unit tests for 3-Tier Hybrid Dispatch Pipeline and Schema V2 Indexing. |
 | [`tests/test_pacing.py`](./tests/test_pacing.py) | `tests`, `pacing`, `quota`, `routing` | tests, pacing, quota-management | Unit tests for adaptive quota management and pacing helper. |
 | [`tests/test_pretty_docs_security.py`](./tests/test_pretty_docs_security.py) | `tests`, `security`, `github` | tests, href, github-paths | Stdlib unit tests for href allow-list and GitHub path helpers. |
 | [`tests/test_qmd_preflight.py`](./tests/test_qmd_preflight.py) | `tests`, `qmd` | qmd, preflight, onboarding | Unit tests for the non-mutating qmd lifecycle preflight. |
 | [`tests/test_skill_graph.py`](./tests/test_skill_graph.py) | `tests`, `routing`, `skills`, `dag` | tests, dag, topological-sort, dependencies, prerequisites | Unit tests for skill dependency DAG resolution, topological ordering, and Schema V2 conventions. |
+| [`tests/test_subagent_context_config.py`](./tests/test_subagent_context_config.py) | `tests`, `subagents`, `context`, `config` | tests, subagents, context-isolation, host-config | Unit tests for cross-host subagent context isolation and project-level settings. |
 | [`tests/test_validate_agent.py`](./tests/test_validate_agent.py) | `tests`, `ai-tooling`, `agents`, `schema-v2` | tests, validate-agent, agents | Unit tests for Schema V2 agent validation. |
 | [`tests/test_validate_context_budget.py`](./tests/test_validate_context_budget.py) | `tests`, `docs`, `validation`, `cost-layers` | tests, validate_context_budget, context-budget, tokens | Unit tests for validate_context_budget.py. |
 | [`tests/test_validate_router_structure.py`](./tests/test_validate_router_structure.py) | `tests`, `docs`, `validation`, `results` | tests, validate_router_structure, results-layout | Unit tests for router structure validator results-layout check. |
@@ -58,20 +60,23 @@ Generated from dest `scripts/` after harness-template export (kept trees only). 
 
 ## By tag
 
-- **agents:** `ai-tooling/validate_agent.py`, `cost-layers/validate_prompt_caching.py`, `tests/test_validate_agent.py`
+- **agents:** `ai-tooling/validate_agent.py`, `cost-layers/validate_prompt_caching.py`, `tests/test_benchmarks.py`, `tests/test_validate_agent.py`
 - **ai-tooling:** `ai-tooling/model_memory.py`, `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `tests/test_hybrid_dispatch.py`, `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
 - **analysis:** `research/community_analyzer.py`
 - **ast-grep:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`
-- **benchmarks:** `research/benchlm_lookup.py`
+- **benchmarks:** `research/benchlm_lookup.py`, `tests/test_benchmarks.py`
 - **briefing:** `research/ai_vendor_briefing.py`
 - **change-history:** `change-history/append_change_history.py`, `change-history/ensure_change_history_quarter.py`
 - **communities:** `research/community_analyzer.py`, `research/manage_social_registry.py`
-- **cost-layers:** `cost-layers/validate_cost_layers.py`, `cost-layers/validate_prompt_caching.py`, `docs/validate_context_budget.py`, `research/local_webfetch.py`, `tests/test_validate_context_budget.py`
+- **config:** `tests/test_subagent_context_config.py`
+- **context:** `tests/test_subagent_context_config.py`
+- **cost-layers:** `cost-layers/validate_cost_layers.py`, `cost-layers/validate_prompt_caching.py`, `docs/validate_context_budget.py`, `research/local_webfetch.py`, `tests/test_benchmarks.py`, `tests/test_validate_context_budget.py`
 - **dag:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`
 - **distillation:** `research/local_webfetch.py`
 - **docs:** `docs/run_markdownlint.py`, `docs/validate_context_budget.py`, `docs/validate_router_structure.py`, `docs/validate_structure_fast.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`
 - **downstream:** `sync/sync_and_push_downstreams.py`
 - **export:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`
+- **fleet:** `tests/test_benchmarks.py`
 - **git:** `sync/sync_and_push_downstreams.py`
 - **github:** `github/resolve_github_path.py`, `repos/scaffold_public_repos.py`, `tests/test_pretty_docs_security.py`
 - **headroom:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`
@@ -91,13 +96,15 @@ Generated from dest `scripts/` after harness-template export (kept trees only). 
 - **repos:** `repos/scaffold_public_repos.py`
 - **research:** `cost-layers/validate_cost_layers.py`, `research/ai_vendor_briefing.py`, `research/benchlm_lookup.py`, `research/community_analyzer.py`, `research/local_webfetch.py`, `research/manage_social_registry.py`
 - **results:** `tests/test_validate_router_structure.py`
+- **retrieval:** `tests/test_benchmarks.py`
 - **routing:** `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `cost-layers/validate_prompt_caching.py`, `docs/validate_router_structure.py`, `routing/generate_routing_index.py`, `routing/generate_script_index.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `routing/resolve_skill_graph.py`, `routing/spawn_worktree.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pacing.py`, `tests/test_skill_graph.py`
 - **scaffold:** `repos/scaffold_public_repos.py`
 - **schema-v2:** `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
 - **security:** `sync/sync_public_repos.py`, `tests/test_pretty_docs_security.py`
 - **skills:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`, `tests/test_validate_skill.py`
 - **socials:** `research/community_analyzer.py`, `research/manage_social_registry.py`
+- **subagents:** `tests/test_subagent_context_config.py`
 - **sync:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`
-- **tests:** `tests/test_hybrid_dispatch.py`, `tests/test_pacing.py`, `tests/test_pretty_docs_security.py`, `tests/test_qmd_preflight.py`, `tests/test_skill_graph.py`, `tests/test_validate_agent.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`
+- **tests:** `tests/test_benchmarks.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pacing.py`, `tests/test_pretty_docs_security.py`, `tests/test_qmd_preflight.py`, `tests/test_skill_graph.py`, `tests/test_subagent_context_config.py`, `tests/test_validate_agent.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`
 - **validation:** `docs/validate_context_budget.py`, `docs/validate_structure_fast.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`
 - **web:** `research/local_webfetch.py`

@@ -86,5 +86,10 @@ Human index (not agent SoT):
 | [`confluence-app-manage/`](./confluence/confluence-app-manage/) | docs-collab-agent | mutate |
 | [`confluence-webhook/`](./confluence/confluence-webhook/) | docs-collab-agent | mutate |
 | [`local-webfetch/`](./research/local-webfetch/) | detailed-activity | read-only |
+| [`agent-cost-estimator/`](./benchmarks/agent-cost-estimator/) | benchmark-agent | mutate |
+| [`agent-fleet-benchmark/`](./benchmarks/agent-fleet-benchmark/) | benchmark-agent | mutate |
+| [`retrieval-benchmark/`](./benchmarks/retrieval-benchmark/) | benchmark-agent | mutate |
+| [`tool-efficiency-benchmark/`](./benchmarks/tool-efficiency-benchmark/) | benchmark-agent | mutate |
+| [`task-eval-benchmark/`](./benchmarks/task-eval-benchmark/) | benchmark-agent | mutate |
 
 
