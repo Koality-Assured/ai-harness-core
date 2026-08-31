@@ -71,6 +71,22 @@ DEFAULT_REPO_MAPPINGS: dict[str, dict[str, str]] = {
         "description": "Industry standard references and machine-readable catalogs export",
     },
     "ai-research-and-benchmarks": {
+        "subpaths": [
+            {
+                "source_subpath": "research",
+                "dest_subpath": "research",
+            },
+            {
+                "source_subpath": "supporting/benchmarks",
+                "dest_subpath": "benchmarks/supporting",
+                "optional": True,
+            },
+            {
+                "source_subpath": "scripts/benchmarks",
+                "dest_subpath": "harnesses/benchmarks",
+                "optional": True,
+            },
+        ],
         "source_subpath": "research",
         "dest_subpath": "research",
         "description": "AI research and benchmarks export",
@@ -559,32 +575,46 @@ class SyncEngine:
             )
 
         mapping = self.mappings[repo_name]
-        src_dir = self.source_root / mapping["source_subpath"]
-        dst_dir = self._resolve_dest_path(repo_name, mapping["dest_subpath"])
+        subpaths = mapping.get("subpaths")
+        if not subpaths:
+            subpaths = [{
+                "source_subpath": mapping.get("source_subpath", ""),
+                "dest_subpath": mapping.get("dest_subpath", ""),
+            }]
+
+        primary_src = self.source_root / subpaths[0]["source_subpath"]
+        primary_dst = self._resolve_dest_path(repo_name, subpaths[0]["dest_subpath"])
 
         result = RepoSyncResult(
             repo_name=repo_name,
             status="success",
-            source_dir=str(src_dir),
-            dest_dir=str(dst_dir),
+            source_dir=str(primary_src),
+            dest_dir=str(primary_dst),
         )
 
-        if not src_dir.exists():
-            result.status = "failed"
-            result.errors.append(f"Source directory does not exist: {src_dir}")
-            return result
-
         mode = mapping.get("mode")
-        for src_file in sorted(self._walk_source_files(src_dir, mapping)):
-            rel_to_src = src_file.relative_to(src_dir)
-            dest_file = dst_dir / rel_to_src
-            self._sync_one_file(src_file, dest_file, result, mode=mode)
+        for sub in subpaths:
+            src_sub = sub["source_subpath"]
+            dst_sub = sub["dest_subpath"]
+            src_dir = self.source_root / src_sub
+            dst_dir = self._resolve_dest_path(repo_name, dst_sub)
+
+            if not src_dir.exists():
+                if not sub.get("optional"):
+                    result.status = "failed"
+                    result.errors.append(f"Source directory does not exist: {src_dir}")
+                continue
+
+            for src_file in sorted(self._walk_source_files(src_dir, mapping)):
+                rel_to_src = src_file.relative_to(src_dir)
+                dest_file = dst_dir / rel_to_src
+                self._sync_one_file(src_file, dest_file, result, mode=mode)
 
         if mapping.get("mode") == HARNESS_TEMPLATE_MODE:
             if not self.dry_run:
-                harness_template_prune_dest_leftovers(dst_dir)
-            for rel, content in harness_template_post_copy_files(dst_dir, source_root=src_dir).items():
-                dest_file = dst_dir / rel
+                harness_template_prune_dest_leftovers(primary_dst)
+            for rel, content in harness_template_post_copy_files(primary_dst, source_root=primary_src).items():
+                dest_file = primary_dst / rel
                 result.files_scanned += 1
                 self._sync_text_payload(dest_file, content, rel, result)
 
@@ -644,19 +674,25 @@ class SyncEngine:
                 violations.append(f"Unknown repository: '{repo}'")
                 continue
             mapping = self.mappings[repo]
-            src_dir = self.source_root / mapping["source_subpath"]
-            if not src_dir.exists():
-                violations.append(f"Source directory missing for {repo}: {src_dir}")
-                continue
+            subpaths = mapping.get("subpaths")
+            if not subpaths:
+                subpaths = [{"source_subpath": mapping["source_subpath"], "dest_subpath": mapping["dest_subpath"]}]
 
-            for p in self._walk_source_files(src_dir, mapping):
-                try:
-                    text = p.read_text(encoding="utf-8")
-                except UnicodeDecodeError:
+            for sub in subpaths:
+                src_dir = self.source_root / sub["source_subpath"]
+                if not src_dir.exists():
+                    if not sub.get("optional"):
+                        violations.append(f"Source directory missing for {repo}: {src_dir}")
                     continue
-                rel = p.relative_to(self.source_root).as_posix()
-                file_violations = self.redactor.find_violations(text, rel)
-                violations.extend(file_violations)
+
+                for p in self._walk_source_files(src_dir, mapping):
+                    try:
+                        text = p.read_text(encoding="utf-8")
+                    except UnicodeDecodeError:
+                        continue
+                    rel = p.relative_to(self.source_root).as_posix()
+                    file_violations = self.redactor.find_violations(text, rel)
+                    violations.extend(file_violations)
 
         return len(violations) == 0, violations
 
