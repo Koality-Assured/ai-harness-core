@@ -697,6 +697,108 @@ class SyncEngine:
         return len(violations) == 0, violations
 
 
+INTERNAL_ONLY_DOMAINS: set[str] = {
+    "change-history",
+    "scratch",
+    "results",
+    "projects",
+    "actionable",
+    "scripts/sync",
+    "scripts/change-history",
+    "scripts/projects",
+    "scripts/repos",
+    "scripts/cost-layers",
+    "scripts/docs",
+    "scripts/github",
+    "scripts/google",
+    "scripts/llm",
+    "scripts/cloud",
+    "scripts/confluence",
+    "scripts/slack",
+    "scripts/qmd",
+    "scripts/references",
+    "scripts/research",
+    "scripts/results",
+    "scripts/routing",
+    "scripts/ai-tooling",
+    "scripts/tests",
+    "scripts/_lib",
+    "ai-tooling/memory",
+    "ai-tooling/agents",
+    "ai-tooling/a2a",
+    "supporting/powershell",
+    "supporting/github",
+    "supporting/tabler",
+    "supporting/foundation",
+    "supporting/cloudflare",
+    "supporting/noir",
+    "supporting/mermaid",
+    "supporting/slack",
+    "supporting/google",
+    "supporting/confluence",
+    "supporting/qmd",
+    "supporting/headroom",
+    "supporting/ast-grep",
+}
+
+
+def check_downstream_source_coverage(
+    source_root: Path,
+    mappings: dict[str, Any] | None = None,
+) -> tuple[bool, list[str], list[str]]:
+    """Audit source directories in ai-router to ensure every domain directory is mapped or declared internal."""
+    if mappings is None:
+        mappings = DEFAULT_REPO_MAPPINGS
+
+    mapped_sources: set[str] = set()
+    for mapping in mappings.values():
+        if mapping.get("mode") == HARNESS_TEMPLATE_MODE:
+            continue
+        subpaths = mapping.get("subpaths")
+        if subpaths:
+            for sub in subpaths:
+                mapped_sources.add(sub["source_subpath"].replace("\\", "/").rstrip("/"))
+        elif "source_subpath" in mapping:
+            mapped_sources.add(mapping["source_subpath"].replace("\\", "/").rstrip("/"))
+
+    covered: list[str] = []
+    unmapped: list[str] = []
+
+    audit_roots = [
+        ("ai-tooling/skills", source_root / "ai-tooling" / "skills"),
+        ("docs/standards", source_root / "docs" / "standards"),
+        ("references", source_root / "references"),
+        ("research", source_root / "research"),
+        ("supporting", source_root / "supporting"),
+        ("scripts", source_root / "scripts"),
+    ]
+
+    for prefix, root_dir in audit_roots:
+        if not root_dir.exists():
+            continue
+        if prefix in mapped_sources:
+            covered.append(prefix)
+            continue
+
+        for child in sorted(root_dir.iterdir()):
+            if not child.is_dir() or child.name.startswith(".") or child.name == "__pycache__":
+                continue
+            rel_path = child.relative_to(source_root).as_posix()
+            if rel_path in INTERNAL_ONLY_DOMAINS or any(rel_path.startswith(d + "/") for d in INTERNAL_ONLY_DOMAINS):
+                continue
+            if (
+                rel_path in mapped_sources
+                or any(rel_path.startswith(m + "/") for m in mapped_sources)
+                or any(m.startswith(rel_path) for m in mapped_sources)
+                or prefix in mapped_sources
+            ):
+                covered.append(rel_path)
+            else:
+                unmapped.append(rel_path)
+
+    return len(unmapped) == 0, covered, unmapped
+
+
 def format_text_report(report: SyncReport) -> str:
     """Format human-readable sync and audit summary."""
     lines: list[str] = [
@@ -802,6 +904,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Source-cleanliness linter: scan source for secrets and proprietary leaks. Export leak control is --dry-run (redaction on copy).",
     )
     parser.add_argument(
+        "--check-coverage",
+        action="store_true",
+        help="Audit source domains to ensure all areas are mapped to downstream repos or declared internal-only.",
+    )
+    parser.add_argument(
         "--report-file",
         type=Path,
         default=None,
@@ -817,6 +924,27 @@ def main(argv: list[str] | None = None) -> int:
 
     source_root = resolve_repo_root(args.source)
     dest_root = args.dest.resolve() if args.dest else (source_root / "scratch" / "exports")
+
+    if args.check_coverage:
+        is_ok, covered, unmapped = check_downstream_source_coverage(source_root)
+        if args.json:
+            out = {
+                "check_coverage": True,
+                "ok": is_ok,
+                "covered_count": len(covered),
+                "unmapped_count": len(unmapped),
+                "covered": covered,
+                "unmapped": unmapped,
+            }
+            print(json.dumps(out, indent=2))
+        else:
+            if is_ok:
+                print(f"OK: All {len(covered)} source domains are mapped downstream or declared internal.")
+            else:
+                print(f"COVERAGE FAILED: Found {len(unmapped)} unmapped source domain(s):")
+                for u in unmapped:
+                    print(f"  ! Unmapped: {u}")
+        return 0 if is_ok else 1
 
     redactor = RedactionEngine()
     engine = SyncEngine(

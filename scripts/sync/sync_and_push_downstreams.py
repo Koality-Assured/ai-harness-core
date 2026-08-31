@@ -26,6 +26,7 @@ from sync_public_repos import (  # noqa: E402
     RedactionEngine,
     SyncEngine,
     build_default_rules,
+    check_downstream_source_coverage,
 )
 
 DOWNSTREAM_REPOS = list(DEFAULT_REPO_MAPPINGS.keys())
@@ -302,12 +303,31 @@ def main() -> int:
         help="Simulate synchronization without modifying downstream checkouts or git state",
     )
     parser.add_argument(
+        "--check-coverage",
+        action="store_true",
+        help="Audit source domains in ai-router to ensure they are mapped downstream or declared internal-only",
+    )
+    parser.add_argument(
         "--json",
         action="store_true",
         help="Output structured JSON results",
     )
 
     args = parser.parse_args()
+
+    if args.check_coverage:
+        is_ok, covered, unmapped = check_downstream_source_coverage(args.source.resolve())
+        if args.json:
+            print(json.dumps({"ok": is_ok, "covered": covered, "unmapped": unmapped}, indent=2))
+        else:
+            if is_ok:
+                print(f"OK: All {len(covered)} source domains are mapped downstream or declared internal.")
+            else:
+                print(f"COVERAGE FAILED: Found {len(unmapped)} unmapped source domain(s):")
+                for u in unmapped:
+                    print(f"  ! Unmapped: {u}")
+        return 0 if is_ok else 1
+
     results = sync_and_push_downstreams(
         source_root=args.source.resolve(),
         dest_root=args.dest.resolve(),
