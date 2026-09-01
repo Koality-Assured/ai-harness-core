@@ -10,3 +10,5 @@ Ingest simply; do not duplicate skills or paste root Critical — link [`../../A
 2. **Lean & Discoverability:** Prompts stored here MUST be lean. Do NOT duplicate repository rules, folder structures, or instructions that an agent can discover from `AGENTS.md`, routing catalogs, or `docs/`.
 3. **Human-Initiated Only:** Agents MUST NEVER autonomously use or execute prompts in this directory as part of routine duties or subagent delegation. Prompts are used exclusively by human operators when directly launching a follow-up task.
 4. **Follow-Up Scope:** Used for live testing of newly created generic tooling, OAuth/credential prompting, interactive human-in-the-loop executions, or continuing incomplete initiative phases.
+5. **Archival Lifecycle MUST:** Once an agent has acted on a prompt in this folder and completed it successfully, the prompt MUST be archived and moved into the [`completed/`](./completed/) sub-folder. Any prompts in the `completed/` sub-folder MUST NOT be read into agent context unless explicitly instructed by the human operator.
+

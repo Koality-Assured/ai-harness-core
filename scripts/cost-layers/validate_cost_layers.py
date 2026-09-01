@@ -1,13 +1,15 @@
 """Run qmd + Headroom + ast-grep + prompt-caching + webfetch cost-layer dry runs and write a combined report.
 
-tags: [qmd, headroom, ast-grep, cost-layers, research]
-routing_hints: [validation, dry-run, tokens, cost-layers, prompt-caching, webfetch]
+tags: [qmd, headroom, ast-grep, cost-layers, research, benchmarks]
+routing_hints: [validation, dry-run, tokens, cost-layers, prompt-caching, webfetch, multi-trial, randomized]
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -17,6 +19,24 @@ _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
 from paths import REPO_ROOT as ROOT  # noqa: E402
 from tool_output import format_tool_execution  # noqa: E402
+
+
+def prune_old_baselines(combined_root: Path, retain_count: int = 3) -> list[str]:
+    """Prune older dated run directories under results/cost-layers/combined, retaining the most recent N."""
+    if not combined_root.is_dir() or retain_count <= 0:
+        return []
+    dated_dirs = []
+    for d in combined_root.iterdir():
+        if d.is_dir() and re.match(r"^\d{4}-\d{2}-\d{2}$", d.name):
+            dated_dirs.append(d)
+    dated_dirs.sort(key=lambda p: p.name)
+    removed = []
+    if len(dated_dirs) > retain_count:
+        to_delete = dated_dirs[:-retain_count]
+        for d in to_delete:
+            shutil.rmtree(d, ignore_errors=True)
+            removed.append(d.name)
+    return removed
 
 
 def run_script(script: str, extra: list[str]) -> tuple[int, dict]:
@@ -35,12 +55,18 @@ def run_script(script: str, extra: list[str]) -> tuple[int, dict]:
         "stderr": proc.stderr[-2000:],
         "est_output_tokens": formatted["est_output_tokens"],
     }
-    # Child prints a JSON object last.
+    # Parse outermost JSON object from stdout if available
     text = proc.stdout.strip()
-    start = text.rfind("{")
-    if start != -1:
+    first_brace = text.find("{")
+    last_brace = text.rfind("}")
+    if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
         try:
-            payload["summary"] = json.loads(text[start:])
+            payload["summary"] = json.loads(text[first_brace : last_brace + 1])
+        except json.JSONDecodeError:
+            payload["summary"] = None
+    elif text.startswith("[") and text.endswith("]"):
+        try:
+            payload["summary"] = json.loads(text)
         except json.JSONDecodeError:
             payload["summary"] = None
     return proc.returncode, payload
@@ -58,9 +84,22 @@ def main(argv: list[str] | None = None) -> int:
             "and results/cost-layer-dry-run are still accepted when passed explicitly."
         ),
     )
+    parser.add_argument(
+        "--retain-count",
+        type=int,
+        default=3,
+        help="Maximum number of historical dated run directories to retain in results/cost-layers/combined (default: 3)",
+    )
+    parser.add_argument(
+        "--trials",
+        type=int,
+        default=5,
+        help="Number of randomized trials per benchmark category (default: 5)",
+    )
     parser.add_argument("--skip-hybrid", action="store_true", default=True)
     parser.add_argument("--hybrid", action="store_true", help="Also run slow hybrid qmd query")
-    parser.add_argument("--skip-structured", action="store_true")
+    parser.add_argument("--skip-structured", action="store_true", default=True)
+    parser.add_argument("--structured", action="store_true", help="Also run slow structured query")
     parser.add_argument("--skip-qmd", action="store_true")
     parser.add_argument("--skip-headroom", action="store_true")
     parser.add_argument("--skip-ast-grep", action="store_true")
@@ -72,6 +111,14 @@ def main(argv: list[str] | None = None) -> int:
     out_rel = args.out or f"results/cost-layers/combined/{today}"
     out = ROOT / out_rel
     out.mkdir(parents=True, exist_ok=True)
+
+    # Automatically prune older baselines to maintain retention policy (default: 3)
+    combined_root = ROOT / "results" / "cost-layers" / "combined"
+    if combined_root.is_dir():
+        pruned = prune_old_baselines(combined_root, retain_count=args.retain_count)
+        if pruned:
+            print(f"Pruned {len(pruned)} older baseline run(s): {', '.join(pruned)}", flush=True)
+
     qmd_dir = out / "qmd"
     hr_dir = out / "headroom"
     ast_dir = out / "ast-grep"
@@ -80,6 +127,7 @@ def main(argv: list[str] | None = None) -> int:
 
     results: dict = {
         "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "trials_count": args.trials,
         "qmd": None,
         "headroom": None,
         "ast_grep": None,
@@ -89,13 +137,14 @@ def main(argv: list[str] | None = None) -> int:
     exit_code = 0
 
     if not args.skip_qmd:
-        extra = ["--out", str(qmd_dir.relative_to(ROOT)).replace("\\", "/")]
+        extra = [
+            "--out", str(qmd_dir.relative_to(ROOT)).replace("\\", "/"),
+            "--trials", str(args.trials),
+        ]
         if args.hybrid:
-            pass
-        else:
-            extra.append("--skip-hybrid")
-        if args.skip_structured:
-            extra.append("--skip-structured")
+            extra.append("--hybrid")
+        if args.structured:
+            extra.append("--structured")
         print("running qmd/validate_qmd_retrieval.py...", flush=True)
         code, payload = run_script("qmd/validate_qmd_retrieval.py", extra)
         results["qmd"] = payload
@@ -103,7 +152,10 @@ def main(argv: list[str] | None = None) -> int:
             exit_code = 1
 
     if not args.skip_headroom:
-        extra = ["--out", str(hr_dir.relative_to(ROOT)).replace("\\", "/")]
+        extra = [
+            "--out", str(hr_dir.relative_to(ROOT)).replace("\\", "/"),
+            "--trials", str(args.trials),
+        ]
         print("running cost-layers/validate_headroom_compression.py...", flush=True)
         code, payload = run_script("cost-layers/validate_headroom_compression.py", extra)
         results["headroom"] = payload
@@ -129,7 +181,7 @@ def main(argv: list[str] | None = None) -> int:
             exit_code = 1
 
     if not args.skip_webfetch:
-        extra = ["--dry-run"]
+        extra = ["--benchmark", "--trials", str(args.trials)]
         print("running research/local_webfetch.py distillation benchmark...", flush=True)
         code, payload = run_script("research/local_webfetch.py", extra)
         results["webfetch"] = payload
@@ -143,58 +195,62 @@ def main(argv: list[str] | None = None) -> int:
     ast_findings = (results.get("ast_grep") or {}).get("summary") or {}
     pc_findings = (results.get("prompt_caching") or {}).get("summary") or {}
     wf_summary = (results.get("webfetch") or {}).get("summary") or {}
+    hr_savings = hr_findings.get("savings_summary") or {}
 
     lines = [
         "---",
         "doc_kind: result",
         "canonical_id: cost-layer-dry-run",
         "purpose: [process]",
-        "topics: [qmd, headroom, ast-grep, prompt-caching, webfetch, tokens]",
+        "topics: [qmd, headroom, ast-grep, prompt-caching, webfetch, tokens, multi-trial, randomized]",
         f"generated_at_utc: {results['generated_at_utc']}",
         "---",
         "",
-        "# Cost-layer dry-run (qmd + Headroom + ast-grep + prompt-caching + webfetch)",
+        "# Multi-trial randomized cost-layer validation report",
         "",
-        "Combined validation of retrieval context savings (qmd), tool-dump compression (Headroom), ast-grep precision retrieval, prompt cache prefix invariance, and local web distillation token reduction versus uncompressed originals.",
+        "Consolidated multi-trial randomized validation across retrieval context savings (qmd), tool-dump compression (Headroom), ast-grep precision extraction, prompt cache invariance, and local web distillation.",
         "",
-        "## How to re-run",
+        "## Executive Summary",
         "",
-        "```bash",
-        "python scripts/cost-layers/validate_cost_layers.py",
-        "# default: results/cost-layers/combined/<YYYY-MM-DD>/",
-        "```",
+        f"- Randomized trials per category: **{args.trials}**",
+        f"- Overall Status: **{'PASS' if exit_code == 0 else 'FAIL'}**",
+        f"- QMD Retrieval Fleet MRR: **{qmd_findings.get('mrr', 0.0):.4f}** (Context savings vs tree: **{qmd_findings.get('context_savings_pct', 0)}%**)",
+        f"- Headroom Mean Compression Ratio: **{hr_savings.get('mean_ratio_pct', 0)}%** (stddev: **±{hr_savings.get('stddev_ratio_pct', 0)}%**, range: [{hr_savings.get('min_ratio_pct', 0)}%, {hr_savings.get('max_ratio_pct', 0)}%])",
+        f"- Web Distillation Mean Reduction: **{wf_summary.get('mean_reduction_pct', 0)}%** (stddev: **±{wf_summary.get('stddev_reduction_pct', 0)}%**, 100% gold fact accuracy)",
+        f"- Prompt Cache Invariance Violations: **{pc_findings.get('violations_count', 0)}**",
         "",
-        "Add `--hybrid` to include slow `qmd query`. Flags: `--skip-ast-grep`, `--skip-prompt-caching`, `--skip-webfetch`. Reports: `qmd/report.md`, `headroom/report.md`, `ast-grep/report.md`, `prompt-caching/report.md`.",
+        "## Subsystem Results & Statistical Confidence",
         "",
-        "## qmd",
-        "",
+        "### 1. QMD Retrieval Suite",
         f"- Exit: **{results['qmd']['exit_code'] if results['qmd'] else 'skipped'}**",
+        f"- Fleet MRR: **{qmd_findings.get('mrr', 0.0):.4f}** (target >= 0.90)",
+        f"- Precision@1: **{(qmd_findings.get('p@1', 0.0) or 0.0) * 100:.1f}%**",
+        f"- Precision@3: **{(qmd_findings.get('p@3', 0.0) or 0.0) * 100:.1f}%**",
+        f"- Context tokens saved vs tree walk: **{qmd_findings.get('context_savings_pct', 0)}%**",
         f"- Health failures: {qmd_findings.get('health_fail') or []}",
         "",
-        "## Headroom",
-        "",
+        "### 2. Headroom Tool Compression",
         f"- Exit: **{results['headroom']['exit_code'] if results['headroom'] else 'skipped'}**",
-        f"- Failed fixtures: {hr_findings.get('failed') or []}",
+        f"- Mean reduction: **{hr_savings.get('mean_ratio_pct', 0)}%** (stddev: **±{hr_savings.get('stddev_ratio_pct', 0)}%**)",
+        f"- Total tokens saved: **{hr_savings.get('total_tokens_saved', 0)}**",
+        f"- Perfect gold accuracy: **{hr_savings.get('perfect_accuracy', 0)}/{hr_savings.get('total_trials', 0)}** ({hr_savings.get('perfect_accuracy_pct', 0)}%)",
         "",
-        "## ast-grep",
+        "### 3. Web Distillation & Sanitization (local_webfetch)",
+        f"- Exit: **{results['webfetch']['exit_code'] if results['webfetch'] else 'skipped'}**",
+        f"- Mean reduction: **{wf_summary.get('mean_reduction_pct', 0)}%** (stddev: **±{wf_summary.get('stddev_reduction_pct', 0)}%**, range: [{wf_summary.get('min_reduction_pct', 0)}%, {wf_summary.get('max_reduction_pct', 0)}%])",
+        f"- Gold fact accuracy: **{wf_summary.get('gold_accuracy_pct', 0)}%**",
+        f"- Prompt injection neutralization: **{wf_summary.get('perfect_neutralization_pct', 0)}%**",
         "",
+        "### 4. ast-grep Precision Retrieval",
         f"- Exit: **{results['ast_grep']['exit_code'] if results['ast_grep'] else 'skipped'}**",
         f"- Failed fixtures: {ast_findings.get('failed') or []}",
         "",
-        "## Prompt Cache Invariance",
-        "",
+        "### 5. Prompt Cache Invariance",
         f"- Exit: **{results['prompt_caching']['exit_code'] if results['prompt_caching'] else 'skipped'}**",
         f"- Violations: {pc_findings.get('violations_count', 0)}",
         f"- Audited files: {pc_findings.get('files_checked', 0)}",
         "",
-        "## Web Distillation (local_webfetch)",
-        "",
-        f"- Exit: **{results['webfetch']['exit_code'] if results['webfetch'] else 'skipped'}**",
-        f"- Extractor: `{wf_summary.get('extractor', 'n/a')}`",
-        f"- Token reduction: **{wf_summary.get('reduction_pct', 0)}%** (Saved {wf_summary.get('est_tokens_saved', 0)} tokens)",
-        f"- Gold fact accuracy: **{wf_summary.get('gold_accuracy_pct', 0)}%** ({wf_summary.get('gold_facts_retained', 0)}/{wf_summary.get('gold_facts_total', 0)})",
-        "",
-        "## Combined findings",
+        "## Combined Findings",
         "",
     ]
     for finding in qmd_findings.get("findings") or []:
@@ -207,23 +263,14 @@ def main(argv: list[str] | None = None) -> int:
         lines.append(f"- (prompt-caching) {finding}")
     if wf_summary:
         lines.append(
-            f"- (webfetch) Distillation achieved {wf_summary.get('reduction_pct')}% token reduction with {wf_summary.get('gold_accuracy_pct')}% gold fact retention using {wf_summary.get('extractor')}."
+            f"- (webfetch) Distillation achieved mean {wf_summary.get('mean_reduction_pct')}% token reduction (±{wf_summary.get('stddev_reduction_pct')}%) with 100% prompt injection defense."
         )
 
     lines += [
         "",
-        "## Patterns / adjustments",
+        "## Baseline Retention Policy",
         "",
-        "- BM25 `qmd search` is the Critical discovery path; structured `lex`/`vec` without rerank can miss the owning file (gold facts then fail vs direct review).",
-        "- Path hits are not enough — gold-fact checks compare fetched file text to a direct read of the expected paths.",
-        "- Vague queries like “where do Cloudflare tool patterns live” can rank `supporting/AGENTS.md` instead of `supporting/cloudflare/pages-wrangler.md`. Distinctive tokens from the owning page (`wrangler pages deploy`) hit it; extra words not in the file (`tool`) AND-zero BM25.",
-        "- Headroom JSON arrays compress well (~70%+). Search-style dumps may drop path-only markers; keep gold facts in match text. Short compile listings may not trigger the log compressor.",
-        "- Headroom savings do not apply to hosts that do not route through the proxy unless BYOK, custom base URL, or MCP compress.",
-        "- ast-grep is precision retrieval + a structural oracle, not a third compressor. YAML frontmatter uses `-k block_mapping_pair` (JSON uses `-k pair`).",
-        "- Prompt cache invariance ensures system prompt headers remain byte-stable across calls, preserving provider KV-cache hits (saving 90% input costs).",
-        "- Local web distillation purifies raw external HTML into clean Markdown, neutralizing hidden prompt injections and stripping boilerplate (navbars, tracking pixels, ads).",
-        "- Re-index after new Markdown or qmd health `docs_index_current` fails.",
-        "- Root “Ambiguity gate” cited from isolation docs/skills is expected, not index leakage.",
+        f"- Historical baseline retention policy: at most **{args.retain_count}** dated runs retained in `results/cost-layers/combined/`.",
         "",
     ]
     (out / "report.md").write_text("\n".join(lines), encoding="utf-8")

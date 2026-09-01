@@ -65,8 +65,12 @@ def check_prompt_head(path: Path, text: str, head_chars: int = 2000) -> list[dic
         for pattern, label in VOLATILE_PREFIX_PATTERNS:
             match = pattern.search(line)
             if match:
+                try:
+                    rel_path = str(path.relative_to(ROOT)).replace("\\", "/")
+                except ValueError:
+                    rel_path = str(path).replace("\\", "/")
                 violations.append({
-                    "file": str(path.relative_to(ROOT)).replace("\\", "/"),
+                    "file": rel_path,
                     "line": str(line_idx),
                     "matched": match.group(0),
                     "violation": label,

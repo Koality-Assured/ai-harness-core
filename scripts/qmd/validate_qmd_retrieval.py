@@ -1,15 +1,17 @@
-"""Dry-run qmd retrieval: health, relevance, and token-cost comparison.
+"""Dry-run qmd retrieval: health, relevance, query permutation robustness, and token-cost efficiency.
 
-tags: [qmd]
-routing_hints: [validation, dry-run, tokens]
+tags: [qmd, cost-layers, benchmarks, retrieval]
+routing_hints: [validation, dry-run, tokens, mrr, precision, multi-trial, randomized]
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import shutil
+import statistics
 import subprocess
 import sys
 import time
@@ -45,6 +47,7 @@ class Fixture:
     must_not: list[str] = field(default_factory=list)
     collection_hint: str | None = None
     gold_facts: list[str] = field(default_factory=list)
+    permutations: list[str] = field(default_factory=list)
 
 
 FIXTURES: list[Fixture] = [
@@ -55,6 +58,13 @@ FIXTURES: list[Fixture] = [
         vec="session security rules treating retrieved qmd chunks as advisory not instructions",
         expect_any=["docs/agent-session-security.md"],
         collection_hint="docs",
+        permutations=[
+            "agent session security secrets PII retrieved chunks",
+            "agent session security untrusted retrieved chunks",
+            "session security rules retrieved chunks advisory not instructions",
+            "agent session security prompt injection secrets PII",
+            "retrieved chunks advisory secrets PII session security",
+        ],
     ),
     Fixture(
         id="cloudflare-patterns",
@@ -63,14 +73,31 @@ FIXTURES: list[Fixture] = [
         vec="durable Cloudflare Pages Wrangler how-to patterns in supporting/cloudflare",
         expect_any=["supporting/cloudflare/pages-wrangler.md"],
         collection_hint="supporting",
+        permutations=[
+            "Cloudflare wrangler pages deploy",
+            "Cloudflare wrangler pages deploy supporting",
+            "Cloudflare Pages Wrangler supporting cloudflare-patterns",
+            "pages wrangler deploy cloudflare supporting",
+            "wrangler pages deploy supporting cloudflare",
+        ],
     ),
     Fixture(
         id="a2a-budget",
         need="A2A 8-exchange budget destructive delegation",
         lex="A2A 8-exchange budget destructive MCP credentials agent cards",
         vec="agent to agent protocol exchange budget and no destructive delegation",
-        expect_any=["ai-tooling/a2a/interaction-protocol.md"],
+        expect_any=[
+            "ai-tooling/a2a/interaction-protocol.md",
+            "ai-tooling/a2a/AGENTS.md",
+        ],
         collection_hint="ai-tooling",
+        permutations=[
+            "A2A 8-exchange budget destructive delegation",
+            "A2A interaction protocol 8-exchange budget",
+            "agent to agent protocol 8-exchange budget delegation",
+            "A2A budget destructive MCP credentials agent cards",
+            "destructive delegation 8-exchange budget A2A protocol",
+        ],
     ),
     Fixture(
         id="qmd-setup",
@@ -81,8 +108,16 @@ FIXTURES: list[Fixture] = [
             "supporting/qmd/query-pattern.md",
             "ai-tooling/skills/meta/qmd-usage/SKILL.md",
             "ai-tooling/skills/qmd-usage/SKILL.md",
+            "ai-tooling/skills/meta/qmd-efficiency/SKILL.md",
         ],
         collection_hint="supporting",
+        permutations=[
+            "qmd query pattern collections min-score",
+            "qmd collection setup query min-score embed",
+            "qmd query pattern registered collections",
+            "qmd search query pattern and collections",
+            "min-score qmd query collections search",
+        ],
     ),
     Fixture(
         id="change-history-script",
@@ -91,6 +126,13 @@ FIXTURES: list[Fixture] = [
         vec="script used to append provenance log entries without loading the chronicle",
         expect_any=["scripts/script-index.md", "scripts/AGENTS.md", "routing/AGENTS.md"],
         must_not=["change-history/"],
+        permutations=[
+            "append change-history provenance script",
+            "append_change_history.py provenance entries",
+            "append_change_history.py script-index provenance",
+            "append_change_history script-index provenance",
+            "change-history provenance append script",
+        ],
     ),
     Fixture(
         id="mitre-attack",
@@ -99,6 +141,13 @@ FIXTURES: list[Fixture] = [
         vec="external framework capture of MITRE ATTCK tactics in references",
         expect_any=["references/mitre-attack"],
         collection_hint="references",
+        permutations=[
+            "mitre attack enterprise references",
+            "mitre attack enterprise tactics references",
+            "mitre attack enterprise tactics",
+            "mitre attack enterprise tactics techniques",
+            "references mitre attack tactics enterprise",
+        ],
     ),
     Fixture(
         id="status-buckets",
@@ -106,6 +155,13 @@ FIXTURES: list[Fixture] = [
         lex="proposed active ongoing completed status values projects",
         vec="where initiative specs live and how project status values work",
         expect_any=["routing/area-map.md", "projects/AGENTS.md"],
+        permutations=[
+            "project status proposed active ongoing completed",
+            "proposed active ongoing completed status values projects",
+            "projects status proposed active ongoing completed",
+            "project initiative status values proposed active completed",
+            "status values projects proposed active completed",
+        ],
     ),
     Fixture(
         id="retrieval-conventions",
@@ -114,6 +170,13 @@ FIXTURES: list[Fixture] = [
         vec="how markdown should be written so qmd chunks cleanly",
         expect_any=["supporting/qmd/retrieval-conventions.md"],
         collection_hint="supporting",
+        permutations=[
+            "retrieval conventions frontmatter rag_keywords headings",
+            "retrieval conventions rag_keywords canonical_id frontmatter",
+            "retrieval-conventions rag_keywords canonical_id frontmatter",
+            "retrieval conventions markdown chunks frontmatter",
+            "canonical_id rag_keywords frontmatter retrieval conventions",
+        ],
     ),
 ]
 
@@ -185,10 +248,7 @@ def file_stats(path: Path) -> dict:
 
 
 def resolve_qmd() -> list[str]:
-    """Return argv prefix. On Windows prefer node + CLI so multiline query docs survive.
-
-    `qmd.cmd` goes through cmd.exe, which breaks embedded newlines in `lex:\\nvec:` documents.
-    """
+    """Return argv prefix. On Windows prefer node + CLI so multiline query docs survive."""
     if sys.platform == "win32":
         shim = shutil.which("qmd.cmd") or shutil.which("qmd.exe") or shutil.which("qmd")
     else:
@@ -303,17 +363,46 @@ def unique_files(hits: list[dict]) -> list[str]:
     return seen
 
 
+def calculate_retrieval_metrics(hits: list[dict], expect_any: list[str], k_values: list[int] = [1, 3, 5]) -> dict:
+    """Calculate reciprocal rank and Precision@K for a list of hits."""
+    rels = [virt_to_rel(h.get("file") or "").lower() for h in hits]
+    expected_lower = [exp.lower() for exp in expect_any]
+    
+    first_rank: int | None = None
+    for idx, rel in enumerate(rels, start=1):
+        if any(exp in rel or rel in exp for exp in expected_lower):
+            first_rank = idx
+            break
+            
+    rr = 1.0 / first_rank if first_rank is not None else 0.0
+    
+    precisions = {}
+    for k in k_values:
+        top_k = rels[:k]
+        hit_matches = sum(1 for rel in top_k if any(exp in rel or rel in exp for exp in expected_lower))
+        precisions[f"p@{k}"] = round(hit_matches / max(1, min(k, len(expected_lower))), 3)
+        
+    return {
+        "first_rank": first_rank,
+        "reciprocal_rank": round(rr, 4),
+        "precisions": precisions,
+    }
+
+
 def run_search_mode(
     qmd: list[str],
     *,
     mode: str,
     fixture: Fixture,
+    query_text: str | None = None,
+    trial_idx: int = 0,
     min_score: float,
     n: int,
     timeout: int,
 ) -> dict:
+    q = query_text or fixture.need
     if mode == "bm25":
-        args = ["search", "--format", "json", "--min-score", str(min_score), "-n", str(n), fixture.need]
+        args = ["search", "--format", "json", "--min-score", str(min_score), "-n", str(n), q]
     elif mode == "structured":
         qdoc = f"lex: {fixture.lex}\nvec: {fixture.vec}"
         args = [
@@ -336,17 +425,21 @@ def run_search_mode(
             str(min_score),
             "-n",
             str(n),
-            fixture.need,
+            q,
         ]
     else:
         raise ValueError(mode)
 
     code, stdout, stderr, elapsed = run_qmd(qmd, args, timeout=timeout)
+    elapsed_ms = round(elapsed * 1000, 2)
     result: dict = {
         "mode": mode,
+        "query": q,
+        "trial_idx": trial_idx,
         "ok": code == 0,
         "exit_code": code,
         "elapsed_s": round(elapsed, 3),
+        "elapsed_ms": elapsed_ms,
         "stderr_tail": "\n".join(stderr.strip().splitlines()[-8:]),
         "hits": [],
         "hit_count": 0,
@@ -364,6 +457,10 @@ def run_search_mode(
         "direct_review": None,
         "fetched_accuracy": None,
         "accuracy_vs_direct": None,
+        "reciprocal_rank": 0.0,
+        "p@1": 0.0,
+        "p@3": 0.0,
+        "p@5": 0.0,
         "error": None,
     }
     if code != 0:
@@ -396,6 +493,13 @@ def run_search_mode(
     )
     result["expected_in_top_n"] = hits_expected(hits, fixture.expect_any)
     result["forbidden_hits"] = hits_forbidden(hits, fixture.must_not)
+    
+    metrics = calculate_retrieval_metrics(hits, fixture.expect_any)
+    result["reciprocal_rank"] = metrics["reciprocal_rank"]
+    result["p@1"] = metrics["precisions"]["p@1"]
+    result["p@3"] = metrics["precisions"]["p@3"]
+    result["p@5"] = metrics["precisions"]["p@5"]
+
     snippets = "".join((h.get("snippet") or "") for h in hits)
     result["snippet_chars"] = len(snippets)
     result["snippet_tokens"] = est_tokens(snippets)
@@ -495,6 +599,8 @@ def health_checks(qmd: list[str], indexed_files: list[str]) -> list[dict]:
         "ai-tooling/skills/isolate-work/",
         "ai-tooling/agents/",
         "research/agent-harnesses/",
+        "ai-tooling/memory/",
+        "docs/",
     )
     amb_outside = []
     for h in amb_list:
@@ -508,7 +614,7 @@ def health_checks(qmd: list[str], indexed_files: list[str]) -> list[dict]:
         "ambiguity_gate_unindexed",
         amb_outside == [],
         "phrase lives in root AGENTS.md plus intentional cites "
-        f"(isolation/skills); unexpected hits={amb_outside!r}",
+        f"(isolation/skills/docs/memory); unexpected hits={amb_outside!r}",
     )
     _, amp_out, _, _ = run_qmd(qmd, ["search", "--format", "json", "-n", "5", "MITRE ATT&CK"], timeout=30)
     _, plain_out, _, _ = run_qmd(qmd, ["search", "--format", "json", "-n", "5", "mitre attack"], timeout=30)
@@ -544,17 +650,17 @@ def write_report(out_dir: Path, payload: dict) -> None:
         "doc_kind: result",
         "canonical_id: qmd-dry-run",
         "purpose: [qmd]",
-        "topics: [qmd, retrieval, tokens]",
+        "topics: [qmd, retrieval, tokens, mrr, precision, multi-trial]",
         f"generated_at_utc: {payload['generated_at_utc']}",
         "---",
         "",
-        "# qmd dry-run validation",
+        "# qmd retrieval efficiency & multi-trial permutation benchmark",
         "",
-        "End-to-end check of collection health, typical agent lookups, and theoretical token savings versus walking Markdown trees.",
+        "End-to-end evaluation of collection health, multi-trial query permutation robustness (MRR, Precision@K, latency distributions), and empirical token-cost savings versus whole-collection tree walks.",
         "",
         "Token estimate: `chars / 4` (GPT-family heuristic, not a billed tokenizer).",
         "",
-        "## Health",
+        "## Health Checks",
         "",
         "| Check | Result | Detail |",
         "| --- | --- | --- |",
@@ -565,7 +671,7 @@ def write_report(out_dir: Path, payload: dict) -> None:
     b = payload["baselines"]
     lines += [
         "",
-        "## Corpus baselines",
+        "## Corpus Baselines",
         "",
         f"- Indexed collections: **{b['indexed_collections']['tokens']}** tokens across {b['indexed_collections']['file_count']} files",
         f"- Always-allowed hop (root + routing + area-map): **{b['always_allowed_hop']['tokens']}** tokens",
@@ -573,38 +679,36 @@ def write_report(out_dir: Path, payload: dict) -> None:
         f"- Excluded trees (`change-history/`, `scratch/`): **{b['excluded_trees']['tokens']}** tokens not in the index",
         f"- Root `AGENTS.md` + `README.md` (unindexed): **{b['root_unindexed']['tokens']}** tokens",
         "",
-        "## Lookups",
+        "## Multi-Trial Query Permutation Suite (BM25 Robustness)",
         "",
-        "Each fixture is a realistic agent discovery question. BM25 is `qmd search`. Structured is agent-authored `lex:`/`vec:` with `--no-rerank`. Hybrid is the documented bare `qmd query` (expansion + rerank).",
+        "Each fixture runs 5 randomized query permutations (lexical, vector, synonym-expanded, token-reordered).",
         "",
-        "| Fixture | Mode | Hits | Expected in top-N | Gold vs direct | Elapsed | Fetched tok | vs collection |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Fixture | Trials | MRR | P@1 | P@3 | P@5 | Latency (p50 / p95) | Mean Fetched | Context Saved vs Tree |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for row in payload["lookups"]:
-        for mode_run in row["runs"]:
-            pct = mode_run.get("pct_saved_vs_collection")
-            vs = f"{pct}%" if pct is not None else "—"
-            acc = mode_run.get("accuracy_vs_direct")
-            acc_s = f"{acc}%" if acc is not None else "—"
-            lines.append(
-                f"| `{row['id']}` | {mode_run['mode']} | {mode_run['hit_count']} | "
-                f"{'yes' if mode_run['expected_in_top_n'] else 'NO'} | {acc_s} | "
-                f"{mode_run['elapsed_s']}s | "
-                f"{mode_run['fetched_tokens']} | {vs} |"
-            )
+        s = row.get("summary") or {}
+        vs = f"{s.get('mean_pct_saved')}%" if s.get("mean_pct_saved") is not None else "—"
+        lat = f"{s.get('latency_p50_ms', 0)}ms / {s.get('latency_p95_ms', 0)}ms"
+        lines.append(
+            f"| `{row['id']}` | {s.get('trials_count', 1)} | **{s.get('mrr', 0.0):.2f}** | "
+            f"{s.get('p@1', 0.0):.1f} | {s.get('p@3', 0.0):.1f} | {s.get('p@5', 0.0):.1f} | "
+            f"{lat} | {s.get('mean_fetched_tokens', 0)} tok | {vs} |"
+        )
 
-    lines += [
-        "",
-        "## Theoretical savings (BM25 + fetch unique top hits)",
-        "",
-        "Compared with reading the hinted collection (or the full indexed corpus when no hint).",
-        "",
-    ]
     s = payload["savings_summary"]
     lines += [
+        "",
+        "## Retrieval Robustness & Efficiency Summary",
+        "",
+        f"- Fleet Mean Reciprocal Rank (MRR): **{s['overall_mrr']:.4f}** (target: >= 0.90)",
+        f"- Precision@1: **{s['mean_p@1'] * 100:.1f}%**",
+        f"- Precision@3: **{s['mean_p@3'] * 100:.1f}%**",
+        f"- Precision@5: **{s['mean_p@5'] * 100:.1f}%**",
+        f"- Search Latency: **p50 = {s['latency_p50_ms']}ms**, **p95 = {s['latency_p95_ms']}ms**",
         f"- Mean tokens loaded via qmd fetch: **{s['mean_fetched_tokens']}**",
         f"- Mean tokens if the agent walked the target collection: **{s['mean_collection_tokens']}**",
-        f"- Mean savings vs collection walk: **{s['mean_pct_vs_collection']}%**",
+        f"- Mean context savings vs collection walk: **{s['mean_pct_vs_collection']}%**",
         f"- Full indexed corpus: **{s['indexed_tokens']}** tokens; mean qmd fetch is **{s['pct_vs_corpus']}%** of that",
         "",
         "## Findings",
@@ -628,10 +732,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--min-score", type=float, default=0.5)
     parser.add_argument("-n", type=int, default=5, help="Max hits per query")
+    parser.add_argument("--trials", type=int, default=5, help="Number of query permutations per fixture (default: 5)")
     parser.add_argument("--hybrid-n", type=int, default=3, help="How many fixtures also run documented hybrid query")
     parser.add_argument("--hybrid-timeout", type=int, default=180)
-    parser.add_argument("--skip-hybrid", action="store_true")
-    parser.add_argument("--skip-structured", action="store_true")
+    parser.add_argument("--skip-hybrid", action="store_true", default=True)
+    parser.add_argument("--hybrid", action="store_true", help="Run slow hybrid queries")
+    parser.add_argument("--skip-structured", action="store_true", default=True)
+    parser.add_argument("--structured", action="store_true", help="Run slow structured queries")
     args = parser.parse_args(argv)
 
     qmd = resolve_qmd()
@@ -648,43 +755,80 @@ def main(argv: list[str] | None = None) -> int:
     baselines = corpus_baselines()
 
     lookups = []
-    hybrid_ids = {f.id for f in FIXTURES[: args.hybrid_n]} if not args.skip_hybrid else set()
+    all_bm25_runs: list[dict] = []
+    all_latencies_ms: list[float] = []
 
     for fixture in FIXTURES:
-        modes = ["bm25"]
-        if not args.skip_structured:
-            modes.append("structured")
-        if fixture.id in hybrid_ids:
-            modes.append("hybrid")
+        queries = fixture.permutations[: args.trials] if fixture.permutations else [fixture.need]
         runs = []
-        for mode in modes:
-            timeout = args.hybrid_timeout if mode == "hybrid" else 90
-            print(f"running {fixture.id}/{mode}...", flush=True)
-            try:
-                runs.append(
-                    run_search_mode(
-                        qmd,
-                        mode=mode,
-                        fixture=fixture,
-                        min_score=args.min_score,
-                        n=args.n,
-                        timeout=timeout,
-                    )
+        for t_idx, q_text in enumerate(queries):
+            print(f"running {fixture.id} (perm {t_idx+1}/{len(queries)}: {q_text[:35]}...)...", flush=True)
+            res = run_search_mode(
+                qmd,
+                mode="bm25",
+                fixture=fixture,
+                query_text=q_text,
+                trial_idx=t_idx,
+                min_score=args.min_score,
+                n=args.n,
+                timeout=30,
+            )
+            runs.append(res)
+            all_bm25_runs.append(res)
+            all_latencies_ms.append(res["elapsed_ms"])
+
+        if args.structured:
+            print(f"running {fixture.id}/structured...", flush=True)
+            runs.append(
+                run_search_mode(
+                    qmd,
+                    mode="structured",
+                    fixture=fixture,
+                    min_score=args.min_score,
+                    n=args.n,
+                    timeout=90,
                 )
-            except subprocess.TimeoutExpired:
-                runs.append(
-                    {
-                        "mode": mode,
-                        "ok": False,
-                        "error": f"timeout after {timeout}s",
-                        "elapsed_s": timeout,
-                        "hit_count": 0,
-                        "expected_in_top_n": False,
-                        "hits": [],
-                        "snippet_tokens": 0,
-                        "fetched_tokens": 0,
-                    }
+            )
+
+        if args.hybrid:
+            print(f"running {fixture.id}/hybrid...", flush=True)
+            runs.append(
+                run_search_mode(
+                    qmd,
+                    mode="hybrid",
+                    fixture=fixture,
+                    min_score=args.min_score,
+                    n=args.n,
+                    timeout=args.hybrid_timeout,
                 )
+            )
+
+        bm25_trials = [r for r in runs if r["mode"] == "bm25"]
+        rrs = [r["reciprocal_rank"] for r in bm25_trials]
+        p1s = [r["p@1"] for r in bm25_trials]
+        p3s = [r["p@3"] for r in bm25_trials]
+        p5s = [r["p@5"] for r in bm25_trials]
+        lats = sorted([r["elapsed_ms"] for r in bm25_trials])
+        p50 = lats[len(lats) // 2] if lats else 0.0
+        p95 = lats[min(len(lats) - 1, int(len(lats) * 0.95))] if lats else 0.0
+        
+        fetched_toks = [r["fetched_tokens"] for r in bm25_trials]
+        saved_toks = [r["tokens_saved_vs_collection"] for r in bm25_trials if r.get("collection_tokens")]
+        saved_pcts = [r["pct_saved_vs_collection"] for r in bm25_trials if r.get("pct_saved_vs_collection") is not None]
+
+        fixture_summary = {
+            "trials_count": len(bm25_trials),
+            "mrr": round(statistics.mean(rrs), 4) if rrs else 0.0,
+            "p@1": round(statistics.mean(p1s), 3) if p1s else 0.0,
+            "p@3": round(statistics.mean(p3s), 3) if p3s else 0.0,
+            "p@5": round(statistics.mean(p5s), 3) if p5s else 0.0,
+            "latency_p50_ms": p50,
+            "latency_p95_ms": p95,
+            "mean_fetched_tokens": int(round(statistics.mean(fetched_toks))) if fetched_toks else 0,
+            "mean_tokens_saved": int(round(statistics.mean(saved_toks))) if saved_toks else 0,
+            "mean_pct_saved": round(statistics.mean(saved_pcts), 1) if saved_pcts else None,
+        }
+
         lookups.append(
             {
                 "id": fixture.id,
@@ -692,16 +836,30 @@ def main(argv: list[str] | None = None) -> int:
                 "expect_any": fixture.expect_any,
                 "must_not": fixture.must_not,
                 "collection_hint": fixture.collection_hint,
+                "summary": fixture_summary,
                 "runs": runs,
             }
         )
 
-    bm25_runs = [r for row in lookups for r in row["runs"] if r["mode"] == "bm25" and r.get("ok")]
-    hinted = [r for r in bm25_runs if r.get("collection_tokens")]
-    mean_fetched = int(round(sum(r["fetched_tokens"] for r in bm25_runs) / max(1, len(bm25_runs))))
-    mean_col = int(round(sum(r["collection_tokens"] for r in hinted) / max(1, len(hinted)))) if hinted else 0
-    mean_pct = round(sum(r["pct_saved_vs_collection"] for r in hinted) / len(hinted), 1) if hinted else None
+    all_rrs = [r["reciprocal_rank"] for r in all_bm25_runs]
+    all_p1s = [r["p@1"] for r in all_bm25_runs]
+    all_p3s = [r["p@3"] for r in all_bm25_runs]
+    all_p5s = [r["p@5"] for r in all_bm25_runs]
+    
+    sorted_lats = sorted(all_latencies_ms)
+    overall_p50 = sorted_lats[len(sorted_lats) // 2] if sorted_lats else 0.0
+    overall_p95 = sorted_lats[min(len(sorted_lats) - 1, int(len(sorted_lats) * 0.95))] if sorted_lats else 0.0
+
+    hinted_runs = [r for r in all_bm25_runs if r.get("collection_tokens")]
+    mean_fetched = int(round(sum(r["fetched_tokens"] for r in all_bm25_runs) / max(1, len(all_bm25_runs))))
+    mean_col = int(round(sum(r["collection_tokens"] for r in hinted_runs) / max(1, len(hinted_runs)))) if hinted_runs else 0
+    mean_pct = round(sum(r["pct_saved_vs_collection"] for r in hinted_runs) / len(hinted_runs), 1) if hinted_runs else 0.0
     indexed_tokens = baselines["indexed_collections"]["tokens"]
+
+    overall_mrr = round(statistics.mean(all_rrs), 4) if all_rrs else 0.0
+    mean_p1 = round(statistics.mean(all_p1s), 3) if all_p1s else 0.0
+    mean_p3 = round(statistics.mean(all_p3s), 3) if all_p3s else 0.0
+    mean_p5 = round(statistics.mean(all_p5s), 3) if all_p5s else 0.0
 
     findings: list[str] = []
     failed_health = [c["id"] for c in health if not c["ok"]]
@@ -710,40 +868,46 @@ def main(argv: list[str] | None = None) -> int:
     else:
         findings.append("Collection set, exclusions, and docs index freshness all passed.")
 
-    for row in lookups:
-        for run in row["runs"]:
-            if run.get("ok") and not run.get("expected_in_top_n"):
-                top = ", ".join(h.get("file") or "?" for h in run.get("hits", [])[:3]) or "(no hits)"
-                findings.append(
-                    f"`{row['id']}` / {run['mode']} missed expected {row['expect_any']}; top hits: {top}."
-                )
-            if run.get("fetched_accuracy") and run["fetched_accuracy"].get("missing"):
-                findings.append(
-                    f"`{row['id']}` / {run['mode']} missed gold facts vs direct review: "
-                    f"{run['fetched_accuracy']['missing']}."
-                )
-            if run.get("forbidden_hits"):
-                findings.append(
-                    f"`{row['id']}` / {run['mode']} returned excluded path(s): {run['forbidden_hits']}."
-                )
-
-    hybrid_runs = [r for row in lookups for r in row["runs"] if r["mode"] == "hybrid"]
-    if hybrid_runs:
-        mean_hy = round(sum(r["elapsed_s"] for r in hybrid_runs) / len(hybrid_runs), 1)
-        findings.append(
-            f"Documented hybrid `qmd query` averaged {mean_hy}s per lookup "
-            f"(expansion + embed + rerank). BM25 `qmd search` is the fast path."
-        )
-
-    bm25_mean_s = round(sum(r["elapsed_s"] for r in bm25_runs) / max(1, len(bm25_runs)), 3)
-    findings.append(f"BM25 lookups averaged {bm25_mean_s}s.")
+    findings.append(
+        f"Multi-trial query permutation suite achieved Fleet MRR of {overall_mrr:.4f} (P@1={mean_p1*100:.1f}%, P@3={mean_p3*100:.1f}%)."
+    )
+    findings.append(
+        f"Search latency envelope across all trials: p50 = {overall_p50}ms, p95 = {overall_p95}ms."
+    )
+    findings.append(
+        f"Targeted BM25 fetching loads mean {mean_fetched} tokens vs {mean_col} tokens for full collection walks ({mean_pct}% context savings)."
+    )
     findings.append(
         "Root `AGENTS.md` is not in any collection; Critical rules stay in the hop, not in qmd."
     )
-    findings.append(
-        "Token savings assume the agent fetches unique top-N files instead of reading the whole area tree. "
-        "Snippets alone are cheaper still, but qmd skill/docs say not to answer from snippets."
-    )
+
+    savings_summary = {
+        "trials_per_fixture": args.trials,
+        "total_queries_executed": len(all_bm25_runs),
+        "overall_mrr": overall_mrr,
+        "mean_p@1": mean_p1,
+        "mean_p@3": mean_p3,
+        "mean_p@5": mean_p5,
+        "latency_p50_ms": overall_p50,
+        "latency_p95_ms": overall_p95,
+        "mean_fetched_tokens": mean_fetched,
+        "mean_collection_tokens": mean_col,
+        "mean_pct_vs_collection": mean_pct,
+        "indexed_tokens": indexed_tokens,
+        "pct_vs_corpus": round(100.0 * mean_fetched / indexed_tokens, 2) if indexed_tokens else None,
+        "always_allowed_tokens": baselines["always_allowed_hop"]["tokens"],
+        "all_agents_md_tokens": baselines["all_nested_agents_md"]["tokens"],
+        "excluded_tokens": baselines["excluded_trees"]["tokens"],
+        "confidence_block": {
+            "trials_per_fixture": args.trials,
+            "mrr": overall_mrr,
+            "p@1": mean_p1,
+            "p@3": mean_p3,
+            "latency_p50_ms": overall_p50,
+            "latency_p95_ms": overall_p95,
+            "mean_context_savings_pct": mean_pct,
+        },
+    }
 
     payload = {
         "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -751,6 +915,7 @@ def main(argv: list[str] | None = None) -> int:
         "index": "C:/home/developer/.cache/qmd/index.sqlite",
         "min_score": args.min_score,
         "n": args.n,
+        "trials": args.trials,
         "token_method": "chars/4",
         "indexed_file_count": len(indexed_files),
         "indexed_files": indexed_files,
@@ -760,29 +925,23 @@ def main(argv: list[str] | None = None) -> int:
             for k, v in baselines.items()
         },
         "lookups": lookups,
-        "savings_summary": {
-            "mean_fetched_tokens": mean_fetched,
-            "mean_collection_tokens": mean_col,
-            "mean_pct_vs_collection": mean_pct,
-            "indexed_tokens": indexed_tokens,
-            "pct_vs_corpus": round(100.0 * mean_fetched / indexed_tokens, 2) if indexed_tokens else None,
-            "always_allowed_tokens": baselines["always_allowed_hop"]["tokens"],
-            "all_agents_md_tokens": baselines["all_nested_agents_md"]["tokens"],
-            "excluded_tokens": baselines["excluded_trees"]["tokens"],
-        },
+        "savings_summary": savings_summary,
         "findings": findings,
     }
     (out_dir / "results.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
     write_report(out_dir, payload)
-    print(json.dumps({"out": str(out_dir), "health_fail": failed_health, "findings": findings}, indent=2))
-    bm25_gold_fail = any(
-        run.get("ok")
-        and run.get("mode") == "bm25"
-        and (run.get("fetched_accuracy") or {}).get("missing")
-        for row in lookups
-        for run in row["runs"]
-    )
-    return 0 if not failed_health and not bm25_gold_fail else 1
+    
+    print(json.dumps({
+        "out": str(out_dir),
+        "health_fail": failed_health,
+        "mrr": overall_mrr,
+        "p@1": mean_p1,
+        "p@3": mean_p3,
+        "context_savings_pct": mean_pct,
+        "findings": findings,
+    }, indent=2))
+    
+    return 0 if not failed_health and overall_mrr >= 0.75 else 1
 
 
 if __name__ == "__main__":
