@@ -30,25 +30,7 @@ from sync_public_repos import (  # noqa: E402
 )
 
 DOWNSTREAM_REPOS = list(DEFAULT_REPO_MAPPINGS.keys())
-SKILL_FAMILIES = {
-    "admin",
-    "aws",
-    "azure",
-    "benchmarks",
-    "community",
-    "confluence",
-    "cost-layers",
-    "gcp",
-    "git",
-    "google",
-    "harness-review",
-    "memory",
-    "meta",
-    "model-memory-operate",
-    "reporting",
-    "research",
-    "slack",
-}
+from _harness_template import SKILL_FAMILIES  # noqa: E402
 
 
 @dataclasses.dataclass
@@ -154,9 +136,11 @@ def sync_and_push_downstreams(
             )
             continue
 
-        # Prune legacy skills in agent-skills-and-tools
+        # Prune legacy skills in agent-skills-and-tools and ai-harness-core
         if repo_name == "agent-skills-and-tools":
             prune_legacy_skill_dirs(repo_dir / "skills")
+        elif repo_name == "ai-harness-core":
+            prune_legacy_skill_dirs(repo_dir / "ai-tooling" / "skills")
 
         # Check git status
         code, stdout, stderr = run_git_cmd(["git", "status", "-s"], repo_dir)

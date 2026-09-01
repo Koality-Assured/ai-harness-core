@@ -15,6 +15,12 @@ Generated from dest `scripts/` after harness-template export (kept trees only). 
 | [`ai-tooling/model_memory.py`](./ai-tooling/model_memory.py) | `ai-tooling`, `memory` | model-memory, model-capability-memory, capability-retrieval, promote-model-learning | Search, validate, and propose promotion of model-family capability memory. |
 | [`ai-tooling/validate_agent.py`](./ai-tooling/validate_agent.py) | `ai-tooling`, `routing`, `agents` | agents, validate, dry-run, schema-v2 | Validate one or all agents against Schema V2 frontmatter and agent conventions. |
 | [`ai-tooling/validate_skill.py`](./ai-tooling/validate_skill.py) | `ai-tooling`, `routing` | skills, dry-run, template, schema-v2 | Validate one or all skills against skill-conventions.md. |
+| [`benchmarks/benchmark_agent_fleet.py`](./benchmarks/benchmark_agent_fleet.py) | `benchmarks`, `agents`, `fleet`, `simulation`, `dry-run` | fleet-benchmark, agent-dry-run, headroom, cache-invariance, isolation | Orchestrate dry-run validation sweeps and simulated multi-agent fleet benchmarks. |
+| [`benchmarks/benchmark_retrieval.py`](./benchmarks/benchmark_retrieval.py) | `benchmarks`, `qmd`, `retrieval`, `rag`, `tokens` | retrieval-benchmark, mrr, precision, bm25, search-latency | Benchmark corpus retrieval accuracy, MRR, Precision@K, and token savings. |
+| [`benchmarks/benchmark_task_eval.py`](./benchmarks/benchmark_task_eval.py) | `benchmarks`, `eval`, `pass-at-1`, `tasks`, `coding-agent` | task-eval, benchmark-suite, pass-rate, evaluation-scorecard | Evaluate autonomous coding agent task execution quality and pass@1 rates on standard suites. |
+| [`benchmarks/benchmark_tool_efficiency.py`](./benchmarks/benchmark_tool_efficiency.py) | `benchmarks`, `cost-layers`, `headroom`, `ast-grep`, `compression`, `tokens` | tool-efficiency, compression-ratio, fact-retention, serialization | Benchmark tool output compression ratios, AST extraction fidelity, and serialization overhead. |
+| [`benchmarks/estimate_agent_costs.py`](./benchmarks/estimate_agent_costs.py) | `benchmarks`, `cost-layers`, `agents`, `pricing`, `tokens` | cost-estimator, agent-cost, token-budget, kv-cache, model-tiers | Estimate token consumption, KV cache savings, and monetary costs for agents and paired skills. |
+| [`benchmarks/run_benchmark_suite.py`](./benchmarks/run_benchmark_suite.py) | `benchmarks`, `fleet`, `cost-layers`, `eval`, `retrieval`, `orchestration` | benchmark-suite, run-benchmarks, combined-benchmark, master-eval | Unified master orchestrator to execute benchmark suites and generate consolidated reports. |
 | [`change-history/append_change_history.py`](./change-history/append_change_history.py) | `change-history` | provenance, session-end, completion-gate | Append a change-history entry for the active year/quarter. |
 | [`change-history/ensure_change_history_quarter.py`](./change-history/ensure_change_history_quarter.py) | `change-history` | provenance, scaffold | Ensure change-history year/quarter entries file exists. |
 | [`cost-layers/extract_ast_facts.py`](./cost-layers/extract_ast_facts.py) | `qmd`, `headroom`, `ast-grep` | structural-facts, outline, cost-layers | Extract structural facts via ast-grep outline/kind JSON (not full files). |
@@ -62,26 +68,30 @@ Generated from dest `scripts/` after harness-template export (kept trees only). 
 
 ## By tag
 
-- **agents:** `ai-tooling/validate_agent.py`, `cost-layers/validate_prompt_caching.py`, `tests/test_benchmarks.py`, `tests/test_validate_agent.py`
+- **agents:** `ai-tooling/validate_agent.py`, `benchmarks/benchmark_agent_fleet.py`, `benchmarks/estimate_agent_costs.py`, `cost-layers/validate_prompt_caching.py`, `tests/test_benchmarks.py`, `tests/test_validate_agent.py`
 - **ai-tooling:** `ai-tooling/model_memory.py`, `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `tests/test_hybrid_dispatch.py`, `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
 - **analysis:** `research/community_analyzer.py`
-- **ast-grep:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`
-- **benchmarks:** `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `qmd/validate_qmd_retrieval.py`, `research/benchlm_lookup.py`, `research/local_webfetch.py`, `tests/test_benchmarks.py`
+- **ast-grep:** `benchmarks/benchmark_tool_efficiency.py`, `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`
+- **benchmarks:** `benchmarks/benchmark_agent_fleet.py`, `benchmarks/benchmark_retrieval.py`, `benchmarks/benchmark_task_eval.py`, `benchmarks/benchmark_tool_efficiency.py`, `benchmarks/estimate_agent_costs.py`, `benchmarks/run_benchmark_suite.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `qmd/validate_qmd_retrieval.py`, `research/benchlm_lookup.py`, `research/local_webfetch.py`, `tests/test_benchmarks.py`
 - **briefing:** `research/ai_vendor_briefing.py`
 - **change-history:** `change-history/append_change_history.py`, `change-history/ensure_change_history_quarter.py`
+- **coding-agent:** `benchmarks/benchmark_task_eval.py`
 - **communities:** `research/community_analyzer.py`, `research/manage_social_registry.py`
+- **compression:** `benchmarks/benchmark_tool_efficiency.py`
 - **config:** `tests/test_subagent_context_config.py`
 - **context:** `tests/test_subagent_context_config.py`
-- **cost-layers:** `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `cost-layers/validate_prompt_caching.py`, `docs/validate_context_budget.py`, `qmd/validate_qmd_retrieval.py`, `research/local_webfetch.py`, `tests/test_benchmarks.py`, `tests/test_local_webfetch.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_prompt_caching.py`
+- **cost-layers:** `benchmarks/benchmark_tool_efficiency.py`, `benchmarks/estimate_agent_costs.py`, `benchmarks/run_benchmark_suite.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `cost-layers/validate_prompt_caching.py`, `docs/validate_context_budget.py`, `qmd/validate_qmd_retrieval.py`, `research/local_webfetch.py`, `tests/test_benchmarks.py`, `tests/test_local_webfetch.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_prompt_caching.py`
 - **dag:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`
 - **distillation:** `research/local_webfetch.py`
 - **docs:** `docs/run_markdownlint.py`, `docs/validate_context_budget.py`, `docs/validate_router_structure.py`, `docs/validate_structure_fast.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`
 - **downstream:** `sync/sync_and_push_downstreams.py`
+- **dry-run:** `benchmarks/benchmark_agent_fleet.py`
+- **eval:** `benchmarks/benchmark_task_eval.py`, `benchmarks/run_benchmark_suite.py`
 - **export:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`
-- **fleet:** `tests/test_benchmarks.py`
+- **fleet:** `benchmarks/benchmark_agent_fleet.py`, `benchmarks/run_benchmark_suite.py`, `tests/test_benchmarks.py`
 - **git:** `sync/sync_and_push_downstreams.py`
 - **github:** `github/resolve_github_path.py`, `repos/scaffold_public_repos.py`, `tests/test_pretty_docs_security.py`
-- **headroom:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`
+- **headroom:** `benchmarks/benchmark_tool_efficiency.py`, `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`
 - **intelligence:** `research/ai_vendor_briefing.py`
 - **isolation:** `routing/spawn_worktree.py`
 - **lint:** `docs/validate_structure_fast.py`
@@ -89,26 +99,32 @@ Generated from dest `scripts/` after harness-template export (kept trees only). 
 - **markdown:** `docs/run_markdownlint.py`
 - **memory:** `ai-tooling/model_memory.py`
 - **models:** `research/benchlm_lookup.py`
+- **orchestration:** `benchmarks/run_benchmark_suite.py`
 - **osint:** `research/community_analyzer.py`
 - **pacing:** `tests/test_pacing.py`
-- **pricing:** `research/benchlm_lookup.py`
+- **pass-at-1:** `benchmarks/benchmark_task_eval.py`
+- **pricing:** `benchmarks/estimate_agent_costs.py`, `research/benchlm_lookup.py`
 - **prompt-caching:** `tests/test_validate_prompt_caching.py`
-- **qmd:** `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `qmd/qmd_preflight.py`, `qmd/refresh_qmd_index.py`, `qmd/setup_qmd_collections.py`, `qmd/validate_qmd_retrieval.py`, `tests/test_qmd_preflight.py`
+- **qmd:** `benchmarks/benchmark_retrieval.py`, `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `qmd/qmd_preflight.py`, `qmd/refresh_qmd_index.py`, `qmd/setup_qmd_collections.py`, `qmd/validate_qmd_retrieval.py`, `tests/test_qmd_preflight.py`
 - **quota:** `tests/test_pacing.py`
+- **rag:** `benchmarks/benchmark_retrieval.py`
 - **registry:** `research/manage_social_registry.py`
 - **repos:** `repos/scaffold_public_repos.py`
 - **research:** `cost-layers/validate_cost_layers.py`, `research/ai_vendor_briefing.py`, `research/benchlm_lookup.py`, `research/community_analyzer.py`, `research/local_webfetch.py`, `research/manage_social_registry.py`, `tests/test_local_webfetch.py`
 - **results:** `tests/test_validate_router_structure.py`
-- **retrieval:** `qmd/validate_qmd_retrieval.py`, `tests/test_benchmarks.py`
+- **retrieval:** `benchmarks/benchmark_retrieval.py`, `benchmarks/run_benchmark_suite.py`, `qmd/validate_qmd_retrieval.py`, `tests/test_benchmarks.py`
 - **routing:** `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `cost-layers/validate_prompt_caching.py`, `docs/validate_router_structure.py`, `routing/generate_routing_index.py`, `routing/generate_script_index.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `routing/resolve_skill_graph.py`, `routing/spawn_worktree.py`, `tests/test_hybrid_dispatch.py`, `tests/test_pacing.py`, `tests/test_skill_graph.py`
 - **scaffold:** `repos/scaffold_public_repos.py`
 - **schema-v2:** `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
 - **security:** `sync/sync_public_repos.py`, `tests/test_pretty_docs_security.py`
+- **simulation:** `benchmarks/benchmark_agent_fleet.py`
 - **skills:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`, `tests/test_validate_skill.py`
 - **socials:** `research/community_analyzer.py`, `research/manage_social_registry.py`
 - **subagents:** `tests/test_subagent_context_config.py`
 - **sync:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`
+- **tasks:** `benchmarks/benchmark_task_eval.py`
 - **tests:** `tests/test_benchmarks.py`, `tests/test_hybrid_dispatch.py`, `tests/test_local_webfetch.py`, `tests/test_pacing.py`, `tests/test_pretty_docs_security.py`, `tests/test_qmd_preflight.py`, `tests/test_skill_graph.py`, `tests/test_subagent_context_config.py`, `tests/test_validate_agent.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_prompt_caching.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`
+- **tokens:** `benchmarks/benchmark_retrieval.py`, `benchmarks/benchmark_tool_efficiency.py`, `benchmarks/estimate_agent_costs.py`
 - **validation:** `docs/validate_context_budget.py`, `docs/validate_structure_fast.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`
 - **web:** `research/local_webfetch.py`
 - **webfetch:** `tests/test_local_webfetch.py`

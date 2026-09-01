@@ -19,15 +19,9 @@ Human index (not agent SoT):
 | [`detailed-activity/`](./detailed-activity/) | antagonistic review + deep research | high |
 | [`artifact-agent/`](./artifact-agent/) | diagrams + modular documents; default `results/` | standard |
 | [`as-code-agent/`](./as-code-agent/) | Terraform/Pulumi/Ansible/Kyverno/Rego drafts | high |
-| [`public-llm-admin/`](./public-llm-admin/) | Public LLM workspace admin, ZDR audit & API key governance | standard |
-| [`google-suite-operator/`](./google-suite-operator/) | Google Workspace resources: Drive, Gmail, Docs, Metadata | standard |
-| [`google-suite-admin/`](./google-suite-admin/) | Google Workspace domain admin, OU hierarchy, DLP, ZDR audit | standard |
 | [`git-fast-operator/`](./git-fast-operator/) | simple git fetch/status/log/diff/sync | fast |
 | [`reference-ops/`](./reference-ops/) | `references/` captures and normalization | standard |
 | [`repo-sync-ops/`](./repo-sync-ops/) | downstream repo sync + public export redaction | standard |
-| [`community-analyst/`](./community-analyst/) | public communities, subreddits, developer forums & OSINT | standard |
-| [`chat-collab-agent/`](./chat-collab-agent/) | Slack workspace governance, Block Kit messaging, webhooks, app manifests | standard |
-| [`docs-collab-agent/`](./docs-collab-agent/) | Confluence space/page governance, CQL querying, ADF/storage formatting, Forge apps, webhooks | standard |
 | [`benchmark-agent/`](./benchmark-agent/) | Empirical benchmarking: cost estimation, fleet dry runs, retrieval, tool efficiency, task eval | standard |
 
 A2A specifications & schemas: canonical in `AGENT.md` (Schema V2); see also [`../a2a/agent-cards/README.md`](../a2a/agent-cards/README.md).

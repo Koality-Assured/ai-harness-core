@@ -24,8 +24,37 @@ from generate_script_index import render_script_index  # noqa: E402
 HARNESS_TEMPLATE_MODE = "harness_template"
 WIKI_TEMPLATE_MODE = HARNESS_TEMPLATE_MODE  # Backward compatibility alias
 
-HARNESS_TEMPLATE_ALLOWED_DOT_DIRS: frozenset[str] = frozenset({".harness"})
+HARNESS_TEMPLATE_ALLOWED_DOT_DIRS: frozenset[str] = frozenset(
+    {
+        ".harness",
+        ".claude",
+        ".cursor",
+        ".github",
+    }
+)
 WIKI_TEMPLATE_ALLOWED_DOT_DIRS = HARNESS_TEMPLATE_ALLOWED_DOT_DIRS
+
+SKILL_FAMILIES: frozenset[str] = frozenset(
+    {
+        "admin",
+        "aws",
+        "azure",
+        "benchmarks",
+        "community",
+        "confluence",
+        "cost-layers",
+        "gcp",
+        "git",
+        "google",
+        "harness-review",
+        "memory",
+        "meta",
+        "model-memory-operate",
+        "reporting",
+        "research",
+        "slack",
+    }
+)
 
 HARNESS_TEMPLATE_ROOT_FILES: frozenset[str] = frozenset(
     {
@@ -44,6 +73,8 @@ WIKI_TEMPLATE_ROOT_FILES = HARNESS_TEMPLATE_ROOT_FILES
 HARNESS_TEMPLATE_KEEP_SKILLS: frozenset[str] = frozenset(
     {
         "agent-builder",
+        "agent-cost-estimator",
+        "agent-fleet-benchmark",
         "antagonistic-review",
         "anti-slop",
         "architecture-diagram",
@@ -59,6 +90,7 @@ HARNESS_TEMPLATE_KEEP_SKILLS: frozenset[str] = frozenset(
         "github-paths",
         "github-workflow",
         "guidance-draft",
+        "harness-review",
         "headroom",
         "humanizer",
         "isolate-work",
@@ -68,16 +100,20 @@ HARNESS_TEMPLATE_KEEP_SKILLS: frozenset[str] = frozenset(
         "memory-cleanup",
         "memory-create",
         "mermaid-diagram",
+        "model-memory-operate",
         "proposal-report",
         "qmd-efficiency",
         "qmd-usage",
         "readme-maintain",
         "reference-maintain",
+        "retrieval-benchmark",
         "scratch-cleanup",
         "script-builder",
         "skill-builder",
         "skill-dry-run",
         "sync-downstream-repos",
+        "task-eval-benchmark",
+        "tool-efficiency-benchmark",
         "router-structure",
     }
 )
@@ -103,6 +139,12 @@ HARNESS_TEMPLATE_DROP_AGENTS: frozenset[str] = frozenset(
         "cloud-operator",
         "cloud-admin-agent",
         "assessment-agent",
+        "google-suite-operator",
+        "google-suite-admin",
+        "chat-collab-agent",
+        "docs-collab-agent",
+        "public-llm-admin",
+        "community-analyst",
     }
 )
 WIKI_TEMPLATE_DROP_AGENTS = HARNESS_TEMPLATE_DROP_AGENTS
@@ -132,6 +174,7 @@ HARNESS_TEMPLATE_KEEP_SCRIPT_DIRS: frozenset[str] = frozenset(
         "docs",
         "github",
         "ai-tooling",
+        "benchmarks",
     }
 )
 WIKI_TEMPLATE_KEEP_SCRIPT_DIRS = HARNESS_TEMPLATE_KEEP_SCRIPT_DIRS
@@ -178,6 +221,7 @@ HARNESS_TEMPLATE_KEEP_SUPPORTING_DIRS: frozenset[str] = frozenset(
         "github",
         "powershell",
         "mermaid",
+        "benchmarks",
     }
 )
 WIKI_TEMPLATE_KEEP_SUPPORTING_DIRS = HARNESS_TEMPLATE_KEEP_SUPPORTING_DIRS
@@ -562,8 +606,17 @@ def is_harness_template_rel_kept(rel: str) -> bool:
     if "/".join(parts) in HARNESS_TEMPLATE_DEST_EXCLUDE_RELS:
         return False
     top = parts[0]
-    if top in {".git", ".github", ".cursor"}:
+    if top == ".git":
         return False
+    if top == ".claude":
+        return parts == [".claude", "settings.json"]
+    if top == ".cursor":
+        return parts == [".cursor", "rules", "context-boundaries.mdc"]
+    if top == ".github":
+        return "/".join(parts) in {
+            ".github/copilot-instructions.md",
+            ".github/instructions/subagents.instructions.md",
+        }
     if len(parts) == 1 and top in HARNESS_TEMPLATE_ROOT_FILES:
         return True
     if top in {"routing", "config", ".harness"}:
@@ -599,8 +652,14 @@ def harness_template_dir_may_contain_kept(rel_dir: str) -> bool:
     if not parts:
         return True
     top = parts[0]
-    if top in {".git", ".github", ".cursor"}:
+    if top == ".git":
         return False
+    if top == ".claude":
+        return len(parts) == 1
+    if top == ".cursor":
+        return parts == [".cursor"] or parts == [".cursor", "rules"]
+    if top == ".github":
+        return parts == [".github"] or parts == [".github", "instructions"]
     if top in HARNESS_TEMPLATE_ROOT_FILES:
         return False
     if top in {"routing", "config", ".harness"}:
@@ -790,15 +849,29 @@ def harness_template_prune_dest_leftovers(dest_root: Path) -> list[str]:
                 shutil.rmtree(agent_dir)
                 pruned.append(f"ai-tooling/agents/{agent_dir.name}")
 
-    # Prune dropped skills
+    # Prune dropped and legacy skills
     skills_root = dest_root / "ai-tooling" / "skills"
     if skills_root.is_dir():
-        for family_dir in sorted(skills_root.iterdir()):
-            if family_dir.is_dir():
-                for skill_dir in sorted(family_dir.iterdir()):
-                    if skill_dir.is_dir() and not skill_is_kept(skill_dir.name):
-                        shutil.rmtree(skill_dir)
-                        pruned.append(f"ai-tooling/skills/{family_dir.name}/{skill_dir.name}")
+        for child in sorted(skills_root.iterdir()):
+            if not child.is_dir() or child.name.startswith("."):
+                continue
+            if child.name not in SKILL_FAMILIES:
+                shutil.rmtree(child)
+                pruned.append(f"ai-tooling/skills/{child.name}")
+            else:
+                if (child / "SKILL.md").exists():
+                    if not skill_is_kept(child.name):
+                        shutil.rmtree(child)
+                        pruned.append(f"ai-tooling/skills/{child.name}")
+                else:
+                    for skill_dir in sorted(child.iterdir()):
+                        if skill_dir.is_dir() and not skill_is_kept(skill_dir.name):
+                            shutil.rmtree(skill_dir)
+                            pruned.append(f"ai-tooling/skills/{child.name}/{skill_dir.name}")
+                    remaining = [f for f in child.iterdir() if f.name not in {".gitkeep", ".DS_Store"}]
+                    if not remaining:
+                        shutil.rmtree(child)
+                        pruned.append(f"ai-tooling/skills/{child.name}")
 
     # Prune dropped reference families
     refs_root = dest_root / "references"
@@ -858,6 +931,14 @@ def render_dest_skill_dispatch(dest_root: Path) -> str:
     if skills_root.is_dir():
         for path in skill_paths(dest_root):
             rows.append(load_skill_record(path))
+    seen: set[str] = set()
+    deduped_rows: list[dict[str, Any]] = []
+    for r in rows:
+        name = str(r.get("name", ""))
+        if name and name not in seen:
+            seen.add(name)
+            deduped_rows.append(r)
+    rows = deduped_rows
     rows.sort(key=lambda r: str(r.get("name", "")))
 
     def _md_cell(value: str) -> str:

@@ -1,0 +1,15 @@
+---
+description: Universal context boundary and clean-slate subagent isolation rule
+globs: ["*"]
+alwaysApply: true
+---
+
+# Subagent Context Boundaries and Clean-Slate Rule
+
+## Core Directives
+
+1. **Clean-Slate Subagent Execution**: Subagents must be initialized with clean-slate context. They receive only the specific task prompt, the designated `AGENT.md` / `SKILL.md` path, and target worktree path.
+2. **No Conversation History Carryover**: Never inject prior conversation transcripts, chat history, or unrelated multi-turn dialogue into subagent prompts.
+3. **Selective JIT Retrieval**: Subagents must discover repository knowledge autonomously Just-In-Time (JIT) via `qmd search` / `qmd get` and `ast-grep` symbol outlines rather than preloading full repository trees.
+4. **Tool and Scope Whitelisting**: Bound subagents to their explicit domain responsibilities. Subagents must not execute out-of-scope mutations.
+5. **Durable Knowledge Write-Back**: Subagents return structured result summaries to the parent router; durable findings are written directly to owning source areas.

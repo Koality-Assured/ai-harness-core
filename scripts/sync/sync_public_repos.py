@@ -473,10 +473,12 @@ class SyncEngine:
 
             pruned: list[str] = []
             for d in dirs:
-                if d in EXCLUDED_NAMES:
-                    continue
-                if d.startswith("."):
-                    if not (mode == HARNESS_TEMPLATE_MODE and d in WIKI_TEMPLATE_ALLOWED_DOT_DIRS):
+                if mode == HARNESS_TEMPLATE_MODE and d in WIKI_TEMPLATE_ALLOWED_DOT_DIRS:
+                    pass
+                else:
+                    if d in EXCLUDED_NAMES:
+                        continue
+                    if d.startswith("."):
                         continue
                 if mode == HARNESS_TEMPLATE_MODE:
                     child_rel = f"{rel_root}/{d}" if rel_root else d

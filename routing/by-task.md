@@ -30,7 +30,6 @@ When work requires mutating the repository, run worktree isolation (`python scri
 | **Author / revise agent definitions** | `ai-tooling/agents/` | [`ai-tooling-ops`](../ai-tooling/agents/ai-tooling-ops/AGENT.md) | [`agent-builder`](../ai-tooling/skills/meta/agent-builder/SKILL.md) | `python scripts/ai-tooling/validate_agent.py` |
 | **Public downstream repo sync** | Public slice repos | [`repo-sync-ops`](../ai-tooling/agents/repo-sync-ops/AGENT.md) | [`sync-downstream-repos`](../ai-tooling/skills/meta/sync-downstream-repos/SKILL.md) | `python scripts/sync/sync_public_repos.py --dry-run` |
 | **Scratch & worktree hygiene** | `scratch/` | [`router-maintenance`](../ai-tooling/agents/router-maintenance/AGENT.md) | [`scratch-cleanup`](../ai-tooling/skills/meta/scratch-cleanup/SKILL.md) | `python scripts/routing/spawn_worktree.py list --json` |
-| **Community analysis & developer OSINT** | Reddit / X / HN / Discord | [`community-analyst`](../ai-tooling/agents/community-analyst/AGENT.md) | [`community-pattern-analysis`](../ai-tooling/skills/community/community-pattern-analysis/SKILL.md) | `python scripts/research/community_analyzer.py` |
 
 ---
 

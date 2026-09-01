@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "subagents": {
+    "isolated_context": true,
+    "inherit_conversation_history": false,
+    "default_model_tier": "standard",
+    "enforce_clean_slate": true,
+    "max_exchange_budget": 8
+  },
+  "caching": {
+    "max_breakpoints": 4,
+    "standard_breakpoints": 2,
+    "ttl_seconds": 300
+  },
+  "permissions": {
+    "non_workspace_files": "ask",
+    "command_execution": "always-proceed"
+  }
+}
