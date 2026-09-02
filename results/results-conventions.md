@@ -27,6 +27,7 @@ Every run uses `results/<family>/<topic-or-slug>/<YYYY-MM-DD>/`. Typed families 
 | threat-model | `results/threat-model/<topic>/<date>/` |
 | as-code | `results/as-code/<type>/<topic>/<date>/` |
 | cost-layers | `results/cost-layers/<slug>/<date>/` |
+| benchmarks | `results/benchmarks/<suite>/<date>/` |
 
 Report `<type>` values: `executive`, `proposal`, `corpus-draft`, `guidance-draft`, `code-review`, `framework-map`.
 

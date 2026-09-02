@@ -91,5 +91,8 @@ Human index (not agent SoT):
 | [`retrieval-benchmark/`](./benchmarks/retrieval-benchmark/) | benchmark-agent | mutate |
 | [`tool-efficiency-benchmark/`](./benchmarks/tool-efficiency-benchmark/) | benchmark-agent | mutate |
 | [`task-eval-benchmark/`](./benchmarks/task-eval-benchmark/) | benchmark-agent | mutate |
+| [`terraform-plan-validate/`](./iac/terraform-plan-validate/) | as-code-agent | read-only |
+| [`terraform-module-builder/`](./iac/terraform-module-builder/) | as-code-agent | mutate |
+| [`iac-security-audit/`](./iac/iac-security-audit/) | as-code-agent | read-only |
 
 

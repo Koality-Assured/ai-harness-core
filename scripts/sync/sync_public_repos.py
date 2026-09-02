@@ -725,6 +725,7 @@ INTERNAL_ONLY_DOMAINS: set[str] = {
     "scripts/ai-tooling",
     "scripts/tests",
     "scripts/_lib",
+    "scripts/network",
     "ai-tooling/memory",
     "ai-tooling/agents",
     "ai-tooling/a2a",
@@ -741,6 +742,9 @@ INTERNAL_ONLY_DOMAINS: set[str] = {
     "supporting/qmd",
     "supporting/headroom",
     "supporting/ast-grep",
+    "supporting/terraform",
+    "supporting/aws",
+    "supporting/discovery",
 }
 
 

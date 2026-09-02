@@ -244,7 +244,7 @@ def check_memory(errors: list[str]) -> None:
 
 ALLOWED_RESULTS_FILES = frozenset({"AGENTS.md", "README.md", "results-conventions.md"})
 ALLOWED_RESULTS_FAMILIES = frozenset(
-    {"reports", "research", "diagrams", "threat-model", "as-code", "cost-layers"}
+    {"reports", "research", "diagrams", "threat-model", "as-code", "cost-layers", "benchmarks"}
 )
 RETIRED_REVIEWS_DIR = "reviews"
 GITKEEP_NAME = ".gitkeep"

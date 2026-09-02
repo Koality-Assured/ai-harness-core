@@ -4,7 +4,7 @@ canonical_id: workstation-onboarding
 purpose: [process]
 rank: high
 topics: [onboarding, python, qmd, ast-grep, headroom]
-rag_keywords: [onboarding, python, path, qmd, headroom, ast-grep, utf8, noir, smart-app-control]
+rag_keywords: [onboarding, python, path, qmd, headroom, ast-grep, utf8, noir, nmap, wireshark, tshark, smart-app-control]
 ---
 
 # Workstation onboarding
@@ -33,6 +33,8 @@ This repo expects a real CPython, Node for qmd, and the cost-layer CLIs. Optiona
 | Google Workspace APIs | optional (google-suite) | current | Drive, Gmail, Docs & Workspace Admin | [`google/google-suite-patterns.md`](./google/google-suite-patterns.md) |
 | Mermaid CLI (`mmdc`) | optional | 10+ | Offline diagram render | [`mermaid/agent-diagram-notes.md`](./mermaid/agent-diagram-notes.md) |
 | Docker / Noir | optional | — | Attack-surface inventory | Wrapper only. [`noir/agent-scan.md`](./noir/agent-scan.md) |
+| Nmap | optional (network-discovery) | current | Authorized private/local host discovery | [`discovery/networking/nmap-network-discovery.md`](./discovery/networking/nmap-network-discovery.md) |
+| Wireshark / TShark | optional (wireshark-capture-review) | current | Offline, metadata-first capture review | [`discovery/networking/wireshark-capture-review.md`](./discovery/networking/wireshark-capture-review.md) |
 | Web distillation (`trafilatura`, `readability-lxml`, `markdownify`, `httpx`) | required | current | Local HTML distillation & prompt injection defense | `pip install trafilatura readability-lxml markdownify httpx`. Used by `scripts/research/local_webfetch.py`. |
 
 Use the vendor’s installer. `--version` is enough to confirm.

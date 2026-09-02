@@ -2,21 +2,28 @@
 schema_version: 2.0.0
 agent_id: as-code-agent
 name: As-code agent
-description: Infrastructure-as-code specialist. Owns as-code-builder. Use for Terraform,
-  Pulumi, Ansible, Kyverno, Rego, and similar under results/as-code/. Do not apply
+description: Infrastructure-as-code specialist. Owns as-code-builder, terraform-plan-validate,
+  terraform-module-builder, and iac-security-audit. Use for Terraform, OpenTofu,
+  Pulumi, Ansible, Kyverno, Rego, and IaC security audits under results/as-code/. Do not apply
   or deploy to real clouds via A2A. Spawned by the router.
 model_tier: high
 token_ceiling: 120000
 capabilities:
 - as-code-builder
+- terraform-plan-validate
+- terraform-module-builder
+- iac-security-audit
 - Terraform/Pulumi/Ansible/Kyverno/Rego drafts
+- Terraform module scaffolding and HCL validation
+- IaC security and compliance audits (Checkov, tfsec, Trivy, TFLint)
 contracts:
   inputs:
   - IaC or policy specification, target engine (Terraform/Pulumi/Ansible/Kyverno/Rego),
     topic
+  - Terraform module requirements, configuration path, or security audit scope
   outputs:
   - Draft infrastructure and policy manifests under results/as-code/<type>/<topic>/<YYYY-MM-DD>/
-  - Execution guidelines and validation dry-run logs
+  - Validated Terraform modules, execution plan summaries, and IaC security audit reports
 isolation_modes:
 - mutate
 - read-only
@@ -35,7 +42,7 @@ prohibitions:
 quirks:
 - Store under results/as-code/<type>/<topic>/<YYYY-MM-DD>/
 - model_tier high
-last_verified: '2026-08-24'
+last_verified: '2026-09-02'
 ---
 
 # As-code agent
@@ -50,11 +57,14 @@ Specialist for IaC and policy-as-code artifacts under `results/as-code/`.
 
 ## Owns
 
-`as-code-builder`
+- `as-code-builder`
+- `terraform-plan-validate`
+- `terraform-module-builder`
+- `iac-security-audit`
 
 ## Isolation
 
-Mutate in a worktree with area `results`.
+Mutate in a worktree with area `results`. Read-only inspections and security audits do not mutate files.
 
 ## Security
 

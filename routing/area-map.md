@@ -35,6 +35,7 @@ Match [`skill-dispatch.md`](./skill-dispatch.md) first. Use this table only when
 | --- | --- |
 | `docs/guidance/` | [`documentation-ops`](../ai-tooling/agents/documentation-ops/AGENT.md) |
 | `references/socials/` | [`community-analyst`](../ai-tooling/agents/community-analyst/AGENT.md) |
+| `supporting/aws/` | [`cloud-operator`](../ai-tooling/agents/cloud-operator/AGENT.md) |
 | `supporting/github/` | [`github-ops`](../ai-tooling/agents/github-ops/AGENT.md) |
 | `supporting/qmd/` | [`qmd-ops`](../ai-tooling/agents/qmd-ops/AGENT.md) |
 | `supporting/headroom/` | [`router-maintenance`](../ai-tooling/agents/router-maintenance/AGENT.md) |
@@ -44,4 +45,7 @@ Match [`skill-dispatch.md`](./skill-dispatch.md) first. Use this table only when
 | `supporting/google/` | [`google-suite-operator`](../ai-tooling/agents/google-suite-operator/AGENT.md) |
 | `supporting/confluence/` | [`docs-collab-agent`](../ai-tooling/agents/docs-collab-agent/AGENT.md) |
 | `supporting/benchmarks/` | [`benchmark-agent`](../ai-tooling/agents/benchmark-agent/AGENT.md) |
+| `supporting/terraform/` | [`as-code-agent`](../ai-tooling/agents/as-code-agent/AGENT.md) |
+| `references/iac/` | [`as-code-agent`](../ai-tooling/agents/as-code-agent/AGENT.md) |
 | `ai-tooling/skills/benchmarks/` | [`benchmark-agent`](../ai-tooling/agents/benchmark-agent/AGENT.md) |
+| `ai-tooling/skills/iac/` | [`as-code-agent`](../ai-tooling/agents/as-code-agent/AGENT.md) |

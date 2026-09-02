@@ -66,6 +66,8 @@ nested_defaults:
     default_agent: documentation-ops
   - path: references/socials
     default_agent: community-analyst
+  - path: supporting/aws
+    default_agent: cloud-operator
   - path: supporting/github
     default_agent: github-ops
   - path: supporting/qmd
@@ -84,5 +86,11 @@ nested_defaults:
     default_agent: docs-collab-agent
   - path: supporting/benchmarks
     default_agent: benchmark-agent
+  - path: supporting/terraform
+    default_agent: as-code-agent
+  - path: references/iac
+    default_agent: as-code-agent
   - path: ai-tooling/skills/benchmarks
     default_agent: benchmark-agent
+  - path: ai-tooling/skills/iac
+    default_agent: as-code-agent
