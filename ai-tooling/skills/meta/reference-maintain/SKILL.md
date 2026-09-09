@@ -7,7 +7,7 @@ description: >-
   OWASP, or similar catalogs, enriching stubs, or fixing stale captures. Do not
   use for inventing control IDs in reports (use qmd on existing topic files) or
   for docs/ standards (doc-builder).
-owner_agent: reference-ops
+owner_agent: document-operator
 rank: high
 isolation: mutate
 contracts:

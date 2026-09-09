@@ -6,7 +6,7 @@ description: >-
   to docs/. Use when drafting corpus content that is not yet ready for
   doc-builder. Do not use as a substitute for landing durable standards in
   docs/ (doc-builder).
-owner_agent: artifact-agent
+owner_agent: document-operator
 rank: medium
 isolation: mutate
 contracts:

@@ -8,7 +8,7 @@ description: >-
   results/reports/executive/ that points at deeper artifacts (e.g. threat
   model). Do not use for proposals (proposal-report), deep research
   (deep-research), or as a substitute for a detailed threat-model.
-owner_agent: artifact-agent
+owner_agent: document-operator
 rank: medium
 isolation: mutate
 contracts:

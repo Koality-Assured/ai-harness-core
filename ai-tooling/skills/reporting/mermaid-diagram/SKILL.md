@@ -7,7 +7,7 @@ description: >-
   C4, Gantt, or similar under results/diagrams/ or beside a host report. Do not
   use for full threat models (threat-model) or multi-view architecture packs
   (architecture-diagram).
-owner_agent: artifact-agent
+owner_agent: document-operator
 rank: medium
 isolation: mutate
 contracts:

@@ -6,7 +6,7 @@ description: >-
   frontmatter, qmd exclusions, dispatch). Use when checking structure drift,
   after adding areas/skills/agents, or on a maintenance pass. Do not use to
   author new docs (doc-builder).
-owner_agent: documentation-ops
+owner_agent: document-operator
 rank: high
 isolation: read-only
 contracts:

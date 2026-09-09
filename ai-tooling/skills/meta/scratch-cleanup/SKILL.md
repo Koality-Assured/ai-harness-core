@@ -5,7 +5,7 @@ description: >-
   Delete or promote scratch/ contents (downloads, experiments, leftover
   worktrees, interim generator output, in-progress review notes) so scratch never becomes source of truth. Use when finishing a session or
   when scratch is cluttered. Do not use to create durable docs in scratch.
-owner_agent: router-maintenance
+owner_agent: harness-operator
 rank: high
 isolation: mutate
 contracts:

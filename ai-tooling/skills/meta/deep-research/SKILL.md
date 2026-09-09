@@ -6,7 +6,7 @@ description: >-
   frameworks, writing under results/research/. Use when the human asks for a
   deep dive or internet-backed investigation. Do not use for antagonistic
   review (antagonistic-review) or short exec reports (executive-report).
-owner_agent: detailed-activity
+owner_agent: research-operator
 rank: high
 isolation: mutate
 contracts:

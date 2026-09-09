@@ -2,7 +2,7 @@
 name: memory-adjust
 description: >-
   Update an existing agent operational memory checkpoint under ai-tooling/memory/agent/ (or user workstation memory under memory/user/) to refine failure modes, environment quirks, and recovery strategies. Use when an agent learns new operational gotchas or resolves an existing pitfall. Do not use to append session work logs, project task lists, or duplicate skill bodies.
-owner_agent: ai-tooling-ops
+owner_agent: harness-operator
 rank: high
 isolation: mutate
 schema_version: 2.0.0

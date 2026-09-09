@@ -5,7 +5,7 @@ description: >-
   Produce architecture diagrams (prefer Mermaid) under results/diagrams/ or
   beside a host report. Use when drawing system/context/component views. Do not use for
   STRIDE threat-model assembly (threat-model) or pure narrative reports.
-owner_agent: artifact-agent
+owner_agent: document-operator
 rank: medium
 isolation: mutate
 contracts:

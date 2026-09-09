@@ -44,6 +44,14 @@ Defines primary, authoritative documentation endpoints, control catalogs, and fr
 - **CIS Benchmarks**: `https://www.cisecurity.org/cis-benchmarks`
 - **Trust Tier**: Tier 1 (Standards Body)
 
+### Microsoft Windows and Active Directory
+
+- **Windows security baselines and Security Compliance Toolkit**: `https://learn.microsoft.com/en-us/windows/security/operating-system-security/device-management/windows-security-configuration-framework/windows-security-baselines`
+- **Active Directory security best practices**: `https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/security-best-practices/best-practices-for-securing-active-directory`
+- **Windows audit policy recommendations**: `https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/security-best-practices/audit-policy-recommendations`
+- **Microsoft Windows Server CIS benchmark listing**: `https://www.cisecurity.org/benchmark/microsoft_windows_server`
+- **Trust Tier**: Tier 1 (Official Vendor Documentation / Standards Body)
+
 ### Cybersecurity and Infrastructure Security Agency (CISA)
 
 - **Known Exploited Vulnerabilities (KEV) Catalog**: `https://www.cisa.gov/known-exploited-vulnerabilities-catalog`

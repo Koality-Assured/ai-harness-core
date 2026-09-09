@@ -6,7 +6,7 @@ description: >-
   proposal. Use when turning a project slug into a proposal under
   results/reports/proposal/. Do not use for durable docs/ pages (doc-builder)
   or exec-only summaries (executive-report).
-owner_agent: artifact-agent
+owner_agent: document-operator
 rank: medium
 isolation: mutate
 contracts:

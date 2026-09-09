@@ -2,7 +2,7 @@
 name: memory-create
 description: >-
   Create an agent operational memory checkpoint under ai-tooling/memory/agent/ (or user workstation memory under memory/user/) to record common problems, failure modes, environment quirks, and learned recovery strategies. Use when an agent discovers operational gotchas or requires cold-resumption operational context. Do not use to record session work logs, project task lists, research archives, or duplicate skill/agent bodies.
-owner_agent: ai-tooling-ops
+owner_agent: harness-operator
 rank: high
 isolation: mutate
 schema_version: 2.0.0

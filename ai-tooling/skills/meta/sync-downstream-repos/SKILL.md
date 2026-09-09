@@ -7,7 +7,7 @@ description: >-
   standards, research, or the generic harness template (ai-harness-core)
   to public downstream repos or validating export safety.
   Do not use for internal branch merges.
-owner_agent: repo-sync-ops
+owner_agent: harness-operator
 rank: high
 isolation: mutate
 dependencies:

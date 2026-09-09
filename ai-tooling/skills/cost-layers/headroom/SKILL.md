@@ -7,7 +7,7 @@ description: >-
   Cursor, pointing OpenAI/Anthropic base URLs at localhost:8787, compressing
   bulky tool outputs, or workstation onboarding that includes Headroom. Do not
   use for qmd token reports (qmd-efficiency).
-owner_agent: router-maintenance
+owner_agent: harness-operator
 rank: critical
 isolation: read-only
 contracts:

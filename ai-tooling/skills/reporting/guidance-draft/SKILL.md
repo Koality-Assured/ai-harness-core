@@ -5,7 +5,7 @@ description: >-
   Draft guidance under results/reports/guidance-draft/. Use when producing
   operational guidance drafts for review. Do not use for durable docs/ landing
   (doc-builder) or corpus page drafts (corpus-draft).
-owner_agent: artifact-agent
+owner_agent: document-operator
 rank: medium
 isolation: mutate
 contracts:

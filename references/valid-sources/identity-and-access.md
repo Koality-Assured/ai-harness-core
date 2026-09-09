@@ -20,6 +20,12 @@ Defines primary, authoritative documentation portals, specifications, and RFCs f
 - **Microsoft Graph API Reference**: `https://learn.microsoft.com/en-us/graph/api/overview`
 - **Trust Tier**: Tier 1 (Official Vendor Documentation)
 
+### Microsoft Active Directory Domain Services
+- **LDAP signing and channel binding**: `https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/ldap-signing`
+- **LDAP signing through Group Policy**: `https://learn.microsoft.com/en-us/windows-server/identity/manage-ldap-signing-group-policy`
+- **Group Policy processing and SYSVOL replication model**: `https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/group-policy/group-policy-processing`
+- **Trust Tier**: Tier 1 (Official Vendor Documentation)
+
 ### Okta
 - **Okta Developer Portal**: `https://developer.okta.com/docs/`
 - **Okta Product Documentation**: `https://help.okta.com/`

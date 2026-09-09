@@ -2,7 +2,7 @@
 name: memory-cleanup
 description: >-
   Archive or remove stale memory checkpoints under ai-tooling/memory/user/ and agent/ (obsolete failure modes, resolved quirks, duplicates, secrets, sprawl). Use when memory contains obsolete notes, a thread finished, or a file holds durable content that belongs in source areas. Do not use to update active operational memory (memory-adjust).
-owner_agent: ai-tooling-ops
+owner_agent: harness-operator
 rank: medium
 isolation: mutate
 schema_version: 2.0.0

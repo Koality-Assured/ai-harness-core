@@ -6,7 +6,7 @@ description: >-
   run section) without mutating the primary checkout. Use when validating a
   new or changed skill, or before relying on a skill in dispatch. Do not use
   to author skills (skill-builder).
-owner_agent: ai-tooling-ops
+owner_agent: harness-operator
 rank: high
 isolation: read-only
 contracts:

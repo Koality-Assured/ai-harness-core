@@ -7,7 +7,7 @@ description: >-
   clearing MD### findings on the corpus. Do not use to author docs
   (doc-builder), validate router layout (router-structure), or encode style rules
   in AGENTS.md.
-owner_agent: documentation-ops
+owner_agent: document-operator
 rank: high
 isolation: mutate
 contracts:

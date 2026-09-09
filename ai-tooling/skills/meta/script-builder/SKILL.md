@@ -6,7 +6,7 @@ description: >-
   idempotent, no secrets). Use when new automation is needed or an existing
   script should be extended. Do not use PowerShell unless the user explicitly
   requires OS-shell-only.
-owner_agent: script-ops
+owner_agent: harness-operator
 rank: high
 isolation: mutate
 contracts:

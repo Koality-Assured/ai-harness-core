@@ -8,7 +8,7 @@ description: >-
   checking whether search/compress dropped facts. Do not use for ordinary
   lookup (qmd-usage), Headroom install (headroom), or ast-grep everyday
   lookup (ast-grep).
-owner_agent: router-maintenance
+owner_agent: harness-operator
 rank: high
 isolation: mutate
 contracts:

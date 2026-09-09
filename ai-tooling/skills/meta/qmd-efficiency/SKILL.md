@@ -6,7 +6,7 @@ description: >-
   walks). Use when validating collections, comparing search vs query, or
   writing a results report for retrieval. Do not use for ordinary lookup
   (qmd-usage).
-owner_agent: qmd-ops
+owner_agent: harness-operator
 rank: medium
 isolation: mutate
 contracts:

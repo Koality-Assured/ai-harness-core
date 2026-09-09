@@ -6,7 +6,7 @@ description: >-
   optional thin host stubs. Use when adding an owner agent, changing dispatch
   owners, or the user asks for an agent builder. Do not use to write skills
   (skill-builder) or to run GitHub/git operations (github-workflow).
-owner_agent: ai-tooling-ops
+owner_agent: harness-operator
 rank: high
 isolation: mutate
 contracts:

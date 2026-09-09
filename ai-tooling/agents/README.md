@@ -6,22 +6,38 @@ Human overview: specialist definitions live in `<id>/AGENT.md`. Optional host st
 
 Human index (not agent SoT):
 
-| Agent | Role | Tier |
+### Broad-sweeping operators
+
+| Operator | Role / Scope | Tier |
 | --- | --- | --- |
-| [`router/`](./router/) | Parent: classify, isolate, spawn | standard |
-| [`documentation-ops/`](./documentation-ops/) | docs + harness structure | standard |
-| [`github-ops/`](./github-ops/) | gh / PRs / branch discipline | standard |
-| [`router-maintenance/`](./router-maintenance/) | worktrees, routing maps, scratch, Headroom, ast-grep | standard |
-| [`qmd-ops/`](./qmd-ops/) | qmd search + efficiency dry runs | standard |
-| [`ai-tooling-ops/`](./ai-tooling-ops/) | skills, user/agent memory, agent defs | standard |
-| [`memory-operator/`](./memory-operator/) | evidence-backed model-family capability memory | standard |
-| [`script-ops/`](./script-ops/) | tagged Python under scripts/ | standard |
-| [`detailed-activity/`](./detailed-activity/) | antagonistic review + deep research | high |
-| [`artifact-agent/`](./artifact-agent/) | diagrams + modular documents; default `results/` | standard |
-| [`as-code-agent/`](./as-code-agent/) | Terraform/Pulumi/Ansible/Kyverno/Rego drafts | high |
-| [`git-fast-operator/`](./git-fast-operator/) | simple git fetch/status/log/diff/sync | fast |
-| [`reference-ops/`](./reference-ops/) | `references/` captures and normalization | standard |
-| [`repo-sync-ops/`](./repo-sync-ops/) | downstream repo sync + public export redaction | standard |
-| [`benchmark-agent/`](./benchmark-agent/) | Empirical benchmarking: cost estimation, fleet dry runs, retrieval, tool efficiency, task eval | standard |
+| [`harness-operator/`](./harness-operator/) | Harness lifecycle, control plane, cost layers, skill/agent builder, repository maintenance | standard |
+| [`document-operator/`](./document-operator/) | Technical writing, diagrams, reports, Confluence/Slack/Google collab, anti-slop | standard |
+| [`research-operator/`](./research-operator/) | Deep technical research, BenchLM, AI vendor tracking, community intelligence, web crawl | high |
+| [`security-tooling-operator/`](./security-tooling-operator/) | Defensive assessments, threat modeling, AD/Windows audit, network discovery, packet review | standard |
+
+### Coordinator & true specialists
+
+| Specialist | Role | Tier |
+| --- | --- | --- |
+| [`router/`](./router/) | Parent coordinator: classify, isolate, spawn | standard |
+| [`as-code-agent/`](./as-code-agent/) | Dedicated Terraform/OpenTofu/IaC authoring & plan validation | high |
+| [`detailed-activity/`](./detailed-activity/) | Dedicated adversarial / antagonistic review and challenge audits | high |
+| [`benchmark-agent/`](./benchmark-agent/) | Empirical benchmarking: cost estimation, fleet dry runs, retrieval, tool efficiency | standard |
+| [`github-ops/`](./github-ops/) | GitHub PR workflow, branch discipline, issue management | standard |
+| [`git-fast-operator/`](./git-fast-operator/) | Simple git fetch/status/log/diff/sync | fast |
+
+### Legacy & component specialists (Consolidated into Operators)
+
+| Agent | Consolidated into | Tier |
+| --- | --- | --- |
+| [`documentation-ops/`](./documentation-ops/) | `document-operator` | standard |
+| [`router-maintenance/`](./router-maintenance/) | `harness-operator` | standard |
+| [`qmd-ops/`](./qmd-ops/) | `harness-operator` | standard |
+| [`ai-tooling-ops/`](./ai-tooling-ops/) | `harness-operator` | standard |
+| [`memory-operator/`](./memory-operator/) | `harness-operator` | standard |
+| [`script-ops/`](./script-ops/) | `harness-operator` | standard |
+| [`artifact-agent/`](./artifact-agent/) | `document-operator` | standard |
+| [`reference-ops/`](./reference-ops/) | `document-operator` | standard |
+| [`repo-sync-ops/`](./repo-sync-ops/) | `harness-operator` | standard |
 
 A2A specifications & schemas: canonical in `AGENT.md` (Schema V2); see also [`../a2a/agent-cards/README.md`](../a2a/agent-cards/README.md).

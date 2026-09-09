@@ -5,7 +5,7 @@ description: >-
   owner_agent, isolation) under domain family subfolders. Use when creating a new SKILL.md, restyling an
   existing skill, or the user asks for a skill builder. Do not use for Cursor
   personal skills outside this repo.
-owner_agent: ai-tooling-ops
+owner_agent: harness-operator
 rank: high
 isolation: mutate
 schema_version: "2.0.0"

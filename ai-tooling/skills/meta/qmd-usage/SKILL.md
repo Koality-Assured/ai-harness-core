@@ -6,7 +6,7 @@ description: >-
   Use when discovering docs, routing content, or the user mentions qmd search,
   collections, or retrieval. Do not use for embedding-cost experiments
   (qmd-efficiency) or rewriting corpus style (doc-builder).
-owner_agent: qmd-ops
+owner_agent: harness-operator
 rank: critical
 isolation: read-only
 contracts:

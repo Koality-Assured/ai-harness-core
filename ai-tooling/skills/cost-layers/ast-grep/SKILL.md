@@ -7,7 +7,7 @@ description: >-
   outline, structural search, precision retrieval, or structured facts. Do
   not use for Markdown BM25 (qmd-usage), compressing dumps (headroom), or
   combined token reports (cost-layer-dry-run).
-owner_agent: router-maintenance
+owner_agent: harness-operator
 rank: critical
 isolation: read-only
 contracts:

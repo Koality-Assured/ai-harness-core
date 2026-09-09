@@ -7,7 +7,7 @@ description: >-
   inflated claims, sales language, stock AI words, chatbot artifacts, or
   Wikipedia-style AI writing signs. Do not use as a substitute for anti-slop
   (run anti-slop first) or to fabricate a fake human anecdote.
-owner_agent: artifact-agent
+owner_agent: document-operator
 rank: high
 isolation: mutate
 contracts:

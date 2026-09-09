@@ -6,7 +6,7 @@ description: >-
   and retrieval-friendly headings. Use when adding standards, process pages, or
   decision records under docs/. Do not use for skills (skill-builder), memory
   files, or scratch notes.
-owner_agent: documentation-ops
+owner_agent: document-operator
 rank: high
 isolation: mutate
 contracts:

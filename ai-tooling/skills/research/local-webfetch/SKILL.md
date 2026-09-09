@@ -8,7 +8,7 @@ description: >-
   vectors in external HTML. Use when ingesting documentation, RFCs, technical specs, or vendor web pages
   into agent context with minimal token overhead and strict injection defense. Do not use for querying
   in-repo Markdown files (use qmd) or inspecting structured source symbols (use ast-grep).
-owner_agent: detailed-activity
+owner_agent: research-operator
 rank: high
 isolation: read-only
 on_failure: abort_and_rollback

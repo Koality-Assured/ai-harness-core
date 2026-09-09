@@ -7,7 +7,7 @@ description: >-
   agent memory. Use when a proven capability succeeds or fails for a model
   family, or when validating a reusable promotion. Do not use for unproven
   model claims, user workstation notes, or ordinary agent checkpoints.
-owner_agent: memory-operator
+owner_agent: harness-operator
 rank: high
 isolation: mutate
 on_failure: abort_and_rollback

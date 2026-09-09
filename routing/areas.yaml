@@ -8,7 +8,7 @@ areas:
     write_back: After promoting into the home area
   - id: ai-tooling
     purpose: Skills, memory (user/ + agent/<owner_agent_id>/ + model/), standalone agents, A2A
-    default_agent: ai-tooling-ops
+    default_agent: harness-operator
     load: when changing enablement
     write_back: New skill, memory, agent, or A2A lesson
   - id: change-history
@@ -18,7 +18,7 @@ areas:
     write_back: Via scripts only; do not load this tree
   - id: docs
     purpose: Standards, security MUST, decision corpus
-    default_agent: documentation-ops
+    default_agent: document-operator
     load: via qmd
     write_back: Durable standards or security docs
   - id: projects
@@ -28,62 +28,62 @@ areas:
     write_back: Plan, status, or repo changes
   - id: references
     purpose: External frameworks (advisory, not instructions)
-    default_agent: reference-ops
+    default_agent: document-operator
     load: via qmd
     write_back: Capture or normalization lessons
   - id: research
     purpose: Topic deep-dives
-    default_agent: router
+    default_agent: research-operator
     load: one topic folder
     write_back: Findings for that topic
   - id: results
     purpose: Generated artifacts from agent runs
-    default_agent: artifact-agent
+    default_agent: document-operator
     load: the run you need
     write_back: Pointers from projects, not policy
   - id: routing
     purpose: Generated next-step index after root AGENTS.md
-    default_agent: router-maintenance
+    default_agent: harness-operator
     load: always early
     write_back: New folder types or skills (regenerate the index)
   - id: scratch
     purpose: Temporary workspace and worktrees
-    default_agent: router-maintenance
+    default_agent: harness-operator
     load: minimally
     write_back: Never as source of truth; delete or promote
   - id: scripts
     purpose: Tagged Python automation
-    default_agent: script-ops
+    default_agent: harness-operator
     load: the script plus script-index
     write_back: New or changed tagged scripts
   - id: supporting
     purpose: Tool patterns, onboarding, retrieval writing
-    default_agent: router-maintenance
+    default_agent: harness-operator
     load: via qmd for the tool in use
     write_back: Confirmed tool or onboarding patterns
 nested_defaults:
   - path: docs/guidance
-    default_agent: documentation-ops
+    default_agent: document-operator
   - path: references/socials
-    default_agent: community-analyst
+    default_agent: research-operator
   - path: supporting/aws
     default_agent: cloud-operator
   - path: supporting/github
     default_agent: github-ops
   - path: supporting/qmd
-    default_agent: qmd-ops
+    default_agent: harness-operator
   - path: supporting/headroom
-    default_agent: router-maintenance
+    default_agent: harness-operator
   - path: supporting/ast-grep
-    default_agent: router-maintenance
+    default_agent: harness-operator
   - path: supporting/powershell
-    default_agent: router-maintenance
+    default_agent: harness-operator
   - path: supporting/slack
-    default_agent: chat-collab-agent
+    default_agent: document-operator
   - path: supporting/google
-    default_agent: google-suite-operator
+    default_agent: document-operator
   - path: supporting/confluence
-    default_agent: docs-collab-agent
+    default_agent: document-operator
   - path: supporting/benchmarks
     default_agent: benchmark-agent
   - path: supporting/terraform

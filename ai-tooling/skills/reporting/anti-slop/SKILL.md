@@ -7,7 +7,7 @@ description: >-
   Use when anti-slop, slop, AI writing, AI design, deliverable, report, docs,
   rewrite, or detect is in scope. Do not use for code, logs, security MUST
   wording, frontmatter schemas, or commit-message conventions.
-owner_agent: artifact-agent
+owner_agent: document-operator
 rank: high
 isolation: mutate
 contracts:

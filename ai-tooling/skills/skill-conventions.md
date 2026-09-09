@@ -26,6 +26,7 @@ Project skills for this router live in domain family subdirectories: `ai-tooling
 - `git/`: Git basics, GitHub workflow, and GitHub path resolution.
 - `reporting/`: Code reviews, executive/proposal reports, corpus drafting, anti-slop, humanizer, diagrams, dashboards, and threat models.
 - `admin/`: Cloud organization and public LLM workspace administration.
+- `security/`: Defensive security audits for directory services, endpoints, and policy configuration.
 - `meta/`: Agent/skill/script builders, harness structure, isolate-work, and validation tools.
 - `community/`: Public community analysis, OSINT, sentiment, and registry maintenance.
 - `iac/`: Terraform, OpenTofu, CloudFormation, and IaC security audit skills.

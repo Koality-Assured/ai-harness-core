@@ -7,7 +7,7 @@ description: >-
   are created, moved, or restructured and need human-facing directory navigation.
   Do not use for agent operational rules (AGENTS.md), generalized standards
   (doc-builder), or linter execution (markdownlint).
-owner_agent: documentation-ops
+owner_agent: document-operator
 rank: high
 isolation: mutate
 contracts:

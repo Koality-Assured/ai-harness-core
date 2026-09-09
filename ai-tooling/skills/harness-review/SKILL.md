@@ -8,7 +8,7 @@ description: >-
   portability, reinforcement, or publication readiness. Do not use for a
   single skill dry run (skill-dry-run) or an ordinary code review
   (code-review-report).
-owner_agent: ai-tooling-ops
+owner_agent: harness-operator
 rank: high
 isolation: mutate
 on_failure: continue_with_partial
