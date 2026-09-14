@@ -240,6 +240,7 @@ HARNESS_TEMPLATE_DEST_EXCLUDE_RELS: frozenset[str] = frozenset(
         "scripts/tests/test_validate_wiki_structure.py",
         "scripts/docs/validate_wiki_structure.py",
         "scripts/tests/test_windows_security.py",
+        "scripts/tests/test_network_discovery.py",
     }
 )
 WIKI_TEMPLATE_DEST_EXCLUDE_RELS = HARNESS_TEMPLATE_DEST_EXCLUDE_RELS

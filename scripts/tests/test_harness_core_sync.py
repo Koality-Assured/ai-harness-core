@@ -35,6 +35,7 @@ from _harness_core_protocol import (
     may_copy_core_source_rel,
 )
 from _harness_template import (
+    HARNESS_TEMPLATE_DEST_EXCLUDE_RELS,
     HARNESS_TEMPLATE_DROP_REFERENCE_FAMILIES,
     HARNESS_TEMPLATE_DROP_SKILL_FAMILIES,
     HARNESS_TEMPLATE_KEEP_REFERENCE_FAMILIES,
@@ -122,6 +123,11 @@ class SkillFamilyCouplingTests(unittest.TestCase):
         self.assertFalse(skill_is_kept("google-workspace-admin"))
         self.assertFalse(is_harness_template_rel_kept("references/financial/sox.md"))
         self.assertFalse(is_harness_template_rel_kept("scripts/tests/test_windows_security.py"))
+        self.assertFalse(is_harness_template_rel_kept("scripts/tests/test_network_discovery.py"))
+        self.assertIn(
+            "scripts/tests/test_network_discovery.py",
+            HARNESS_TEMPLATE_DEST_EXCLUDE_RELS,
+        )
         self.assertTrue(
             {"financial", "windows-security", "cis-controls"}
             <= HARNESS_TEMPLATE_DROP_REFERENCE_FAMILIES
@@ -147,6 +153,23 @@ class SkillFamilyCouplingTests(unittest.TestCase):
             self.assertTrue((dest / "ai-tooling" / "skills" / "meta" / "isolate-work").exists())
             self.assertTrue(any("aws" in item for item in pruned))
 
+    def test_prune_drops_orphan_network_discovery_test(self) -> None:
+        rel = "scripts/tests/test_network_discovery.py"
+        self.assertIn(rel, HARNESS_TEMPLATE_DEST_EXCLUDE_RELS)
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp)
+            orphan = dest / rel
+            orphan.parent.mkdir(parents=True)
+            orphan.write_text(
+                "from scripts.network.discover_network import discover\n",
+                encoding="utf-8",
+            )
+            keeper = dest / "scripts" / "tests" / "test_harness_core_sync.py"
+            keeper.write_text("# keep\n", encoding="utf-8")
+            pruned = harness_template_prune_dest_leftovers(dest)
+            self.assertFalse(orphan.exists())
+            self.assertTrue(keeper.exists())
+            self.assertIn(rel, pruned)
 
 
 class ScaffoldHarnessTests(unittest.TestCase):
