@@ -24,6 +24,7 @@ from unittest.mock import patch
 
 from _harness_core_protocol import (
     CORE_REMOTE_NAME,
+    GAME_DEV_PUBLIC_REFUSED,
     ORIGIN_REMOTE_NAME,
     classify_spoke_path,
     copy_tree_filtered,
@@ -41,6 +42,7 @@ from _harness_template import (
     HARNESS_TEMPLATE_KEEP_REFERENCE_FAMILIES,
     HARNESS_TEMPLATE_SKILL_FAMILIES,
     SKILL_FAMILIES,
+    agent_is_kept,
     harness_template_prune_dest_leftovers,
     is_harness_template_rel_kept,
     skill_is_kept,
@@ -138,6 +140,48 @@ class SkillFamilyCouplingTests(unittest.TestCase):
             )
         )
 
+    def test_unknown_overlay_agent_is_domain(self) -> None:
+        rel = "ai-tooling/agents/portfolio-strategy-operator/AGENT.md"
+        self.assertFalse(agent_is_kept("portfolio-strategy-operator"))
+        self.assertTrue(agent_is_kept("script-ops"))
+        self.assertTrue(is_domain_marker(rel))
+        self.assertFalse(is_allowlisted_core_path(rel))
+        self.assertEqual(classify_spoke_path(rel), "domain")
+        self.assertEqual(classify_spoke_path("ai-tooling/agents/script-ops/AGENT.md"), "core")
+        self.assertTrue(is_allowlisted_core_path("ai-tooling/agents/script-ops/AGENT.md"))
+
+    def test_domain_test_file_is_not_core(self) -> None:
+        rel = "scripts/tests/test_ui_ux.py"
+        self.assertTrue(is_domain_marker(rel))
+        self.assertFalse(is_allowlisted_core_path(rel))
+        self.assertEqual(classify_spoke_path(rel), "domain")
+        self.assertFalse(is_harness_template_rel_kept(rel))
+        self.assertTrue(is_harness_template_rel_kept("scripts/tests/test_harness_core_sync.py"))
+        self.assertTrue(is_harness_template_rel_kept("scripts/tests/test_subagent_context_config.py"))
+        self.assertEqual(classify_spoke_path("scripts/tests/test_subagent_context_config.py"), "core")
+
+    def test_game_product_paths_are_instance_leaks(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            marker = root / "projects" / "secpanic-idler"
+            marker.mkdir(parents=True)
+            (marker / "README.md").write_text("# stub overlay only\n", encoding="utf-8")
+            vendor = root / "vendor" / "Distastefu1" / "notes"
+            vendor.mkdir(parents=True)
+            (vendor / "note.md").write_text("# identity stub\n", encoding="utf-8")
+            hits = detect_instance_leakage(root)
+            joined = " ".join(hits).lower()
+            self.assertIn("secpanic-idler", joined)
+            self.assertIn("distastefu1", joined)
+            self.assertTrue(is_domain_marker("projects/secpanic-idler/README.md"))
+            self.assertFalse(is_harness_template_rel_kept("projects/secpanic-idler/README.md"))
+            self.assertFalse(is_harness_template_rel_kept("vendor/Distastefu1/notes/note.md"))
+            pruned = harness_template_prune_dest_leftovers(root)
+            self.assertFalse(marker.exists())
+            self.assertFalse((root / "vendor" / "Distastefu1").exists())
+            self.assertTrue(any("secpanic-idler" in item.lower() for item in pruned))
+            self.assertTrue(any("distastefu1" in item.lower() for item in pruned))
+
 
     def test_prune_drops_leftover_vendor_family(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -203,6 +247,29 @@ class ScaffoldHarnessTests(unittest.TestCase):
         self.assertEqual(payload["visibility"], "private")
         self.assertTrue(payload["remotes"][ORIGIN_REMOTE_NAME].endswith("game-dev-router.git"))
         self.assertIn("ai-harness-core.git", payload["remotes"][CORE_REMOTE_NAME])
+
+    def test_game_dev_public_visibility_is_refused(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            scaffold_harness(
+                name="game-dev-router",
+                target=Path("unused"),
+                domain="game-dev",
+                visibility="public",
+                dry_run=True,
+            )
+        self.assertEqual(str(ctx.exception), GAME_DEV_PUBLIC_REFUSED)
+
+    def test_game_dev_public_break_glass_allows(self) -> None:
+        payload = scaffold_harness(
+            name="game-dev-router",
+            target=Path("unused"),
+            domain="game-dev",
+            visibility="public",
+            allow_public_game_dev=True,
+            dry_run=True,
+        )
+        self.assertEqual(payload["visibility"], "public")
+        self.assertTrue(payload["ok"])
 
     def test_live_path_source_writes_overlays_and_remotes(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -324,6 +391,46 @@ class ProposeCoreUpdateTests(unittest.TestCase):
                     paths=["docs/standards/legal-overlay.md", "AGENTS.md"],
                     dry_run=True,
                 )
+
+    def test_refuses_unknown_overlay_agent_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            spoke = Path(tmp)
+            with self.assertRaises(DomainPathRefused) as ctx:
+                propose_core_update(
+                    spoke=spoke,
+                    paths=["ai-tooling/agents/portfolio-strategy-operator/AGENT.md"],
+                    dry_run=True,
+                )
+            self.assertIn("portfolio-strategy-operator", str(ctx.exception))
+            payload = propose_core_update(
+                spoke=spoke,
+                paths=["ai-tooling/agents/script-ops/AGENT.md"],
+                dry_run=True,
+            )
+            self.assertTrue(payload["ok"])
+            self.assertIn("ai-tooling/agents/script-ops/AGENT.md", payload["paths"])
+
+    def test_refuses_domain_test_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            spoke = Path(tmp)
+            with self.assertRaises(DomainPathRefused) as ctx:
+                propose_core_update(
+                    spoke=spoke,
+                    paths=["scripts/tests/test_ui_ux.py"],
+                    dry_run=True,
+                )
+            self.assertIn("test_ui_ux.py", str(ctx.exception))
+
+    def test_refuses_game_product_leak_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            spoke = Path(tmp)
+            with self.assertRaises(DomainPathRefused) as ctx:
+                propose_core_update(
+                    spoke=spoke,
+                    paths=["projects/secpanic-idler/README.md"],
+                    dry_run=True,
+                )
+            self.assertIn("secpanic-idler", str(ctx.exception))
 
     def test_refuses_vendor_skill_paths(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

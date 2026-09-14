@@ -179,6 +179,65 @@ HARNESS_TEMPLATE_DROP_AGENTS: frozenset[str] = frozenset(
 )
 WIKI_TEMPLATE_DROP_AGENTS = HARNESS_TEMPLATE_DROP_AGENTS
 
+# Generic core agents only. Unknown ai-tooling/agents/<id> is domain overlay.
+HARNESS_TEMPLATE_KEEP_AGENTS: frozenset[str] = frozenset(
+    {
+        "ai-tooling-ops",
+        "artifact-agent",
+        "as-code-agent",
+        "benchmark-agent",
+        "detailed-activity",
+        "document-operator",
+        "documentation-ops",
+        "git-fast-operator",
+        "github-ops",
+        "harness-operator",
+        "memory-operator",
+        "qmd-ops",
+        "reference-ops",
+        "repo-sync-ops",
+        "research-operator",
+        "router",
+        "router-maintenance",
+        "script-ops",
+        "security-tooling-operator",
+    }
+)
+WIKI_TEMPLATE_KEEP_AGENTS = HARNESS_TEMPLATE_KEEP_AGENTS
+
+# Named core tests only. Unknown scripts/tests/test_*.py is domain (e.g. test_ui_ux.py).
+# test_harness_core*.py is also kept unless listed in DEST_EXCLUDE_RELS.
+HARNESS_TEMPLATE_KEEP_TEST_FILES: frozenset[str] = frozenset(
+    {
+        "__init__.py",
+        "test_benchmarks.py",
+        "test_harness_core_sync.py",
+        "test_hybrid_dispatch.py",
+        "test_local_webfetch.py",
+        "test_pacing.py",
+        "test_pretty_docs_security.py",
+        "test_qmd_preflight.py",
+        "test_skill_graph.py",
+        "test_subagent_context_config.py",
+        "test_validate_agent.py",
+        "test_validate_context_budget.py",
+        "test_validate_prompt_caching.py",
+        "test_validate_router_structure.py",
+        "test_validate_skill.py",
+        "test_validate_structure_fast.py",
+    }
+)
+WIKI_TEMPLATE_KEEP_TEST_FILES = HARNESS_TEMPLATE_KEEP_TEST_FILES
+
+# Game-product / private-identity path tokens. Never vendor those trees as fixtures.
+INSTANCE_LEAK_NAME_MARKERS: frozenset[str] = frozenset(
+    {
+        "distastefu1",
+        "secpanic-idler",
+        "secpanic_idler",
+    }
+)
+
 # Leftover dest-root engine packaging from older ai-harness-core releases.
 # Do not prune `.harness/` (that is the template engine).
 HARNESS_TEMPLATE_PRUNE_DEST_NAMES: frozenset[str] = frozenset(
@@ -420,7 +479,7 @@ Domain routers are **spokes**. `ai-harness-core` is the generic **core**.
 
 1. Scaffold a spoke with `python scripts/sync/scaffold_harness.py` (local template export and/or clone of `ai-harness-core`). Remotes: `origin` = the domain repo, `harness-core` = `Koality-Assured/ai-harness-core`. Private visibility is first-class (`--visibility private|public`).
 2. Pull material core updates with `python scripts/sync/pull_harness_core.py` (allowlisted core paths only; never auto-merge).
-3. Propose generic core improvements back with `python scripts/sync/propose_core_update.py` (refuses domain overlay paths; `--create-issue` only; never open a PR from the spoke working tree).
+3. Propose generic core improvements back with `python scripts/sync/propose_core_update.py` (refuses domain overlay paths; `--create-issue` only; never open a PR from the spoke working tree). Game-dev spokes default private; `--visibility public` is refused unless `--allow-public-game-dev`.
 
 Do not copy instance `projects/`, `research/`, or `ai-tooling/memory/` dumps, and do not feed a fed instance (for example a security corpus) in as the template source.
 
@@ -639,12 +698,32 @@ def skill_is_kept(skill_name: str) -> bool:
 
 
 def agent_is_kept(agent_name: str) -> bool:
-    """Return True if an agent directory should be copied into the harness template."""
-    if agent_name in HARNESS_TEMPLATE_DROP_AGENTS:
-        return False
+    """Return True if an agent directory belongs in the generic harness template.
+
+    Allow-list, not deny-list. Unknown overlay agents (for example
+    portfolio-strategy-operator) are domain and must not classify as core.
+    """
     if agent_name in {"AGENTS.md", "model-tiers.md", "README.md"}:
         return True
-    return True
+    if agent_name in HARNESS_TEMPLATE_DROP_AGENTS:
+        return False
+    return agent_name in HARNESS_TEMPLATE_KEEP_AGENTS
+
+
+def script_test_is_kept(test_filename: str) -> bool:
+    """Return True if a scripts/tests file belongs in the generic template."""
+    name = test_filename.replace("\\", "/").split("/")[-1]
+    if not name:
+        return False
+    if name.startswith("test_harness_core") and name.endswith(".py"):
+        return True
+    return name in HARNESS_TEMPLATE_KEEP_TEST_FILES
+
+
+def rel_has_instance_leak_name(rel: str) -> bool:
+    """True when a relative path names Distastefu1 / secpanic-idler (any casing)."""
+    lowered = rel.replace("\\", "/").lower()
+    return any(marker in lowered for marker in INSTANCE_LEAK_NAME_MARKERS)
 
 
 HARNESS_TEMPLATE_DOMAIN_MARKERS: frozenset[str] = frozenset(
@@ -660,6 +739,8 @@ def is_harness_template_rel_kept(rel: str) -> bool:
     if not parts:
         return False
     joined = "/".join(parts)
+    if rel_has_instance_leak_name(joined):
+        return False
     if joined in HARNESS_TEMPLATE_DEST_EXCLUDE_RELS:
         return False
     if joined in HARNESS_TEMPLATE_DOMAIN_MARKERS:
@@ -900,6 +981,23 @@ def harness_template_prune_dest_leftovers(dest_root: Path) -> list[str]:
                 shutil.rmtree(target)
             pruned.append(rel)
 
+    leak_targets: list[Path] = []
+    for path in dest_root.rglob("*"):
+        if ".git" in path.parts:
+            continue
+        rel = path.relative_to(dest_root).as_posix()
+        if rel_has_instance_leak_name(rel):
+            leak_targets.append(path)
+    for target in sorted(leak_targets, key=lambda p: len(p.parts), reverse=True):
+        if not target.exists():
+            continue
+        rel = target.relative_to(dest_root).as_posix()
+        if target.is_dir():
+            shutil.rmtree(target)
+        else:
+            target.unlink()
+        pruned.append(rel)
+
     # Prune dropped agents
     agents_root = dest_root / "ai-tooling" / "agents"
     if agents_root.is_dir():
@@ -1100,6 +1198,10 @@ def _keep_scripts(parts: list[str]) -> bool:
         return True
     if len(parts) == 2 and parts[1] == "script-index.md":
         return False
+    if len(parts) >= 2 and parts[1] == "tests":
+        if len(parts) != 3:
+            return False
+        return script_test_is_kept(parts[2])
     if len(parts) >= 2 and parts[1] in HARNESS_TEMPLATE_KEEP_SCRIPT_DIRS:
         return True
     return False

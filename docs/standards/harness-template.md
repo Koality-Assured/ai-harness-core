@@ -62,7 +62,7 @@ This page states the boundary. The file map and redaction pipeline live with the
 
 ## Core and spoke protocol
 
-`ai-harness-core` is the generic core. A domain router (legal, UI/UX, financial, game-dev, or other) is a **spoke** scaffolded from that core. Material core fixes flow core to spoke. Generic machinery improvements flow spoke to core as issues or draft PRs. Domain corpus never returns to core.
+`ai-harness-core` is the generic core. A domain router (legal, UI/UX, financial, game-dev, or other) is a **spoke** scaffolded from that core. Material core fixes flow core to spoke. Generic machinery improvements flow spoke to core as **issues only**. Pull-request creation belongs on an `ai-harness-core` clone, never a spoke working tree. Domain corpus never returns to core.
 
 ### Scaffold
 
@@ -71,7 +71,7 @@ Use `python scripts/sync/scaffold_harness.py --name <repo> --target <dir> --org 
 - Obtain the generic core by local template export (`--core-source export`) or clone of `Koality-Assured/ai-harness-core` (`--core-source clone`). `--core-source path` copies an existing core checkout and refuses a fed instance (OWASP dumps, identity standards, `projects/` slugs, memory dumps, AWS skill families).
 - Write domain overlay stubs only (`.harness/domain.json` and `docs/standards/<domain>-overlay.md`). Do not copy this instance's projects, research, or memory.
 - Remotes: `origin` is the domain repo; `harness-core` is `ai-harness-core`. After overlays and remotes, the scaffolder makes an initial commit so `pull_harness_core` has `HEAD`. It does not push.
-- Private visibility is first-class. Default follows the domain (game-dev private; legal/ui-ux/financial public) unless `--visibility` is set.
+- Private visibility is first-class. Default follows the domain (game-dev private; legal/ui-ux/financial public) unless `--visibility` is set. `--visibility public` with `--domain game-dev` is refused unless `--allow-public-game-dev` (off by default).
 
 `python scripts/harness_init.py` remains the embed-engine CLI. Do not replace it with the domain scaffolder.
 
@@ -83,7 +83,7 @@ Allowlisted paths match the generic template keep rules (root `AGENTS.md`, routi
 
 ### Propose core updates
 
-`python scripts/sync/propose_core_update.py --dry-run --json` plans a generic improvement back to `Koality-Assured/ai-harness-core`. It refuses domain overlay paths, vendor skill families, and other non-core files (full dirty tree, not only `--path`). Opt-in `--create-issue` opens a text-only issue. `--create-pr` from a spoke is refused: it would attach the spoke branch as the PR head. To open a PR, copy allowlisted files into an `ai-harness-core` clone. It never auto-merges.
+`python scripts/sync/propose_core_update.py --dry-run --json` plans a generic improvement back to `Koality-Assured/ai-harness-core`. It refuses domain overlay paths, vendor skill families, unknown overlay agents, domain tests, and other non-core files (full dirty tree, not only `--path`). Opt-in `--create-issue` opens a text-only issue on the core repo. `--create-pr` from a spoke is refused: it would attach the spoke branch as the PR head. To open a PR, copy allowlisted files into an `ai-harness-core` clone and create the PR there. It never auto-merges.
 
 ### What stays in the spoke
 
@@ -185,8 +185,4 @@ Every routed directory’s `AGENTS.md` defines eight canonical dimensions:
 Public export still redacts credentials, tokens, internal paths, and similar secrets. Redaction applies even when the payload is machinery only.
 
 Session rules: [`../agent-session-security.md`](../agent-session-security.md).
-
-## Related
-
-Phase 4 initiative spec: [`../../projects/harness-v2-evolution/README.md`](../../projects/harness-v2-evolution/README.md).
 

@@ -13,12 +13,16 @@ from pathlib import Path
 from typing import Callable, Iterable
 
 from _harness_template import (
+    HARNESS_TEMPLATE_DEST_EXCLUDE_RELS,
     HARNESS_TEMPLATE_DOMAIN_MARKERS,
     HARNESS_TEMPLATE_DROP_REFERENCE_FAMILIES,
     HARNESS_TEMPLATE_DROP_SKILL_FAMILIES,
     HARNESS_TEMPLATE_KEEP_DOCS_STANDARDS,
     HARNESS_TEMPLATE_KEEP_REFERENCE_FAMILIES,
+    agent_is_kept,
     is_harness_template_rel_kept,
+    rel_has_instance_leak_name,
+    script_test_is_kept,
 )
 
 DEFAULT_ORG = "Koality-Assured"
@@ -80,6 +84,13 @@ INSTANCE_LEAK_MARKERS: tuple[str, ...] = (
     "ai-tooling/skills/slack",
     "ai-tooling/skills/confluence",
     "ai-tooling/skills/google",
+    "projects/secpanic-idler",
+    "research/secpanic-idler",
+)
+
+GAME_DEV_PUBLIC_REFUSED = (
+    "refusing --visibility public for --domain game-dev; game-dev defaults to "
+    "private. Pass --allow-public-game-dev only as an off-by-default break-glass."
 )
 
 GitRunner = Callable[..., tuple[int, str, str]]
@@ -128,8 +139,21 @@ def default_visibility(domain: str, override: str | None) -> str:
     return DOMAIN_DEFAULT_VISIBILITY.get(domain, "private")
 
 
+def refuse_public_game_dev(
+    domain: str,
+    visibility: str,
+    *,
+    allow_public_game_dev: bool = False,
+) -> None:
+    """Refuse public game-dev unless the explicit break-glass flag is on."""
+    if domain == "game-dev" and visibility == "public" and not allow_public_game_dev:
+        raise ValueError(GAME_DEV_PUBLIC_REFUSED)
+
+
 def is_domain_marker(rel: str) -> bool:
     path = posix_rel(rel)
+    if rel_has_instance_leak_name(path):
+        return True
     if path in HARNESS_TEMPLATE_DOMAIN_MARKERS:
         return True
     if path.endswith("-overlay.md") and path.startswith("docs/standards/"):
@@ -137,6 +161,14 @@ def is_domain_marker(rel: str) -> bool:
     parts = [p for p in path.split("/") if p]
     if len(parts) >= 3 and parts[0] == "ai-tooling" and parts[1] == "skills":
         if parts[2] in HARNESS_TEMPLATE_DROP_SKILL_FAMILIES:
+            return True
+    if len(parts) >= 3 and parts[0] == "ai-tooling" and parts[1] == "agents":
+        if parts[2] not in {"AGENTS.md", "model-tiers.md", "README.md"} and not agent_is_kept(parts[2]):
+            return True
+    if len(parts) >= 3 and parts[0] == "scripts" and parts[1] == "tests":
+        if path in HARNESS_TEMPLATE_DEST_EXCLUDE_RELS:
+            return True
+        if len(parts) != 3 or not script_test_is_kept(parts[2]):
             return True
     if len(parts) >= 2 and parts[0] == "docs" and parts[1] == "standards":
         if len(parts) >= 3 and parts[2] not in HARNESS_TEMPLATE_KEEP_DOCS_STANDARDS:
@@ -174,6 +206,8 @@ def may_copy_core_source_rel(rel: str) -> bool:
 def is_instance_corpus_rel(rel: str) -> bool:
     """True when a path is fed-instance corpus that must not be copied."""
     path = posix_rel(rel)
+    if rel_has_instance_leak_name(path):
+        return True
     if is_domain_marker(path):
         return True
     parts = [p for p in path.split("/") if p]
@@ -260,25 +294,40 @@ def spoke_visibility(root: Path) -> str | None:
 def detect_instance_leakage(root: Path) -> list[str]:
     """Return dest-relative markers that mean a fed instance was used as source."""
     hits: list[str] = []
+    seen: set[str] = set()
+
+    def _add(rel: str) -> None:
+        path = posix_rel(rel)
+        if path and path not in seen:
+            seen.add(path)
+            hits.append(path)
+
     for rel in INSTANCE_LEAK_MARKERS:
         target = root / Path(*rel.split("/"))
         if target.exists():
-            hits.append(rel)
+            _add(rel)
     memory_user = root / "ai-tooling" / "memory" / "user"
     if memory_user.is_dir():
         for child in memory_user.iterdir():
             if child.is_dir() and not child.name.startswith("."):
-                hits.append(f"ai-tooling/memory/user/{child.name}")
+                _add(f"ai-tooling/memory/user/{child.name}")
     projects = root / "projects"
     if projects.is_dir():
         for child in projects.iterdir():
             if child.is_dir() and child.name not in {"notes", "project-prompts"}:
-                hits.append(f"projects/{child.name}")
+                _add(f"projects/{child.name}")
     research = root / "research"
     if research.is_dir():
         for child in research.iterdir():
             if child.is_dir() and not child.name.startswith("."):
-                hits.append(f"research/{child.name}")
+                _add(f"research/{child.name}")
+    if root.is_dir():
+        for path in root.rglob("*"):
+            if ".git" in path.parts:
+                continue
+            rel = posix_rel(path.relative_to(root).as_posix())
+            if rel_has_instance_leak_name(rel):
+                _add(rel)
     return hits
 
 

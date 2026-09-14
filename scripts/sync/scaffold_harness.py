@@ -39,6 +39,7 @@ from _harness_core_protocol import (  # noqa: E402
     default_visibility,
     detect_instance_leakage,
     domain_overlay_files,
+    refuse_public_game_dev,
     ensure_initial_commit,
     git_init_if_needed,
     github_https_url,
@@ -101,6 +102,7 @@ def scaffold_harness(
     core_path: Path | None = None,
     source_root: Path | None = None,
     dry_run: bool = False,
+    allow_public_game_dev: bool = False,
 ) -> dict[str, Any]:
     """Scaffold a domain spoke. Never pushes. Never auto-merges."""
     name = validate_repo_name(name)
@@ -110,6 +112,9 @@ def scaffold_harness(
     if core_source not in CORE_SOURCE_CHOICES:
         raise ValueError(f"invalid --core-source {core_source!r}")
     vis = default_visibility(domain, visibility)
+    refuse_public_game_dev(
+        domain, vis, allow_public_game_dev=allow_public_game_dev
+    )
     origin_url = github_https_url(org, name)
     core_url = core_remote_url(DEFAULT_ORG)
     overlays = domain_overlay_files(domain=domain, name=name, org=org, visibility=vis)
@@ -223,7 +228,14 @@ def main(argv: list[str] | None = None) -> int:
         "--visibility",
         choices=VISIBILITY_CHOICES,
         default=None,
-        help="Repo visibility. Private is first-class. Default follows --domain.",
+        help="Repo visibility. Private is first-class. Default follows --domain. "
+        "Public is refused for --domain game-dev unless --allow-public-game-dev.",
+    )
+    parser.add_argument(
+        "--allow-public-game-dev",
+        action="store_true",
+        default=False,
+        help="Break-glass: allow --visibility public for --domain game-dev. Off by default.",
     )
     parser.add_argument(
         "--domain",
@@ -266,6 +278,7 @@ def main(argv: list[str] | None = None) -> int:
             core_path=args.core_path,
             source_root=args.source,
             dry_run=args.dry_run,
+            allow_public_game_dev=args.allow_public_game_dev,
         )
     except (ValueError, FileExistsError, FileNotFoundError, RuntimeError) as exc:
         err = {"ok": False, "error": str(exc), "pushed": False, "merged": False}
