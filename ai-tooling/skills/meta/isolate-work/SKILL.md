@@ -38,7 +38,19 @@ Critical: overlapping checkouts corrupt work and confuse agents. Area overlap wi
 
 ## Isolation
 
-This skill *is* isolation. Parent/router **MUST** run `python scripts/routing/spawn_worktree.py` check/add/remove itself before other mutating skills. **MUST NOT spawn** `router-maintenance` to run that CLI, even bundled with other chores. After merge, the parent removes the worktree without a specialist. `spawn_worktree.py` writes claims on the primary checkout under `scratch/worktrees/` (gitignored).
+This skill *is* isolation. Parent/router **MUST** run `python scripts/routing/spawn_worktree.py` check/add/remove itself before other mutating skills. **MUST NOT spawn** `router-maintenance` to run that CLI, even bundled with other chores. After merge, the parent removes the worktree without a specialist. `spawn_worktree.py` writes claims on the primary checkout under `scratch/worktrees/` (gitignored). Those checkouts **must remain readable and writable by the host's agent file tools.**
+
+Host ignore split (Cursor, with the same rule on other hosts):
+
+| File | Effect | `scratch/worktrees/` |
+| --- | --- | --- |
+| `.gitignore` | Not committed; Cursor also uses this for indexing | Ignore (keep) |
+| `.cursorindexingignore` | Indexing/embeddings only | Ignore (keep) |
+| `.cursorignore` | Blocks Agent Read, Write, Tab, and `@` ([docs](https://cursor.com/docs/reference/ignore-file)) | **Must not ignore** |
+
+Do not list `scratch/**` in `.cursorignore`. A 2026-09-09 Cursor session proved specialists could not `Read`/`Write` their assigned worktree while that pattern was present. Claude/Codex/Gemini: do not denylist the same path in tool permissions.
+
+On Windows, Cursor's Shell sandbox may be unable to enforce `workspace_readwrite` (network-proxy-only helper). Parent isolate CLI and worktree Shell then need host `all` permissions. That is an environment quirk, not a reason to move worktrees out of `scratch/`.
 
 ## How to use
 

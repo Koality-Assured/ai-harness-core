@@ -45,12 +45,31 @@ class TestSubagentContextConfig(unittest.TestCase):
         self.assertIn("antigravity", host_adapters)
 
     def test_cursor_config(self) -> None:
-        """Verify .cursorignore and .cursor/rules/context-boundaries.mdc exist and enforce boundaries."""
+        """Verify Cursor ignore split: agent access vs indexing, plus clean-slate rules."""
         cursorignore_path = self.repo_root / ".cursorignore"
         self.assertTrue(cursorignore_path.is_file(), ".cursorignore must exist")
         cursorignore_content = cursorignore_path.read_text(encoding="utf-8")
-        self.assertIn("scratch/**", cursorignore_content)
+        active_lines = [
+            ln.strip()
+            for ln in cursorignore_content.splitlines()
+            if ln.strip() and not ln.strip().startswith("#")
+        ]
+        self.assertNotIn(
+            "scratch/**",
+            active_lines,
+            ".cursorignore must not deny scratch/** (that blocks isolate-work Read/Write)",
+        )
+        self.assertIn("!scratch/worktrees/", active_lines)
+        self.assertIn("!scratch/worktrees/**", active_lines)
+        self.assertIn("scratch/scaffolded-repos/**", active_lines)
+        self.assertIn(".*oauth_token*.json", active_lines)
         self.assertIn(".cache/", cursorignore_content)
+        self.assertIn(".env", cursorignore_content)
+
+        indexing_ignore = self.repo_root / ".cursorindexingignore"
+        self.assertTrue(indexing_ignore.is_file(), ".cursorindexingignore must exist")
+        indexing_content = indexing_ignore.read_text(encoding="utf-8")
+        self.assertIn("scratch/**", indexing_content)
 
         rule_path = self.repo_root / ".cursor" / "rules" / "context-boundaries.mdc"
         self.assertTrue(rule_path.is_file(), ".cursor/rules/context-boundaries.mdc must exist")
@@ -58,6 +77,7 @@ class TestSubagentContextConfig(unittest.TestCase):
         self.assertIn("alwaysApply: true", rule_content)
         self.assertIn("Clean-Slate Subagent Execution", rule_content)
         self.assertIn("No Conversation History Carryover", rule_content)
+        self.assertIn("Worktree file-tool access", rule_content)
 
     def test_claude_config(self) -> None:
         """Verify CLAUDE.md and .claude/settings.json exist and configure isolation."""
@@ -66,6 +86,7 @@ class TestSubagentContextConfig(unittest.TestCase):
         claude_md_content = claude_md_path.read_text(encoding="utf-8")
         self.assertIn("Clean-Slate Subagent Spawning", claude_md_content)
         self.assertIn("Prompt Caching Compliance", claude_md_content)
+        self.assertIn("Worktree file-tool access", claude_md_content)
 
         settings_path = self.repo_root / ".claude" / "settings.json"
         self.assertTrue(settings_path.is_file(), ".claude/settings.json must exist")
@@ -83,11 +104,13 @@ class TestSubagentContextConfig(unittest.TestCase):
         copilot_content = copilot_path.read_text(encoding="utf-8")
         self.assertIn("Subagent Context Isolation", copilot_content)
         self.assertIn("No Transcript Bleed", copilot_content)
+        self.assertIn("Worktree file-tool access", copilot_content)
 
         instructions_path = self.repo_root / ".github" / "instructions" / "subagents.instructions.md"
         self.assertTrue(instructions_path.is_file(), "subagents.instructions.md must exist")
         instructions_content = instructions_path.read_text(encoding="utf-8")
         self.assertIn("clean-slate context", instructions_content)
+        self.assertIn("scratch/worktrees", instructions_content)
 
     def test_gemini_antigravity_config(self) -> None:
         """Verify GEMINI.md exists and sets subagent directives."""
@@ -97,6 +120,7 @@ class TestSubagentContextConfig(unittest.TestCase):
         self.assertIn("invoke_subagent", gemini_content)
         self.assertIn("isolated context windows with clean state", gemini_content)
         self.assertIn("Progressive Disclosure", gemini_content)
+        self.assertIn("Worktree file-tool access", gemini_content)
 
 
 if __name__ == "__main__":

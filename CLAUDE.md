@@ -9,3 +9,4 @@ All Claude Code sessions, coordinator prompts, and subagents operating in this r
 3. **Prompt Caching Compliance**: Respect the 5-Tier Ordered Context Hierarchy and 2-breakpoint caching structure (Tier 1/2 Base Prefix + Tier 3 Turn N-1). Do not place breakpoints on ephemeral turn deltas or churn cache blocks.
 4. **Cost Layers**: Use `qmd` for Markdown discovery (`qmd search` / `qmd get`), `ast-grep` for structured code inspection, and Headroom for bulky tool outputs. Avoid dumping full repository trees.
 5. **Durable Learning Loop**: Always write durable findings, fixes, and quirks to the owning source area before session completion.
+6. **Worktree file-tool access**: Mutating specialists work in `scratch/worktrees/<slug>/`. Do not denylist that path in Claude tool permissions or ignore files. `.gitignore` already keeps scratch out of git; blocking it from the agent's file tools makes isolate-work unusable.

@@ -1,0 +1,8 @@
+# Indexing only. Does not block Agent Read/Write/Tab/@.
+# Isolated worktrees under scratch/worktrees/ are full extra checkouts; keep
+# them (and other gitignored scratch clutter) out of embeddings.
+# Agent access for those paths is required — see isolate-work and .cursorignore.
+
+scratch/**
+!scratch/AGENTS.md
+!scratch/README.md

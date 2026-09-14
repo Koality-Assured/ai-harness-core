@@ -13,3 +13,4 @@ alwaysApply: true
 3. **Selective JIT Retrieval**: Subagents must discover repository knowledge autonomously Just-In-Time (JIT) via `qmd search` / `qmd get` and `ast-grep` symbol outlines rather than preloading full repository trees.
 4. **Tool and Scope Whitelisting**: Bound subagents to their explicit domain responsibilities. Subagents must not execute out-of-scope mutations.
 5. **Durable Knowledge Write-Back**: Subagents return structured result summaries to the parent router; durable findings are written directly to owning source areas.
+6. **Worktree file-tool access**: Isolated git worktrees live under `scratch/worktrees/<slug>/`. Never list that path in `.cursorignore`. Cursor's `.cursorignore` blocks Agent Read/Write/Tab/@ ([ignore-file docs](https://cursor.com/docs/reference/ignore-file)). Keep scratch out of embeddings with `.gitignore` and `.cursorindexingignore` only.

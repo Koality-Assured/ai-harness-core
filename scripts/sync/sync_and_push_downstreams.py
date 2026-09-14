@@ -30,7 +30,10 @@ from sync_public_repos import (  # noqa: E402
 )
 
 DOWNSTREAM_REPOS = list(DEFAULT_REPO_MAPPINGS.keys())
-from _harness_template import SKILL_FAMILIES  # noqa: E402
+from _harness_template import (  # noqa: E402
+    HARNESS_TEMPLATE_SKILL_FAMILIES,
+    INSTANCE_SKILL_FAMILIES,
+)
 
 
 @dataclasses.dataclass
@@ -59,14 +62,18 @@ class DownstreamPublishResult:
         }
 
 
-def prune_legacy_skill_dirs(skills_dir: Path) -> list[str]:
-    """Remove obsolete flat skill directories from downstream skills folder."""
+def prune_legacy_skill_dirs(
+    skills_dir: Path,
+    families: frozenset[str] | None = None,
+) -> list[str]:
+    """Remove obsolete flat skill directories from a downstream skills folder."""
+    allowed = families if families is not None else INSTANCE_SKILL_FAMILIES
     pruned: list[str] = []
     if not skills_dir.exists():
         return pruned
 
     for child in list(skills_dir.iterdir()):
-        if child.is_dir() and child.name not in SKILL_FAMILIES and not child.name.startswith("."):
+        if child.is_dir() and child.name not in allowed and not child.name.startswith("."):
             pruned.append(child.name)
             shutil.rmtree(child)
     return pruned
@@ -138,9 +145,12 @@ def sync_and_push_downstreams(
 
         # Prune legacy skills in agent-skills-and-tools and ai-harness-core
         if repo_name == "agent-skills-and-tools":
-            prune_legacy_skill_dirs(repo_dir / "skills")
+            prune_legacy_skill_dirs(repo_dir / "skills", INSTANCE_SKILL_FAMILIES)
         elif repo_name == "ai-harness-core":
-            prune_legacy_skill_dirs(repo_dir / "ai-tooling" / "skills")
+            prune_legacy_skill_dirs(
+                repo_dir / "ai-tooling" / "skills",
+                HARNESS_TEMPLATE_SKILL_FAMILIES,
+            )
 
         # Check git status
         code, stdout, stderr = run_git_cmd(["git", "status", "-s"], repo_dir)

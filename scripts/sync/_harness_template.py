@@ -34,27 +34,49 @@ HARNESS_TEMPLATE_ALLOWED_DOT_DIRS: frozenset[str] = frozenset(
 )
 WIKI_TEMPLATE_ALLOWED_DOT_DIRS = HARNESS_TEMPLATE_ALLOWED_DOT_DIRS
 
-SKILL_FAMILIES: frozenset[str] = frozenset(
+# Generic skill families that may exist in ai-harness-core.
+# Vendor/workplace families (aws/azure/gcp/slack/confluence/google) and other
+# instance-only families are not template core — they leak if listed here.
+# reporting/ holds generic report/diagram skills (mermaid, executive-report),
+# not a vendor family.
+HARNESS_TEMPLATE_SKILL_FAMILIES: frozenset[str] = frozenset(
     {
-        "admin",
-        "aws",
-        "azure",
         "benchmarks",
-        "community",
-        "confluence",
         "cost-layers",
-        "gcp",
         "git",
-        "google",
         "harness-review",
         "memory",
         "meta",
         "model-memory-operate",
         "reporting",
         "research",
+    }
+)
+
+# Instance-only families. Refuse descent/copy into the generic template.
+HARNESS_TEMPLATE_DROP_SKILL_FAMILIES: frozenset[str] = frozenset(
+    {
+        "admin",
+        "aws",
+        "azure",
+        "community",
+        "confluence",
+        "discovery",
+        "gcp",
+        "google",
+        "iac",
+        "security",
         "slack",
     }
 )
+
+# Full instance family set for downstream skill-export prune (not the template).
+INSTANCE_SKILL_FAMILIES: frozenset[str] = (
+    HARNESS_TEMPLATE_SKILL_FAMILIES | HARNESS_TEMPLATE_DROP_SKILL_FAMILIES
+)
+
+# Template prune allowlist. Do not point this at vendor families.
+SKILL_FAMILIES: frozenset[str] = HARNESS_TEMPLATE_SKILL_FAMILIES
 
 HARNESS_TEMPLATE_ROOT_FILES: frozenset[str] = frozenset(
     {
@@ -62,6 +84,7 @@ HARNESS_TEMPLATE_ROOT_FILES: frozenset[str] = frozenset(
         "CLAUDE.md",
         "GEMINI.md",
         ".cursorignore",
+        ".cursorindexingignore",
         "naming-conventions.md",
         ".gitignore",
         ".markdownlint-cli2.jsonc",
@@ -119,7 +142,14 @@ HARNESS_TEMPLATE_KEEP_SKILLS: frozenset[str] = frozenset(
 )
 WIKI_TEMPLATE_KEEP_SKILLS = HARNESS_TEMPLATE_KEEP_SKILLS
 
-HARNESS_TEMPLATE_DROP_SKILL_PREFIXES: tuple[str, ...] = ("aws-", "azure-", "gcp-")
+HARNESS_TEMPLATE_DROP_SKILL_PREFIXES: tuple[str, ...] = (
+    "aws-",
+    "azure-",
+    "gcp-",
+    "slack-",
+    "google-",
+    "confluence-",
+)
 WIKI_TEMPLATE_DROP_SKILL_PREFIXES = HARNESS_TEMPLATE_DROP_SKILL_PREFIXES
 
 HARNESS_TEMPLATE_DROP_SKILLS: frozenset[str] = frozenset(
@@ -209,6 +239,7 @@ HARNESS_TEMPLATE_DEST_EXCLUDE_RELS: frozenset[str] = frozenset(
         "scripts/tests/test_confluence_sync.py",
         "scripts/tests/test_validate_wiki_structure.py",
         "scripts/docs/validate_wiki_structure.py",
+        "scripts/tests/test_windows_security.py",
     }
 )
 WIKI_TEMPLATE_DEST_EXCLUDE_RELS = HARNESS_TEMPLATE_DEST_EXCLUDE_RELS
@@ -238,13 +269,21 @@ WIKI_TEMPLATE_KEEP_REFERENCE_FAMILIES = HARNESS_TEMPLATE_KEEP_REFERENCE_FAMILIES
 
 HARNESS_TEMPLATE_DROP_REFERENCE_FAMILIES: frozenset[str] = frozenset(
     {
+        "cis-controls",
+        "cwe",
+        "financial",
+        "google-workspace-security",
+        "governance-privacy",
+        "iac",
+        "mitre-atlas",
+        "mitre-attack",
         "nist-ai-rmf",
         "nist-csf",
         "owasp",
-        "cwe",
-        "mitre-attack",
-        "mitre-atlas",
+        "slack-security",
+        "socials",
         "stride",
+        "windows-security",
     }
 )
 WIKI_TEMPLATE_DROP_REFERENCE_FAMILIES = HARNESS_TEMPLATE_DROP_REFERENCE_FAMILIES
@@ -374,6 +413,15 @@ Embed the core engine directly into an existing software project to give AI codi
    ```
 2. Configure provider thresholds and adapter paths in `config/harness.config.json`.
 3. Leverage `.harness/` Python adapters for worktree sandboxing, prompt cache breakpoint planning, and Headroom compression.
+
+### Core ↔ spoke protocol
+Domain routers are **spokes**. `ai-harness-core` is the generic **core**.
+
+1. Scaffold a spoke with `python scripts/sync/scaffold_harness.py` (local template export and/or clone of `ai-harness-core`). Remotes: `origin` = the domain repo, `harness-core` = `Koality-Assured/ai-harness-core`. Private visibility is first-class (`--visibility private|public`).
+2. Pull material core updates with `python scripts/sync/pull_harness_core.py` (allowlisted core paths only; never auto-merge).
+3. Propose generic core improvements back with `python scripts/sync/propose_core_update.py` (refuses domain overlay paths; `--create-issue` only; never open a PR from the spoke working tree).
+
+Do not copy instance `projects/`, `research/`, or `ai-tooling/memory/` dumps, and do not feed a fed instance (for example a security corpus) in as the template source.
 
 ---
 
@@ -598,12 +646,22 @@ def agent_is_kept(agent_name: str) -> bool:
     return True
 
 
+HARNESS_TEMPLATE_DOMAIN_MARKERS: frozenset[str] = frozenset(
+    {
+        ".harness/domain.json",
+    }
+)
+
+
 def is_harness_template_rel_kept(rel: str) -> bool:
     """Return True if a source-root-relative file belongs in ai-harness-core."""
     parts = _posix_parts(rel)
     if not parts:
         return False
-    if "/".join(parts) in HARNESS_TEMPLATE_DEST_EXCLUDE_RELS:
+    joined = "/".join(parts)
+    if joined in HARNESS_TEMPLATE_DEST_EXCLUDE_RELS:
+        return False
+    if joined in HARNESS_TEMPLATE_DOMAIN_MARKERS:
         return False
     top = parts[0]
     if top == ".git":
@@ -855,7 +913,10 @@ def harness_template_prune_dest_leftovers(dest_root: Path) -> list[str]:
         for child in sorted(skills_root.iterdir()):
             if not child.is_dir() or child.name.startswith("."):
                 continue
-            if child.name not in SKILL_FAMILIES:
+            if (
+                child.name in HARNESS_TEMPLATE_DROP_SKILL_FAMILIES
+                or child.name not in HARNESS_TEMPLATE_SKILL_FAMILIES
+            ):
                 shutil.rmtree(child)
                 pruned.append(f"ai-tooling/skills/{child.name}")
             else:
@@ -1087,6 +1148,8 @@ def _keep_ai_tooling(parts: list[str]) -> bool:
     if len(parts) >= 2 and parts[1] == "skills":
         if len(parts) == 3 and parts[2] in {"AGENTS.md", "skill-conventions.md", "README.md"}:
             return True
+        if len(parts) >= 3 and parts[2] in HARNESS_TEMPLATE_DROP_SKILL_FAMILIES:
+            return False
         for p in parts[2:]:
             if p in HARNESS_TEMPLATE_DROP_SKILLS or p.startswith(HARNESS_TEMPLATE_DROP_SKILL_PREFIXES):
                 return False
@@ -1126,6 +1189,8 @@ def _ai_tooling_dir_may_contain_kept(parts: list[str]) -> bool:
     if parts[1] == "skills":
         if len(parts) == 2:
             return True
+        if parts[2] in HARNESS_TEMPLATE_DROP_SKILL_FAMILIES:
+            return False
         for p in parts[2:]:
             if p in HARNESS_TEMPLATE_DROP_SKILLS or p.startswith(HARNESS_TEMPLATE_DROP_SKILL_PREFIXES):
                 return False

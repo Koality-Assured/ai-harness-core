@@ -86,7 +86,8 @@
       },
       "cursor": {
         "rules_dir": ".cursor/rules",
-        "ignore_path": ".cursorignore"
+        "ignore_path": ".cursorignore",
+        "indexing_ignore_path": ".cursorindexingignore"
       },
       "openai_copilot": {
         "instructions_path": ".github/copilot-instructions.md"

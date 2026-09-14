@@ -10,3 +10,4 @@
 3. **Progressive Disclosure**: Only skill names and descriptions are visible initially. Full skill bodies (`SKILL.md`) and target folder rules are loaded strictly Just-In-Time (JIT) when needed.
 4. **Cost Layers**: Leverage `qmd search`/`qmd get` for Markdown discovery, `ast-grep` for AST symbol exploration, and Headroom for bulky outputs.
 5. **Durable Write-Back**: Record lessons and recovery strategies in `ai-tooling/memory/` and update owning source areas upon completion.
+6. **Worktree file-tool access**: Mutating specialists work in `scratch/worktrees/<slug>/`. Do not deny Read/Write on that path. Indexing ignores (`.gitignore`, `.cursorindexingignore`) are not the same as agent-access denies.

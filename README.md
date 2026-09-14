@@ -33,6 +33,15 @@ Embed the core engine directly into an existing software project to give AI codi
 2. Configure provider thresholds and adapter paths in `config/harness.config.json`.
 3. Leverage `.harness/` Python adapters for worktree sandboxing, prompt cache breakpoint planning, and Headroom compression.
 
+### Core ↔ spoke protocol
+Domain routers are **spokes**. `ai-harness-core` is the generic **core**.
+
+1. Scaffold a spoke with `python scripts/sync/scaffold_harness.py` (local template export and/or clone of `ai-harness-core`). Remotes: `origin` = the domain repo, `harness-core` = `Koality-Assured/ai-harness-core`. Private visibility is first-class (`--visibility private|public`).
+2. Pull material core updates with `python scripts/sync/pull_harness_core.py` (allowlisted core paths only; never auto-merge).
+3. Propose generic core improvements back with `python scripts/sync/propose_core_update.py` (refuses domain overlay paths; `--create-issue` only; never open a PR from the spoke working tree).
+
+Do not copy instance `projects/`, `research/`, or `ai-tooling/memory/` dumps, and do not feed a fed instance (for example a security corpus) in as the template source.
+
 ---
 
 ## Architecture Overview

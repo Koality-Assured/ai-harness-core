@@ -7,3 +7,4 @@
 3. **No Transcript Bleed**: Never chain historical chat transcripts into subtask or child agent prompts.
 4. **Just-In-Time Context Ingestion**: Load area-level `AGENTS.md` and domain skill instructions strictly JIT when entering target folders. Extract only relevant headings or line ranges rather than full file dumps.
 5. **Cost-Effective Tooling**: Use `qmd search` / `qmd get` for documentation search, `ast-grep` for code outline inspection, and Headroom for bulky command outputs.
+6. **Worktree file-tool access**: Mutating specialists work in `scratch/worktrees/<slug>/`. Do not add that path to `.cursorignore` or Copilot `ignore` lists. `.gitignore` keeps scratch out of git; agent file tools must still be able to read and write the worktree.

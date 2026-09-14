@@ -182,7 +182,7 @@ When an orchestrating agent spawns a specialist subagent, the subagent MUST be i
 | :--- | :--- | :--- | :--- |
 | **Claude (Claude Code / Anthropic)** | `CLAUDE.md`, `.claude/settings.json`, `.claude/agents/*.md` | Subagents run in isolated context windows ("amnesiac" to parent transcript); tool whitelisting in agent configs. | Coordinator passes explicit prompt via Agent tool; `.claude/settings.json` enforces `isolated_context: true`. |
 | **GPT / OpenAI (Agents SDK / Copilot / Codex)** | `.github/copilot-instructions.md`, `.github/instructions/*.instructions.md`, `.codex/agents/*.toml` | Clean session instantiation (`Session`); input filtering on handoffs (`input_filter`); path-scoped `applyTo` globs. | Repo-level instructions enforce clean state; handoff filters prune conversation history before subagent invocation. |
-| **Cursor (Cursor IDE / Composer / Subagents)** | `.cursorignore`, `.cursor/rules/context-boundaries.mdc`, `.cursor/agents/*.md` | Indexing/embedding pruning via `.cursorignore`; universal rule injection via `.mdc` (`alwaysApply: true`). | `.cursorignore` blocks non-source clutter from automatic injection; `context-boundaries.mdc` mandates clean-slate spawning. |
+| **Cursor (Cursor IDE / Composer / Subagents)** | `.cursorignore`, `.cursorindexingignore`, `.cursor/rules/context-boundaries.mdc`, `.cursor/agents/*.md` | Clean-slate spawn via `.mdc` (`alwaysApply: true`). **Split ignores:** `.cursorignore` blocks Agent Read/Write/Tab/@; `.cursorindexingignore` and `.gitignore` prune embeddings only. | Never put `scratch/worktrees/` in `.cursorignore` (isolate-work checkouts). Index those trees via `.cursorindexingignore`. Official: [Ignore file](https://cursor.com/docs/reference/ignore-file). |
 | **Google Antigravity (AGY / Gemini)** | `GEMINI.md`, `config/harness.config.json`, `AGENTS.md` | Dedicated `invoke_subagent` tool with explicit parameters (`TypeName`, `Role`, `Prompt`, `Model`, `Workspace`); progressive disclosure. | Harness schema validation enforces `require_clean_state: true`, `prohibit_transcript_forwarding: true`, and JIT skill loading. |
 
 ### 3. Anti-Patterns in Subagent Context Delegation
@@ -190,6 +190,7 @@ When an orchestrating agent spawns a specialist subagent, the subagent MUST be i
 1. **Transcript Dumping**: Pasting the full multi-turn coordinator chat history into the child's `Prompt` parameter. This pollutes the subagent's attention window and breaks prompt caching.
 2. **Whole-Repository Preloading**: Instructing a subagent to dump or read the entire repository tree ahead of time. Subagents must use JIT search (`qmd`) and symbol outlines (`ast-grep`).
 3. **Padded Definitions of Done**: Expanding subagent task prompts with unrequested coordinator chores rather than passing the concise, bounded task contract.
+4. **Agent-access ignore on worktrees**: Listing `scratch/` or `scratch/worktrees/` in `.cursorignore` (or a host tool denylist) so specialists cannot Read/Write their isolated checkout. Use `.gitignore` / `.cursorindexingignore` for indexing only.
 
 ---
 

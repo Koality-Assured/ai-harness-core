@@ -11,6 +11,10 @@ rag_keywords:
     generic-template,
     router-structure,
     downstream-sync,
+    scaffold-harness,
+    pull-harness-core,
+    propose-core-update,
+    spoke,
   ]
 ---
 
@@ -36,6 +40,7 @@ Machinery belongs in `ai-harness-core`. Copy it, then sync later corrections fro
 - `routing/` (areas, skill-dispatch, isolation)
 - Cost layers: qmd, ast-grep, Headroom
 - Generic skills, agents, scripts, and `supporting/` notes that are not a vendor or domain corpus
+- Host ignore split: `.cursorignore` (agent access), `.cursorindexingignore` (indexing only), plus `CLAUDE.md` / `GEMINI.md` / Copilot instruction stubs
 - Harness operating pages such as this one and [`context-management.md`](./context-management.md)
 
 ## What the template must not copy
@@ -54,6 +59,35 @@ The template may keep empty or stub folders so the layout is recognizable, witho
 Structure corrections in this harness are the source that gets synced into `ai-harness-core` via `scripts/sync`. Domain pages remain in this instance and in other public slice repos; they do not go into the template.
 
 This page states the boundary. The file map and redaction pipeline live with the repo-sync specialist.
+
+## Core and spoke protocol
+
+`ai-harness-core` is the generic core. A domain router (legal, UI/UX, financial, game-dev, or other) is a **spoke** scaffolded from that core. Material core fixes flow core to spoke. Generic machinery improvements flow spoke to core as issues or draft PRs. Domain corpus never returns to core.
+
+### Scaffold
+
+Use `python scripts/sync/scaffold_harness.py --name <repo> --target <dir> --org Koality-Assured --visibility public|private --domain legal|ui-ux|financial|game-dev|none --dry-run --json`.
+
+- Obtain the generic core by local template export (`--core-source export`) or clone of `Koality-Assured/ai-harness-core` (`--core-source clone`). `--core-source path` copies an existing core checkout and refuses a fed instance (OWASP dumps, identity standards, `projects/` slugs, memory dumps, AWS skill families).
+- Write domain overlay stubs only (`.harness/domain.json` and `docs/standards/<domain>-overlay.md`). Do not copy this instance's projects, research, or memory.
+- Remotes: `origin` is the domain repo; `harness-core` is `ai-harness-core`. After overlays and remotes, the scaffolder makes an initial commit so `pull_harness_core` has `HEAD`. It does not push.
+- Private visibility is first-class. Default follows the domain (game-dev private; legal/ui-ux/financial public) unless `--visibility` is set.
+
+`python scripts/harness_init.py` remains the embed-engine CLI. Do not replace it with the domain scaffolder.
+
+### Pull core updates
+
+`python scripts/sync/pull_harness_core.py --dry-run --json` does **not** git fetch. It plans against the existing `harness-core/<ref>` remote-tracking ref. Fetch first (`git fetch harness-core`) or omit `--dry-run` to fetch. Live pull copies **allowlisted core paths only** onto a new branch (`chore/pull-harness-core-<utc>`). Domain overlay files are skipped. The command never merges into the previous branch and never pushes.
+
+Allowlisted paths match the generic template keep rules (root `AGENTS.md`, routing machinery, `.harness/` except `domain.json`, generic skills/scripts/docs/supporting).
+
+### Propose core updates
+
+`python scripts/sync/propose_core_update.py --dry-run --json` plans a generic improvement back to `Koality-Assured/ai-harness-core`. It refuses domain overlay paths, vendor skill families, and other non-core files (full dirty tree, not only `--path`). Opt-in `--create-issue` opens a text-only issue. `--create-pr` from a spoke is refused: it would attach the spoke branch as the PR head. To open a PR, copy allowlisted files into an `ai-harness-core` clone. It never auto-merges.
+
+### What stays in the spoke
+
+Domain standards, reference families, cloud/workplace skills, and instance `projects/` / `research/` / `ai-tooling/memory/` stay in the spoke. They are not template export payload and must not be proposed back to core.
 
 ## Repository taxonomy & subfolder archetypes
 

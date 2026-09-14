@@ -32,20 +32,13 @@ except ImportError:
         return Path(override).resolve() if override else DEFAULT_ROOT
 
 from _harness_template import (  # noqa: E402
-    HARNESS_TEMPLATE_ALLOWED_DOT_DIRS,
     HARNESS_TEMPLATE_MODE,
-    harness_template_dir_may_contain_kept,
-    harness_template_post_copy_files,
-    harness_template_prune_dest_leftovers,
-    harness_template_sanitize_file_content,
-    is_harness_template_rel_kept,
     WIKI_TEMPLATE_ALLOWED_DOT_DIRS,
-    HARNESS_TEMPLATE_MODE,
-    is_harness_template_rel_kept,
     harness_template_dir_may_contain_kept,
     harness_template_post_copy_files,
     harness_template_prune_dest_leftovers,
     harness_template_sanitize_file_content,
+    is_harness_template_rel_kept,
 )
 
 

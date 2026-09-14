@@ -1,10 +1,18 @@
-# Cursor indexing and context ignore file
-# Excludes non-source artifacts, large datasets, and transient files from automatic codebase embeddings
-
-# Scratch and transient worktrees
-scratch/**
+# Cursor AGENT access ignore (Read, Write, Tab, @-mention).
+# Official: https://cursor.com/docs/reference/ignore-file
+#
+# Do NOT list scratch/worktrees here. isolate-work places mutating specialists
+# in those git checkouts; .cursorignore blocks Agent file tools entirely.
+# Keep scratch out of embeddings with .gitignore and .cursorindexingignore.
+# Override gitignore for isolate-work checkouts (Cursor may treat gitignore as
+# Agent deny). Negations only work for nested paths if the parent dir is not
+# excluded in THIS file via scratch/**.
+!scratch/worktrees/
+!scratch/worktrees/**
 !scratch/AGENTS.md
 !scratch/README.md
+scratch/scaffolded-repos/**
+.*oauth_token*.json
 
 # Tooling and build caches
 .cache/
