@@ -48,6 +48,16 @@ CREATE_PR_REFUSED = (
     "into an ai-harness-core clone and open a draft PR there."
 )
 
+SPOKE_GENERATED_INDEXES: frozenset[str] = frozenset(
+    {
+        "routing/skill-dispatch.md",
+        "routing/area-map.md",
+        "routing/agent-dispatch.md",
+        "routing/by-task.md",
+        "scripts/script-index.md",
+    }
+)
+
 
 def _changed_paths(spoke: Path) -> list[str]:
     """List dirty/untracked paths. Empty when the spoke is not a git repo."""
@@ -86,7 +96,11 @@ def classify_proposal_paths(paths: list[str]) -> tuple[list[str], list[str]]:
     refused: list[str] = []
     for rel in unique_paths(paths):
         path = posix_rel(rel)
-        if classify_spoke_path(path) != "core" or not is_allowlisted_core_path(path):
+        if (
+            path in SPOKE_GENERATED_INDEXES
+            or classify_spoke_path(path) != "core"
+            or not is_allowlisted_core_path(path)
+        ):
             refused.append(path)
         else:
             core.append(path)

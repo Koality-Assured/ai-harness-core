@@ -171,7 +171,11 @@ def is_domain_marker(rel: str) -> bool:
         if len(parts) != 3 or not script_test_is_kept(parts[2]):
             return True
     if len(parts) >= 2 and parts[0] == "docs" and parts[1] == "standards":
-        if len(parts) >= 3 and parts[2] not in HARNESS_TEMPLATE_KEEP_DOCS_STANDARDS:
+        if (
+            len(parts) >= 3
+            and parts[2] not in HARNESS_TEMPLATE_KEEP_DOCS_STANDARDS
+            and parts[2] not in {"AGENTS.md", "README.md"}
+        ):
             return True
     return False
 
@@ -258,7 +262,9 @@ def is_allowlisted_core_path(rel: str) -> bool:
     path = posix_rel(rel)
     if is_domain_marker(path):
         return False
-    return is_harness_template_rel_kept(path)
+    if is_harness_template_rel_kept(path):
+        return True
+    return path in CORE_CHECKOUT_EXTRA_RELS
 
 
 def classify_spoke_path(rel: str) -> str:
@@ -266,7 +272,7 @@ def classify_spoke_path(rel: str) -> str:
     path = posix_rel(rel)
     if is_domain_marker(path):
         return "domain"
-    if is_harness_template_rel_kept(path):
+    if is_harness_template_rel_kept(path) or path in CORE_CHECKOUT_EXTRA_RELS:
         return "core"
     return "domain"
 

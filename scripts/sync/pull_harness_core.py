@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,6 +36,18 @@ from _harness_core_protocol import (  # noqa: E402
 )
 
 
+def _run_python_script(script_path: Path, cwd: Path, timeout: int = 120) -> tuple[int, str, str]:
+    result = subprocess.run(
+        [sys.executable, str(script_path)],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        check=False,
+    )
+    return result.returncode, result.stdout.strip(), result.stderr.strip()
+
+
 def _branch_name() -> str:
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     return f"chore/pull-harness-core-{stamp}"
@@ -49,7 +62,7 @@ def _diff_names(spoke: Path, core_ref: str) -> tuple[list[str], bool]:
     """Return (paths, used_unborn_fallback). Never requires a spoke commit."""
     if _has_head(spoke):
         code, stdout, stderr = run_git(
-            ["git", "diff", "--name-only", "HEAD", core_ref],
+            ["git", "diff", "--name-only", "--diff-filter=d", "HEAD", core_ref],
             cwd=spoke,
         )
         if code != 0:
@@ -89,6 +102,7 @@ def pull_harness_core(
         "base_branch": current_branch(spoke),
         "updates": [],
         "skipped_domain": [],
+        "regenerated_indexes": [],
         "merged": False,
         "pushed": False,
         "fetched": False,
@@ -139,6 +153,29 @@ def pull_harness_core(
     code, _, err = run_git(checkout_args, cwd=spoke)
     if code != 0:
         raise RuntimeError(err or "failed to checkout allowlisted core paths")
+
+    regenerated: list[str] = []
+    routing_gen = spoke / "scripts" / "routing" / "generate_routing_index.py"
+    if routing_gen.is_file():
+        code, out, err = _run_python_script(routing_gen, cwd=spoke)
+        if code != 0:
+            raise RuntimeError(err or out or "failed to regenerate routing index")
+        regenerated.extend(
+            [
+                "routing/area-map.md",
+                "routing/skill-dispatch.md",
+                "routing/agent-dispatch.md",
+            ]
+        )
+
+    script_gen = spoke / "scripts" / "routing" / "generate_script_index.py"
+    if script_gen.is_file():
+        code, out, err = _run_python_script(script_gen, cwd=spoke)
+        if code != 0:
+            raise RuntimeError(err or out or "failed to regenerate script index")
+        regenerated.append("scripts/script-index.md")
+
+    payload["regenerated_indexes"] = regenerated
     # Explicitly do not merge into the previous branch.
     return payload
 
@@ -206,6 +243,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  update:  {rel}")
         for rel in payload["skipped_domain"]:
             print(f"  skip:    {rel}")
+        for rel in payload.get("regenerated_indexes", []):
+            print(f"  reindex: {rel}")
         if not payload["updates"]:
             print("  no allowlisted core updates")
     return 0
