@@ -134,6 +134,10 @@ def pull_harness_core(
     for rel in names:
         kind = classify_spoke_path(rel)
         if kind == "core" and is_allowlisted_core_path(rel):
+            # Guard against overwriting spoke domain taxonomy
+            if rel == "routing/areas.yaml" and (spoke / "routing" / "areas.yaml").is_file():
+                skipped.append(rel)
+                continue
             updates.append(rel)
         else:
             skipped.append(rel)
