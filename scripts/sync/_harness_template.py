@@ -89,6 +89,9 @@ HARNESS_TEMPLATE_ROOT_FILES: frozenset[str] = frozenset(
         ".gitignore",
         ".markdownlint-cli2.jsonc",
         "sgconfig.yml",
+        "harness.cmd",
+        "harness.ps1",
+        "harness.sh",
     }
 )
 WIKI_TEMPLATE_ROOT_FILES = HARNESS_TEMPLATE_ROOT_FILES
@@ -211,7 +214,10 @@ HARNESS_TEMPLATE_KEEP_TEST_FILES: frozenset[str] = frozenset(
     {
         "__init__.py",
         "test_benchmarks.py",
+        "test_harness_auth.py",
+        "test_harness_cli.py",
         "test_harness_core_sync.py",
+        "test_harness_registry.py",
         "test_hybrid_dispatch.py",
         "test_local_webfetch.py",
         "test_pacing.py",
@@ -252,6 +258,7 @@ WIKI_TEMPLATE_PRUNE_DEST_NAMES = HARNESS_TEMPLATE_PRUNE_DEST_NAMES
 HARNESS_TEMPLATE_KEEP_SCRIPT_DIRS: frozenset[str] = frozenset(
     {
         "_lib",
+        "cli",
         "routing",
         "qmd",
         "cost-layers",

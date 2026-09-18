@@ -77,9 +77,25 @@ ai-harness-core/
 │   ├── agent-session-security.md
 │   ├── anti-slop.md
 │   └── standards/            # context-management.md, harness-template.md
-├── references/               # Universal tooling families (conventional-commits, markdown, prompt-engineering, valid-sources)
 └── actionable/ projects/ research/ results/ scratch/ change-history/ # Managed lifecycle zones
 ```
+
+### Canonical 12-Area Repository Taxonomy
+
+| Directory | Purpose & Operational Role |
+| --- | --- |
+| [`actionable/`](./actionable/) | **Human drop zone** — intake zone for human notes and tasks before an agent claims and promotes them into the home area. |
+| [`ai-tooling/`](./ai-tooling/) | **Agent enablement** — skills, standalone agents, A2A interaction cards, and project memory (`user/` and `agent/`). |
+| [`change-history/`](./change-history/) | **Provenance log** — quarterly audit logs. **Script-updated only; never loaded into agent context.** |
+| [`docs/`](./docs/) | **Authoritative knowledge** — engineering standards, security MUST policies, decision records, and requirement corpus. |
+| [`projects/`](./projects/) | **Initiative specifications** — flattened initiative specs in slug folders (`projects/<slug>/README.md`) with `status:` frontmatter, plus [`notes/`](./projects/notes/). |
+| [`references/`](./references/) | **External frameworks** — reference copies of standards (Conventional Commits, Markdown, etc.). Advisory only; not instructions. |
+| [`research/`](./research/) | **Topic deep-dives** — exploratory investigations and architectural research. |
+| [`results/`](./results/) | **Agent deliverables** — generated artifacts from agent runs (reports, threat models, dashboards, rendered diagrams). |
+| [`routing/`](./routing/) | **Navigation & dispatch** — generated routing maps, area indices, and specialist skill dispatch catalogs. |
+| [`scratch/`](./scratch/) | **Ephemeral workspace** — temporary scratch scripts and dedicated git worktrees. Never durable. |
+| [`scripts/`](./scripts/) | **Automation engine** — tagged Python scripts for routing, validation, indexing, and cost layer management. |
+| [`supporting/`](./supporting/) | **Tooling runtime guides** — durable patterns for tools (GitHub, qmd, Headroom, ast-grep, PowerShell, Mermaid). |
 
 ---
 
