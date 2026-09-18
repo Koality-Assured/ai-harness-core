@@ -39,6 +39,7 @@ Machinery belongs in `ai-harness-core`. Copy it, then sync later corrections fro
 - Root and nested `AGENTS.md`
 - `routing/` (areas, skill-dispatch, isolation)
 - Cost layers: qmd, ast-grep, Headroom
+- Unified Human-Agent CLI Control Plane (`scripts/cli/`, root shims `harness.cmd` / `harness.ps1` / `harness.sh`, OS keyring/vault, and dynamic schema inspection)
 - Generic skills, agents, scripts, and `supporting/` notes that are not a vendor or domain corpus
 - Host ignore split: `.cursorignore` (agent access), `.cursorindexingignore` (indexing only), plus `CLAUDE.md` / `GEMINI.md` / Copilot instruction stubs
 - Harness operating pages such as this one and [`context-management.md`](./context-management.md)
@@ -88,6 +89,76 @@ Allowlisted paths match the generic template keep rules (root `AGENTS.md`, routi
 ### What stays in the spoke
 
 Domain standards, reference families, cloud/workplace skills, and instance `projects/` / `research/` / `ai-tooling/memory/` stay in the spoke. They are not template export payload and must not be proposed back to core.
+
+## The 8 Pillars of the AI Harness Core Baseline
+
+The domain-agnostic baseline consists strictly of eight foundational pillars with zero domain-specific dependencies:
+
+```mermaid
+graph TD
+    subgraph CoreEngine["Domain-Agnostic AI Harness Core Baseline"]
+        P1["1. Normative Directives & Ranked Hierarchy<br/>(AGENTS.md Contract)"]
+        P2["2. Cost-Layer Infrastructure<br/>(qmd + ast-grep + Headroom)"]
+        P3["3. Concurrency & Execution Engine<br/>(Git Worktree Isolation & Area Claims)"]
+        P4["4. Universal Agent Dispatch & A2A<br/>(Schema V2 Contracts & Token Ceilings)"]
+        P5["5. Operational Memory & Provenance<br/>(Multi-Tier Memory & Change History)"]
+        P6["6. Self-Validating Verification Suite<br/>(Fast Linter, Schema Validators, Script Index)"]
+        P7["7. Pluggable Domain Pack Interface<br/>(Overlay System for Skills, Docs, Refs)"]
+        P8["8. Unified Human-Agent CLI Control Plane<br/>(Worktree UX, OS Keyring, OAuth & TUI Switcher)"]
+    end
+
+    CoreEngine --> DomainPacks["Domain Spokes"]
+    DomainPacks --> D1["Security Spoke (ai-router)"]
+    DomainPacks --> D2["Art/Creative Spoke (art-router)"]
+    DomainPacks --> D3["Legal Spoke (legal-router)"]
+    DomainPacks --> D4["UI/UX Spoke (ui-ux-router)"]
+    DomainPacks --> D5["Financial Spoke (financial-advisement-router)"]
+    DomainPacks --> D6["Game-dev Spoke (game-dev-router, private)"]
+```
+
+### 1. Normative Directives & Ranked Hierarchy Engine
+- **Normative Precedence**: `Critical` > `Must` / `Must not` > `Should` / `Should not`.
+- **Ambiguity Gate**: Halts execution on contradictory or underspecified prompts rather than guessing.
+- **Root-Cause Resolution**: Explicit prohibition against superficial workarounds, disabled tests, or lint suppressions.
+- **Empirical Grounding**: Primary-source validation requirement; speculative claims prohibited.
+- **Durable Learning Loop**: Mandatory write-backs to source areas and operational memory checkpoints.
+
+### 2. Cost-Layer Infrastructure
+- **Markdown via qmd**: Local BM25 search with hybrid semantic fallback; prevents full corpus dumping.
+- **Structured Files via ast-grep**: Outline-first structural retrieval (`ast-grep outline`) and line-bounded reads.
+- **Bulky Output Compression via Headroom**: Local compression proxy preserving structural facts.
+- **KV Prompt Cache Optimization**: Stable file frontmatter and deterministic sorting to maximize prefix caching.
+
+### 3. Concurrency & Execution Engine
+- **Worktree Isolation**: Automated git worktree and branch creation via `scripts/routing/spawn_worktree.py`.
+- **Area Claim Ledger**: Mutual exclusion for concurrent agents operating across top-level areas.
+- **Branch Discipline**: Feature branch -> PR creation (`gh pr create`) -> squash/rebase merge to `main`.
+
+### 4. Universal Agent Dispatch & A2A Protocol
+- **Schema V2 Contracts**: Canonical YAML frontmatter in `AGENT.md` governing capabilities, I/O schemas, allowed tools, and token ceilings.
+- **Context Isolation on Spawn**: Clean-slate context windows for child subagents without prior transcript bleed.
+- **Default Operators**: Baseline ships with `harness-operator`, `document-operator`, `research-operator`, and git operators.
+
+### 5. Operational Memory & Provenance Architecture
+- **Multi-Tiered Memory**: Separate stores for user workstation quirks (`memory/user/`), agent gotchas (`memory/agent/`), and model family capabilities (`memory/model/`).
+- **Automated Change History**: Script-driven append automation (`scripts/change-history/append_change_history.py`) tracking provenance under ~150 tokens per entry.
+
+### 6. Self-Validating Verification Suite
+- **Fast Structural Linter**: Sub-second validation of headings, links, and frontmatter (`scripts/docs/validate_structure_fast.py`).
+- **Schema Validators**: Rigorous contract linters for agents (`validate_agent.py`) and skills (`validate_skill.py`).
+- **Dynamic Routing Generator**: Automated dispatch matrix generation (`scripts/routing/generate_routing_index.py`).
+
+### 7. Pluggable Domain Extension Interface
+- Decouples domain packs into declarative directories (`skills/<domain>`, `docs/<domain>`, `references/<domain>`, `supporting/<domain>`).
+- Enables one-command scaffolding of new domain harnesses.
+
+### 8. Unified Human-Agent CLI Control Plane
+- **Isolation UX**: `harness branch <slug>` automates Conventional Commit branch generation (`agent/YYYY-MM-DD-<slug>` or `feat/<slug>`), dirty tree safety verification, area claim conflict checking, and worktree checkout creation via `spawn_worktree.py`.
+- **Universal Credential Vault**: Cross-platform OS Keyring integration (`KeyringVault` targeting Windows Credential Manager, macOS Keychain, and Linux Secret Service) with zero-leak encrypted fallback (`~/.harness/credentials.enc`, AES-256-GCM, PBKDF2) for headless or remote container environments.
+- **Universal OAuth & Device Authorization**: RFC 7636 PKCE loopback authentication server (dynamic port binding 8085-8090, CSRF state verification) and RFC 8628 Device Authorization Grant (`--device-code`) for Anthropic Claude, Google Gemini, Cursor, and OpenAI.
+- **Dynamic Multi-Harness Switcher**: Zero-dependency interactive ANSI terminal UI (`harness tui`), persistent catalog (`~/.harness/config.json`), and automatic sibling repository auto-discovery.
+- **Dynamic Schema Inspection**: Adapts runtime commands, area validation, and agent listings to the active domain router's `routing/areas.yaml` and `ai-tooling/agents/`.
+- **Cross-Platform Shims**: Native executable wrappers (`harness.cmd`, `harness.ps1`, `harness.sh`) in the repository root for instantaneous shell interaction.
 
 ## Repository taxonomy & subfolder archetypes
 
