@@ -8,6 +8,12 @@ $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
 $env:PYTHONUTF8 = "1"
 $env:PYTHONIOENCODING = "utf-8"
+$NativeExe = Get-Command "harness.exe" -ErrorAction SilentlyContinue
+if ($NativeExe) {
+    & $NativeExe.Source @Args
+    exit $LASTEXITCODE
+}
+
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PythonExe = if (Get-Command python -ErrorAction SilentlyContinue) { "python" } elseif (Get-Command py -ErrorAction SilentlyContinue) { "py" } else { "python" }
 & $PythonExe "$ScriptDir\scripts\cli\harness.py" @Args
