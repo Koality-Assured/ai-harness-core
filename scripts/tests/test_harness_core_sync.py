@@ -753,6 +753,42 @@ class PullHarnessCoreTests(unittest.TestCase):
                 "# scripts spoke\n",
             )
 
+    def test_pull_skips_areas_yaml_when_spoke_has_it(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            core = Path(tmp) / "core"
+            spoke = Path(tmp) / "spoke"
+
+            _init_repo(core)
+            (core / "AGENTS.md").write_text("# core v1\n", encoding="utf-8")
+            (core / "routing").mkdir(parents=True)
+            (core / "routing" / "areas.yaml").write_text("areas:\n  - id: core_area\n", encoding="utf-8")
+            _commit(core, "core v1")
+
+            _init_repo(spoke)
+            (spoke / "AGENTS.md").write_text("# core v1\n", encoding="utf-8")
+            (spoke / "routing").mkdir(parents=True)
+            (spoke / "routing" / "areas.yaml").write_text("areas:\n  - id: domain_area\n", encoding="utf-8")
+            _commit(spoke, "spoke v1")
+            _git(spoke, "remote", "add", CORE_REMOTE_NAME, str(core))
+            _git(spoke, "fetch", CORE_REMOTE_NAME)
+
+            # Core updates areas.yaml
+            (core / "routing" / "areas.yaml").write_text("areas:\n  - id: core_area_v2\n", encoding="utf-8")
+            _commit(core, "core v2")
+
+            dry = pull_harness_core(spoke=spoke, ref="main", dry_run=True, fetch=True)
+            self.assertTrue(dry["ok"])
+            self.assertIn("routing/areas.yaml", dry["skipped_domain"])
+            self.assertNotIn("routing/areas.yaml", dry["updates"])
+
+            live = pull_harness_core(spoke=spoke, ref="main", dry_run=False, fetch=True)
+            self.assertTrue(live["ok"])
+            self.assertEqual(
+                (spoke / "routing" / "areas.yaml").read_text(encoding="utf-8"),
+                "areas:\n  - id: domain_area\n",
+            )
+
+
 
 
 class OverlayStubTests(unittest.TestCase):
