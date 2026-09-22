@@ -4,6 +4,15 @@ Entries newest first. Append via `python scripts/change-history/append_change_hi
 
 ## Entries
 
+
+### 2026-09-22 — Host-Agnostic Hardening and CLI Isolation Upstream Promotion
+
+- **Requesting user:** Distasteful
+- **AI agent:** harness-operator
+- **User request:** Host-agnostic hardening, Python standardization, worktree auto-GC, and silent OAuth refresh
+- **Summary:**
+  - Promoted host-agnostic worktree isolation, in-memory secret execution, and cross-platform claim watcher daemon.
+
 ### 2026-09-18 — Slice 4: Pillar 8 CLI Control Plane and Spoke Distribution Protocol
 
 - **Requesting user:** Distasteful

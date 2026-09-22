@@ -40,8 +40,10 @@ from cli.auth.oauth_flows import (
     GeminiOAuthFlow,
     LoopbackAuthServer,
     OpenAIAuthFlow,
+    ensure_fresh_token,
     extract_code_from_input,
     generate_pkce_pair,
+    refresh_token,
 )
 from harness import main
 
@@ -533,5 +535,79 @@ class TestLoopbackAndOAuthSecurity(unittest.TestCase):
                     self.assertIn("Authentication canceled", str(ctx.exception))
 
 
+class TestSilentRefreshTokenRotation(unittest.TestCase):
+    """Test RFC 6749 background token rotation and in-memory refresh before agent execution."""
+
+    def test_rfc6749_refresh_rotation(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            vault_file = Path(td) / "credentials.enc"
+            vault = UniversalVault(vault_path=vault_file, force_file_vault=True)
+
+            # Store an expiring Anthropic OAuth credential
+            old_at = "sk-ant-old-access-token-12345"
+            old_rt = "anthropic_refresh_old_12345"
+            expiring_time = time.time() + 120  # Expires in 2 minutes (within default 900s buffer)
+            token_data = {
+                "provider": "anthropic",
+                "token_type": "Bearer",
+                "access_token": old_at,
+                "refresh_token": old_rt,
+                "expires_at": expiring_time,
+                "profile": "claude-user",
+            }
+            vault.set_credential("anthropic", token_data)
+
+            # Ensure fresh token with 15m buffer -> should trigger rotation
+            fresh = ensure_fresh_token("anthropic", vault=vault, buffer_seconds=900)
+            self.assertIsNotNone(fresh)
+            self.assertNotEqual(fresh["access_token"], old_at)
+            self.assertNotEqual(fresh["refresh_token"], old_rt)
+            self.assertTrue(fresh["access_token"].startswith("sk-ant-oauth-rot-"))
+            self.assertGreater(fresh["expires_at"], time.time() + 1800)
+
+            # Check vault persistence
+            persisted = vault.get_credential("anthropic")
+            self.assertEqual(persisted["access_token"], fresh["access_token"])
+            self.assertEqual(persisted["refresh_token"], fresh["refresh_token"])
+
+    def test_fresh_token_skipped(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            vault_file = Path(td) / "credentials.enc"
+            vault = UniversalVault(vault_path=vault_file, force_file_vault=True)
+
+            # Store a fresh credential (expires in 2 days)
+            token_data = {
+                "provider": "gemini",
+                "token_type": "Bearer",
+                "access_token": "ya29.current-fresh-token",
+                "refresh_token": "1//gemini-refresh",
+                "expires_at": time.time() + 172800,
+                "profile": "google-user",
+            }
+            vault.set_credential("gemini", token_data)
+
+            result = ensure_fresh_token("gemini", vault=vault, buffer_seconds=900)
+            self.assertEqual(result["access_token"], "ya29.current-fresh-token")
+            self.assertEqual(result["refresh_token"], "1//gemini-refresh")
+
+    def test_non_refreshable_api_key_untouched(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            vault_file = Path(td) / "credentials.enc"
+            vault = UniversalVault(vault_path=vault_file, force_file_vault=True)
+
+            api_key_data = {
+                "provider": "openai",
+                "token_type": "ApiKey",
+                "access_token": "sk-static-api-key",
+                "expires_at": None,
+                "profile": "api-key",
+            }
+            vault.set_credential("openai", api_key_data)
+
+            res = ensure_fresh_token("openai", vault=vault, buffer_seconds=900)
+            self.assertEqual(res["access_token"], "sk-static-api-key")
+
+
 if __name__ == "__main__":
     unittest.main()
+

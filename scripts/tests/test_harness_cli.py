@@ -271,6 +271,30 @@ class TestHarnessCommands(unittest.TestCase):
                     self.assertEqual(ret, 0)
                     mock_remove.assert_called_once_with(slug="test-worktree", dry_run=True, force=False)
 
+    def test_clean_auto_pruning(self) -> None:
+        mock_proc = MagicMock()
+        mock_proc.stdout = "  main\n+ agent/2026-09-15-merged-feature\n"
+        claims = [
+            {"slug": "merged-feature", "branch": "agent/2026-09-15-merged-feature", "path": "/fake/merged"},
+            {"slug": "stale-feature", "branch": "agent/2026-09-15-stale-feature", "path": "/fake/nonexistent-path"},
+            {"slug": "active-feature", "branch": "agent/2026-09-15-active-feature", "path": "/fake/active"},
+        ]
+        def fake_exists(self_path):
+            return "active" in str(self_path) or "merged" in str(self_path)
+
+        with patch("cli.harness.run_git", return_value=mock_proc):
+            with patch("cli.harness.load_claims", return_value=claims):
+                with patch("pathlib.Path.exists", fake_exists):
+                    with patch("routing.spawn_worktree.cmd_remove") as mock_remove:
+                        ret = main(["clean", "--auto", "--stale-hours", "12", "--dry-run"])
+                        self.assertEqual(ret, 0)
+                        # Both merged-feature and stale-feature should be pruned, active-feature must NOT
+                        calls = [c.kwargs.get("slug") for c in mock_remove.call_args_list]
+                        self.assertIn("merged-feature", calls)
+                        self.assertIn("stale-feature", calls)
+                        self.assertNotIn("active-feature", calls)
+
+
     def test_pr_missing_gh(self) -> None:
         err_capture = io.StringIO()
         with patch("shutil.which", return_value=None):

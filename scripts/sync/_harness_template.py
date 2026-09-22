@@ -271,6 +271,7 @@ HARNESS_TEMPLATE_KEEP_SCRIPT_DIRS: frozenset[str] = frozenset(
         "github",
         "ai-tooling",
         "benchmarks",
+        "daemon",
     }
 )
 WIKI_TEMPLATE_KEEP_SCRIPT_DIRS = HARNESS_TEMPLATE_KEEP_SCRIPT_DIRS
