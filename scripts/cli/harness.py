@@ -540,25 +540,50 @@ def cmd_clean(args: argparse.Namespace) -> int:
     except Exception:
         merged_branches = set()
 
+    stale_threshold = args.stale_hours
+    if (args.stale or args.auto) and stale_threshold <= 0:
+        stale_threshold = 24.0
+
     # Classify claims
     targets: list[str] = []
+    now_utc = dt.datetime.now(dt.timezone.utc)
     for c in claims:
         slug = c.get("slug", "")
         branch = c.get("branch", "")
         c_path = Path(c.get("path", "")) if c.get("path") else (get_worktrees_dir(primary_root) / slug)
         is_stale = not c_path.exists()
+        if not is_stale and stale_threshold > 0:
+            created_str = c.get("created_at") or c.get("created")
+            if created_str:
+                try:
+                    c_dt = dt.datetime.fromisoformat(created_str.replace("Z", "+00:00"))
+                    if (now_utc - c_dt).total_seconds() / 3600.0 >= stale_threshold:
+                        is_stale = True
+                except Exception:
+                    pass
+            exp_str = c.get("expires_at")
+            if exp_str:
+                try:
+                    exp_dt = dt.datetime.fromisoformat(exp_str.replace("Z", "+00:00"))
+                    if now_utc > exp_dt:
+                        is_stale = True
+                except Exception:
+                    pass
+
         is_merged = branch in merged_branches
 
         if args.slug and slug == args.slug:
             targets.append(slug)
         elif args.all:
             targets.append(slug)
+        elif args.auto and (is_merged or is_stale):
+            targets.append(slug)
         elif args.merged and is_merged:
             targets.append(slug)
-        elif args.stale and is_stale:
+        elif (args.stale or args.stale_hours > 0) and is_stale:
             targets.append(slug)
 
-    if not args.slug and not args.all and not args.merged and not args.stale:
+    if not args.slug and not args.all and not args.merged and not args.stale and not args.auto and args.stale_hours <= 0:
         # Display candidates
         print("=== Worktree Cleanup Candidates ===")
         if not claims:
@@ -578,7 +603,7 @@ def cmd_clean(args: argparse.Namespace) -> int:
             if not status_tags:
                 status_tags.append("ACTIVE")
             print(f"  [{'/'.join(status_tags)}] {slug} ({branch})")
-        print("\nSpecify --merged, --stale, --slug <slug>, or --all to clean.")
+        print("\nSpecify --merged, --stale, --stale-hours <N>, --auto, --slug <slug>, or --all to clean.")
         return 0
 
     if not targets:
@@ -956,6 +981,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_clean.add_argument("--slug", help="Specific worktree slug to clean")
     p_clean.add_argument("--merged", action="store_true", help="Clean all merged worktrees")
     p_clean.add_argument("--stale", action="store_true", help="Clean all stale claims")
+    p_clean.add_argument("--stale-hours", type=float, default=0.0, help="Prune claims older than specified hours")
+    p_clean.add_argument("--auto", action="store_true", help="Automatically prune merged and stale worktrees non-interactively")
     p_clean.add_argument("--all", action="store_true", help="Clean all worktrees and claims")
 
     # auth

@@ -10,6 +10,7 @@ import argparse
 import datetime as dt
 import json
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -123,6 +124,74 @@ def load_claims() -> list[dict]:
     return claims
 
 
+def find_harness_binary() -> str | None:
+    """Locate the compiled harness CLI binary across Windows and POSIX platforms."""
+    bin_name = "harness.exe" if os.name == "nt" else "harness"
+    cmd = shutil.which("harness") or shutil.which(bin_name)
+    if cmd:
+        return cmd
+    candidates: list[Path] = [
+        # POSIX standard paths
+        Path.home() / ".local" / "bin" / bin_name,
+        Path("/opt/homebrew/bin") / bin_name,
+        Path("/usr/local/bin") / bin_name,
+    ]
+    if os.name == "nt":
+        candidates.extend([
+            Path.home() / "scoop" / "shims" / bin_name,
+            Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "harness" / bin_name,
+            Path("C:/Code/harness-cli") / bin_name,
+        ])
+    candidates.append(PRIMARY_ROOT.parent / "harness-cli" / bin_name)
+
+    for cand in candidates:
+        if cand.is_file():
+            return str(cand)
+    return None
+
+
+def query_active_claims() -> list[dict]:
+    """Query active non-expired claims via 'harness claim inspect --json', falling back to load_claims()."""
+    harness_bin = find_harness_binary()
+
+    if harness_bin:
+        try:
+            proc = subprocess.run(
+                [harness_bin, "claim", "inspect", "--json"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                check=False,
+                cwd=str(PRIMARY_ROOT),
+            )
+            if proc.returncode == 0 and proc.stdout.strip():
+                data = json.loads(proc.stdout)
+                claims = data.get("claims", [])
+                active = []
+                for c in claims:
+                    # Ignore stale or expired claims during collision checks
+                    if not c.get("is_stale", False):
+                        active.append(c)
+                return active
+        except Exception:
+            pass
+
+    # Fallback to local load_claims with TTL / lease expiry check
+    now_utc = dt.datetime.now(dt.timezone.utc)
+    active = []
+    for c in load_claims():
+        exp_str = c.get("expires_at")
+        if exp_str:
+            try:
+                exp_dt = dt.datetime.fromisoformat(exp_str.replace("Z", "+00:00"))
+                if now_utc > exp_dt:
+                    continue  # Expired lease
+            except Exception:
+                pass
+        active.append(c)
+    return active
+
+
 def overlapping(areas: list[str], claims: list[dict], *, ignore_slug: str | None = None) -> list[dict]:
     want = set(areas)
     hits = []
@@ -157,7 +226,7 @@ def cmd_list(as_json: bool) -> int:
 
 
 def cmd_check(areas: list[str], as_json: bool) -> int:
-    hits = overlapping(areas, load_claims())
+    hits = overlapping(areas, query_active_claims())
     payload = {"ok": not hits, "overlap": hits, "areas": areas}
     if as_json:
         print(json.dumps(payload, indent=2))
@@ -178,6 +247,7 @@ def cmd_add(
     dry_run: bool,
     as_json: bool,
     branch: str | None = None,
+    ttl_hours: float = 24.0,
 ) -> int:
     if not SLUG_RE.match(slug):
         print("error: slug must be kebab-case [a-z0-9-]", file=sys.stderr)
@@ -194,8 +264,13 @@ def cmd_add(
     if not branch:
         branch = f"agent/{dt.date.today().isoformat()}-{slug}"
 
+    now_utc = dt.datetime.now(dt.timezone.utc)
+    created_str = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    expires_utc = now_utc + dt.timedelta(hours=ttl_hours)
+    expires_str = expires_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+
     if dry_run:
-        hits = overlapping(areas, load_claims(), ignore_slug=slug)
+        hits = overlapping(areas, query_active_claims(), ignore_slug=slug)
         if hits and not force:
             print("error: overlapping areas with active claims (pass --force to override):", file=sys.stderr)
             for claim in hits:
@@ -207,7 +282,10 @@ def cmd_add(
             "path": str(dest),
             "areas": areas,
             "agent": agent,
-            "created": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "created": created_str,
+            "created_at": created_str,
+            "ttl_hours": ttl_hours,
+            "expires_at": expires_str,
         }
         if as_json:
             print(json.dumps({"dry_run": True, "claim": claim}, indent=2))
@@ -218,7 +296,7 @@ def cmd_add(
 
     try:
         with claim_lock():
-            hits = overlapping(areas, load_claims(), ignore_slug=slug)
+            hits = overlapping(areas, query_active_claims(), ignore_slug=slug)
             if hits and not force:
                 print("error: overlapping areas with active claims (pass --force to override):", file=sys.stderr)
                 for claim in hits:
@@ -237,7 +315,10 @@ def cmd_add(
                 "path": str(dest),
                 "areas": areas,
                 "agent": agent,
-                "created": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "created": created_str,
+                "created_at": created_str,
+                "ttl_hours": ttl_hours,
+                "expires_at": expires_str,
             }
             WORKTREES.mkdir(parents=True, exist_ok=True)
             try:
@@ -309,6 +390,7 @@ def main(argv: list[str] | None = None) -> int:
     p_add.add_argument("--areas", required=True, help="Comma-separated top-level areas")
     p_add.add_argument("--agent", default="router", help="Intended owner agent id")
     p_add.add_argument("--branch", default=None, help="Custom branch name (defaults to agent/YYYY-MM-DD-<slug>)")
+    p_add.add_argument("--ttl-hours", type=float, default=24.0, help="Lease time-to-live in hours (default: 24.0)")
 
     sub.add_parser("list", help="Show git worktrees and claim files", parents=[shared])
 
@@ -332,6 +414,7 @@ def main(argv: list[str] | None = None) -> int:
             args.dry_run,
             args.json,
             branch=args.branch,
+            ttl_hours=args.ttl_hours,
         )
     if args.cmd == "remove":
         return cmd_remove(args.slug, args.dry_run, args.force)

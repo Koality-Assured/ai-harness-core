@@ -2,7 +2,7 @@
 doc_kind: routing_map
 canonical_id: script-index
 topics: [scripts, routing]
-generated_at_utc: 2026-09-18T17:30:54Z
+generated_at_utc: 2026-09-22T16:40:37Z
 generator: scripts/routing/generate_script_index.py
 ---
 
@@ -27,6 +27,7 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 | [`cli/auth/oauth_flows.py`](./cli/auth/oauth_flows.py) | `harness`, `cli`, `auth`, `oauth`, `pkce`, `anthropic`, `cursor`, `gemini`, `openai` | auth, oauth, pkce, loopback, device-flow, anthropic, cursor, gemini, openai | Universal OAuth 2.0 and Provider Authentication Flows for Harness CLI. |
 | [`cli/harness.py`](./cli/harness.py) | `harness`, `cli`, `routing`, `isolation`, `auth`, `keyring` | harness, cli, status, branch, agent, pr, clean, auth, login, logout | In-repo Python CLI control plane for ai-router. |
 | [`cli/registry.py`](./cli/registry.py) | `harness`, `cli`, `registry`, `multi-harness`, `switcher` | harness, registry, switch, scan, list, register, deregister | Harness registry manager for multi-harness discovery and switching. |
+| [`cli/run_agent_isolated.py`](./cli/run_agent_isolated.py) | `cli`, `isolation`, `security`, `credentials`, `agent` | exec, agent, keyring, vault, in-memory, zero-disk | Execute subagent commands with provider API keys injected strictly in-memory. |
 | [`cli/schema_adapter.py`](./cli/schema_adapter.py) | `harness`, `cli`, `schema`, `adapter`, `multi-harness` | harness, schema, adapter, areas, skills, agents | Dynamic schema inspection and adapter for multi-harness repositories. |
 | [`cli/tui.py`](./cli/tui.py) | `harness`, `cli`, `tui`, `switcher`, `interactive` | harness, tui, switcher, switch, menu | Interactive Terminal User Interface (TUI) and Harness Switcher. |
 | [`cost-layers/extract_ast_facts.py`](./cost-layers/extract_ast_facts.py) | `qmd`, `headroom`, `ast-grep` | structural-facts, outline, cost-layers | Extract structural facts via ast-grep outline/kind JSON (not full files). |
@@ -34,6 +35,7 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 | [`cost-layers/validate_cost_layers.py`](./cost-layers/validate_cost_layers.py) | `qmd`, `headroom`, `ast-grep`, `cost-layers`, `research`, `benchmarks` | validation, dry-run, tokens, cost-layers, prompt-caching, webfetch, multi-trial, randomized | Run qmd + Headroom + ast-grep + prompt-caching + webfetch cost-layer dry runs and write a combined report. |
 | [`cost-layers/validate_headroom_compression.py`](./cost-layers/validate_headroom_compression.py) | `headroom`, `qmd`, `cost-layers`, `benchmarks` | validation, dry-run, tokens, compression, multi-trial, randomized | Dry-run Headroom compression: token savings vs gold-fact accuracy with multi-trial randomization. |
 | [`cost-layers/validate_prompt_caching.py`](./cost-layers/validate_prompt_caching.py) | `cost-layers`, `routing`, `agents` | prompt-caching, invariance, validation, dry-run, kv-cache | Validate prompt cache invariance across agent definitions and system instructions. |
+| [`daemon/register_watcher.py`](./daemon/register_watcher.py) | `daemon`, `watcher`, `claims`, `worktree`, `cross-platform` | schtasks, launchd, systemd, watcher, daemon, background | Configure and manage Harness Claim Watcher daemon across Windows, macOS, and Linux. |
 | [`docs/run_markdownlint.py`](./docs/run_markdownlint.py) | `docs`, `markdown` | markdownlint, lint, markdownlint-cli2, dry-run | Run markdownlint-cli2 over repo Markdown (read-only by default). |
 | [`docs/validate_context_budget.py`](./docs/validate_context_budget.py) | `docs`, `validation`, `cost-layers` | context-budget, tokens, agents-md, ingestibility, ceiling | Validate context budget ceilings and ingestibility rules across repository entry files. |
 | [`docs/validate_router_structure.py`](./docs/validate_router_structure.py) | `docs`, `routing` | router, structure, validation, results-layout | Validate router structure (areas, catalogs, frontmatter, dispatch, results layout). |
@@ -70,6 +72,7 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 | [`tests/test_pacing.py`](./tests/test_pacing.py) | `tests`, `pacing`, `quota`, `routing` | tests, pacing, quota-management | Unit tests for adaptive quota management and pacing helper. |
 | [`tests/test_pretty_docs_security.py`](./tests/test_pretty_docs_security.py) | `tests`, `security`, `github` | tests, href, github-paths | Stdlib unit tests for href allow-list and GitHub path helpers. |
 | [`tests/test_qmd_preflight.py`](./tests/test_qmd_preflight.py) | `tests`, `qmd` | qmd, preflight, onboarding | Unit tests for the non-mutating qmd lifecycle preflight. |
+| [`tests/test_run_agent_isolated.py`](./tests/test_run_agent_isolated.py) | `tests`, `cli`, `isolation`, `security`, `credentials`, `agent` | tests, run_agent_isolated, spawn_worktree, ttl, zero-disk | Unit tests for isolated zero-disk subagent execution wrapper and lease TTL tracking. |
 | [`tests/test_skill_graph.py`](./tests/test_skill_graph.py) | `tests`, `routing`, `skills`, `dag` | tests, dag, topological-sort, dependencies, prerequisites | Unit tests for skill dependency DAG resolution, topological ordering, and Schema V2 conventions. |
 | [`tests/test_subagent_context_config.py`](./tests/test_subagent_context_config.py) | `tests`, `subagents`, `context`, `config` | tests, subagents, context-isolation, host-config | Unit tests for cross-host subagent context isolation and project-level settings. |
 | [`tests/test_validate_agent.py`](./tests/test_validate_agent.py) | `tests`, `ai-tooling`, `agents`, `schema-v2` | tests, validate-agent, agents | Unit tests for Schema V2 agent validation. |
@@ -82,6 +85,7 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 ## By tag
 
 - **adapter:** `cli/schema_adapter.py`
+- **agent:** `cli/run_agent_isolated.py`, `tests/test_run_agent_isolated.py`
 - **agents:** `ai-tooling/validate_agent.py`, `benchmarks/benchmark_agent_fleet.py`, `benchmarks/estimate_agent_costs.py`, `cost-layers/validate_prompt_caching.py`, `tests/test_benchmarks.py`, `tests/test_validate_agent.py`
 - **ai-tooling:** `ai-tooling/model_memory.py`, `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `tests/test_hybrid_dispatch.py`, `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
 - **analysis:** `research/community_analyzer.py`
@@ -91,14 +95,18 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 - **benchmarks:** `benchmarks/benchmark_agent_fleet.py`, `benchmarks/benchmark_retrieval.py`, `benchmarks/benchmark_task_eval.py`, `benchmarks/benchmark_tool_efficiency.py`, `benchmarks/estimate_agent_costs.py`, `benchmarks/run_benchmark_suite.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `qmd/validate_qmd_retrieval.py`, `research/benchlm_lookup.py`, `research/local_webfetch.py`, `tests/test_benchmarks.py`
 - **briefing:** `research/ai_vendor_briefing.py`
 - **change-history:** `change-history/append_change_history.py`, `change-history/ensure_change_history_quarter.py`
-- **cli:** `cli/auth/keyring_vault.py`, `cli/auth/oauth_flows.py`, `cli/harness.py`, `cli/registry.py`, `cli/schema_adapter.py`, `cli/tui.py`, `tests/test_harness_auth.py`, `tests/test_harness_cli.py`
+- **claims:** `daemon/register_watcher.py`
+- **cli:** `cli/auth/keyring_vault.py`, `cli/auth/oauth_flows.py`, `cli/harness.py`, `cli/registry.py`, `cli/run_agent_isolated.py`, `cli/schema_adapter.py`, `cli/tui.py`, `tests/test_harness_auth.py`, `tests/test_harness_cli.py`, `tests/test_run_agent_isolated.py`
 - **coding-agent:** `benchmarks/benchmark_task_eval.py`
 - **communities:** `research/community_analyzer.py`, `research/manage_social_registry.py`
 - **compression:** `benchmarks/benchmark_tool_efficiency.py`
 - **config:** `tests/test_subagent_context_config.py`
 - **context:** `tests/test_subagent_context_config.py`
 - **cost-layers:** `benchmarks/benchmark_tool_efficiency.py`, `benchmarks/estimate_agent_costs.py`, `benchmarks/run_benchmark_suite.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `cost-layers/validate_prompt_caching.py`, `docs/validate_context_budget.py`, `qmd/validate_qmd_retrieval.py`, `research/local_webfetch.py`, `tests/test_benchmarks.py`, `tests/test_local_webfetch.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_prompt_caching.py`
+- **credentials:** `cli/run_agent_isolated.py`, `tests/test_run_agent_isolated.py`
+- **cross-platform:** `daemon/register_watcher.py`
 - **cursor:** `cli/auth/oauth_flows.py`
+- **daemon:** `daemon/register_watcher.py`
 - **dag:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`
 - **distillation:** `research/local_webfetch.py`
 - **docs:** `docs/run_markdownlint.py`, `docs/validate_context_budget.py`, `docs/validate_router_structure.py`, `docs/validate_structure_fast.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`
@@ -114,7 +122,7 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 - **headroom:** `benchmarks/benchmark_tool_efficiency.py`, `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`
 - **intelligence:** `research/ai_vendor_briefing.py`
 - **interactive:** `cli/tui.py`
-- **isolation:** `cli/harness.py`, `routing/spawn_worktree.py`, `tests/test_harness_cli.py`
+- **isolation:** `cli/harness.py`, `cli/run_agent_isolated.py`, `routing/spawn_worktree.py`, `tests/test_harness_cli.py`, `tests/test_run_agent_isolated.py`
 - **keyring:** `cli/auth/keyring_vault.py`, `cli/harness.py`, `tests/test_harness_auth.py`
 - **lint:** `docs/validate_structure_fast.py`
 - **maintenance:** `research/manage_social_registry.py`
@@ -145,7 +153,7 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 - **scaffold:** `repos/scaffold_public_repos.py`, `sync/scaffold_harness.py`
 - **schema:** `cli/schema_adapter.py`
 - **schema-v2:** `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
-- **security:** `cli/auth/keyring_vault.py`, `sync/sync_public_repos.py`, `tests/test_harness_auth.py`, `tests/test_pretty_docs_security.py`
+- **security:** `cli/auth/keyring_vault.py`, `cli/run_agent_isolated.py`, `sync/sync_public_repos.py`, `tests/test_harness_auth.py`, `tests/test_pretty_docs_security.py`, `tests/test_run_agent_isolated.py`
 - **simulation:** `benchmarks/benchmark_agent_fleet.py`
 - **skills:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`, `tests/test_validate_skill.py`
 - **socials:** `research/community_analyzer.py`, `research/manage_social_registry.py`
@@ -153,10 +161,12 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 - **switcher:** `cli/registry.py`, `cli/tui.py`, `tests/test_harness_registry.py`
 - **sync:** `sync/propose_core_update.py`, `sync/pull_harness_core.py`, `sync/scaffold_harness.py`, `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`, `tests/test_harness_core_sync.py`
 - **tasks:** `benchmarks/benchmark_task_eval.py`
-- **tests:** `tests/test_benchmarks.py`, `tests/test_harness_auth.py`, `tests/test_harness_cli.py`, `tests/test_harness_core_sync.py`, `tests/test_harness_registry.py`, `tests/test_hybrid_dispatch.py`, `tests/test_local_webfetch.py`, `tests/test_pacing.py`, `tests/test_pretty_docs_security.py`, `tests/test_qmd_preflight.py`, `tests/test_skill_graph.py`, `tests/test_subagent_context_config.py`, `tests/test_validate_agent.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_prompt_caching.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`
+- **tests:** `tests/test_benchmarks.py`, `tests/test_harness_auth.py`, `tests/test_harness_cli.py`, `tests/test_harness_core_sync.py`, `tests/test_harness_registry.py`, `tests/test_hybrid_dispatch.py`, `tests/test_local_webfetch.py`, `tests/test_pacing.py`, `tests/test_pretty_docs_security.py`, `tests/test_qmd_preflight.py`, `tests/test_run_agent_isolated.py`, `tests/test_skill_graph.py`, `tests/test_subagent_context_config.py`, `tests/test_validate_agent.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_prompt_caching.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`
 - **tokens:** `benchmarks/benchmark_retrieval.py`, `benchmarks/benchmark_tool_efficiency.py`, `benchmarks/estimate_agent_costs.py`
 - **tui:** `cli/tui.py`, `tests/test_harness_registry.py`
 - **validation:** `docs/validate_context_budget.py`, `docs/validate_structure_fast.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`
 - **vault:** `cli/auth/keyring_vault.py`
+- **watcher:** `daemon/register_watcher.py`
 - **web:** `research/local_webfetch.py`
 - **webfetch:** `tests/test_local_webfetch.py`
+- **worktree:** `daemon/register_watcher.py`

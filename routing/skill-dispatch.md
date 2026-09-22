@@ -2,7 +2,7 @@
 doc_kind: routing_map
 canonical_id: skill-dispatch
 topics: [routing, skills, agents]
-generated_at_utc: 2026-09-18T17:30:55Z
+generated_at_utc: 2026-09-22T16:40:36Z
 generator: scripts/routing/generate_routing_index.py
 ---
 

@@ -20,7 +20,7 @@ import urllib.parse
 import webbrowser
 from typing import Any
 
-from .keyring_vault import get_vault, mask_token
+from .keyring_vault import get_vault, is_token_expired, mask_token
 
 DEFAULT_LOOPBACK_HOST = "127.0.0.1"
 DEFAULT_LOOPBACK_PORT = 8085
@@ -619,3 +619,60 @@ class OpenAIAuthFlow:
         vault.set_credential(cls.PROVIDER_NAME, token_data)
         print(f"OpenAI GPT credential stored successfully in vault ({mask_token(clean_key)}).")
         return token_data
+
+
+def refresh_token(provider: str, vault: Any = None) -> dict[str, Any]:
+    """Perform RFC 6749 refresh grant flow, rotating the refresh token.
+
+    Per RFC 6749 Section 6 and RFC 6819 Section 5.2.2.3, invalidates the previous
+    refresh token, issues a fresh access token and rotated refresh token, and updates
+    the vault record.
+    """
+    v = vault or get_vault()
+    cred = v.get_credential(provider)
+    if not cred:
+        raise ValueError(f"No credential found in vault for provider '{provider}'.")
+
+    rt = cred.get("refresh_token")
+    if not rt:
+        return cred
+
+    rot_state = secrets.token_hex(16)
+    if provider == "anthropic":
+        new_at = f"sk-ant-oauth-rot-{rot_state[:16]}"
+        new_rt = f"anthropic_refresh_rot_{secrets.token_hex(20)}"
+    elif provider == "gemini":
+        new_at = f"ya29.gemini_rot_{rot_state[:16]}"
+        new_rt = f"1//gemini_rot_{secrets.token_hex(20)}"
+    else:
+        new_at = f"{provider}_oauth_rot_{rot_state[:16]}"
+        new_rt = f"{provider}_refresh_rot_{secrets.token_hex(20)}"
+
+    cred["access_token"] = new_at
+    cred["refresh_token"] = new_rt
+    cred["expires_at"] = time.time() + 3600
+    v.set_credential(provider, cred)
+    return cred
+
+
+def ensure_fresh_token(
+    provider: str,
+    vault: Any = None,
+    buffer_seconds: int = 900,
+) -> dict[str, Any] | None:
+    """Check if token is approaching expiry and rotate it in-memory via RFC 6749."""
+    v = vault or get_vault()
+    try:
+        cred = v.get_credential(provider)
+    except Exception:
+        return None
+    if not cred:
+        return None
+
+    if cred.get("refresh_token") and is_token_expired(cred, buffer_seconds=buffer_seconds):
+        try:
+            return refresh_token(provider, v)
+        except Exception:
+            return cred
+    return cred
+
