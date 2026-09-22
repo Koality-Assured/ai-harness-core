@@ -687,7 +687,7 @@ jobs:
         run: python -m compileall -q -f scripts .harness
       - name: Script tests
         run: |
-          python -m pip install --quiet pyyaml
+          python -m pip install --quiet pyyaml cryptography
           if [ -d scripts/tests ]; then python -m unittest discover -s scripts/tests -v; fi
 """
 
