@@ -1,13 +1,14 @@
 {
   "version": 1,
-  "last_updated": "2026-08-25",
+  "last_updated": "2026-10-07",
   "description": "Normalized catalog of authoritative primary domains and portals for agent empirical research and source validation.",
   "categories": [
     "cloud-infrastructure",
     "ai-platforms",
     "security-standards",
     "identity-access",
-    "devops-software"
+    "devops-software",
+    "us-primary-law"
   ],
   "domains": [
     {
@@ -254,6 +255,83 @@
       "category": "devops-software",
       "tier": "Tier 1",
       "url": "https://support.atlassian.com/"
+    },
+    {
+      "domain": "uscode.house.gov",
+      "entity": "Office of the Law Revision Counsel (United States Code)",
+      "category": "us-primary-law",
+      "tier": "Tier 1",
+      "url": "https://uscode.house.gov/"
+    },
+    {
+      "domain": "govinfo.gov",
+      "entity": "Government Publishing Office (GovInfo)",
+      "category": "us-primary-law",
+      "tier": "Tier 1",
+      "url": "https://www.govinfo.gov/"
+    },
+    {
+      "domain": "ecfr.gov",
+      "entity": "Electronic Code of Federal Regulations",
+      "category": "us-primary-law",
+      "tier": "Tier 1",
+      "url": "https://www.ecfr.gov/"
+    },
+    {
+      "domain": "federalregister.gov",
+      "entity": "Federal Register",
+      "category": "us-primary-law",
+      "tier": "Tier 1",
+      "url": "https://www.federalregister.gov/"
+    },
+    {
+      "domain": "supremecourt.gov",
+      "entity": "Supreme Court of the United States",
+      "category": "us-primary-law",
+      "tier": "Tier 1",
+      "url": "https://www.supremecourt.gov/opinions/opinions.aspx"
+    },
+    {
+      "domain": "uscourts.gov",
+      "entity": "Administrative Office of the U.S. Courts",
+      "category": "us-primary-law",
+      "tier": "Tier 1",
+      "url": "https://www.uscourts.gov/forms-rules/current-rules-practice-procedure"
+    },
+    {
+      "domain": "pacer.uscourts.gov",
+      "entity": "PACER (fee-based federal dockets)",
+      "category": "us-primary-law",
+      "tier": "Tier 1",
+      "url": "https://pacer.uscourts.gov/"
+    },
+    {
+      "domain": "archives.gov",
+      "entity": "National Archives (Constitution)",
+      "category": "us-primary-law",
+      "tier": "Tier 1",
+      "url": "https://www.archives.gov/founding-docs/constitution"
+    },
+    {
+      "domain": "justice.gov",
+      "entity": "Department of Justice, Office of Legal Counsel",
+      "category": "us-primary-law",
+      "tier": "Tier 1",
+      "url": "https://www.justice.gov/olc"
+    },
+    {
+      "domain": "ussc.gov",
+      "entity": "United States Sentencing Commission",
+      "category": "us-primary-law",
+      "tier": "Tier 1",
+      "url": "https://www.ussc.gov/guidelines"
+    },
+    {
+      "domain": "bia.gov",
+      "entity": "Bureau of Indian Affairs (federal agency; not a tribal code)",
+      "category": "us-primary-law",
+      "tier": "Tier 1",
+      "url": "https://www.bia.gov/"
     }
   ]
 }

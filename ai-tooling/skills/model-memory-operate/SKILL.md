@@ -46,8 +46,8 @@ High: model claims can cause costly misrouting. A single host execution is evide
 
 ## Source of truth
 
-- [`ai-tooling/memory/model/AGENTS.md`](../../memory/model/AGENTS.md)
-- [`ai-tooling/memory/AGENTS.md`](../../memory/AGENTS.md)
+- `ai-tooling/memory/model/AGENTS.md` (`../../memory/model/AGENTS.md`; ai-router-only, optional provenance)
+- `ai-tooling/memory/AGENTS.md` (`../../memory/AGENTS.md`; ai-router-only, optional provenance)
 - Bound script: `scripts/ai-tooling/model_memory.py` (scripts area; may be on a sibling branch until merge)
 
 ## Isolation

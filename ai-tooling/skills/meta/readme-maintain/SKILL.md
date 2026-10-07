@@ -41,8 +41,8 @@ High when repository structure or folder capabilities experience material shifts
 
 ## Source of truth
 
-- [`AGENTS.md`](../../../../AGENTS.md)
-- [`docs/AGENTS.md`](../../../../docs/AGENTS.md)
+- `AGENTS.md` (`../../../../AGENTS.md`; ai-router-only, optional provenance)
+- `docs/AGENTS.md` (`../../../../docs/AGENTS.md`; ai-router-only, optional provenance)
 - [`ai-tooling/skills/skill-conventions.md`](../../skill-conventions.md)
 - `python scripts/docs/validate_router_structure.py`
 
@@ -77,7 +77,9 @@ When maintaining a `README.md` file, follow this context-aware lifecycle:
 
 ## Isolation
 
-`mutate`. Parent isolates the target areas via `python scripts/routing/spawn_worktree.py check` → `add` before dispatching `documentation-ops`.
+Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
+
+`mutate`. In ai-router, the parent isolates the target areas via `python scripts/routing/spawn_worktree.py check` → `add` before dispatching `documentation-ops`.
 
 ## How to use
 
@@ -104,7 +106,7 @@ python scripts/docs/validate_router_structure.py --dry-run
 
 Inherits Critical cost layers: qmd for discovery; ast-grep for structured files; Headroom for bulky tool output. Skills cannot waive root AGENTS.md.
 
-[`docs/agent-session-security.md`](../../../../docs/agent-session-security.md). No credentials, secrets, or internal proprietary tokens in README files.
+the destination's root security rules (ai-router policy path is optional provenance). No credentials, secrets, or internal proprietary tokens in README files.
 
 ## Completion gates
 

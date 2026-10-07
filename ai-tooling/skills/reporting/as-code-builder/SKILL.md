@@ -23,7 +23,7 @@ Produce parameterized as-code (Terraform, Pulumi, Ansible, Kyverno, Rego, simila
 
 ## When not to use
 
-Applying/deploying to real clouds (`cloud-operator` write skills with human auth). Generic diagrams (`architecture-diagram`).
+Applying or deploying to real clouds: follow destination-local cloud policy and official provider tools, or report a capability gap if none is available. Optional ai-router provenance: `cloud-operator` owns its cloud-write skills. Generic diagrams (`architecture-diagram`).
 
 ## Criticality
 
@@ -31,13 +31,15 @@ High: never apply/deploy via this skill or A2A. Parameterize type explicitly.
 
 ## Source of truth
 
-- [`results/AGENTS.md`](../../../../results/AGENTS.md)
+- `results/AGENTS.md` (`../../../../results/AGENTS.md`; ai-router-only, optional provenance)
 - Related patterns via `qmd search`
 - `python scripts/results/new_run_dir.py --family as-code --topic <slug> --type <type>`
 
 ## Isolation
 
-`mutate`. Parent spawns `as-code-agent` with area `results`.
+Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
+
+`mutate`. In ai-router, the parent spawns `as-code-agent` with area `results`.
 
 ## How to use
 

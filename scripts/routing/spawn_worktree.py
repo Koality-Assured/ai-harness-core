@@ -71,6 +71,30 @@ def worktree_path(slug: str) -> Path:
     return WORKTREES / slug
 
 
+def path_exists(path: Path) -> bool | None:
+    """Return path presence, or None when filesystem state is uncertain."""
+    try:
+        path.stat()
+        return True
+    except (FileNotFoundError, NotADirectoryError):
+        return False
+    except OSError:
+        return None
+
+
+def write_claim_atomically(path: Path, claim: dict) -> None:
+    """Publish a complete claim file atomically before creating its worktree."""
+    temp_path = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        temp_path.write_text(json.dumps(claim, indent=2) + "\n", encoding="utf-8")
+        os.replace(temp_path, path)
+    finally:
+        try:
+            temp_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
 from contextlib import contextmanager
 import os
 import time
@@ -89,13 +113,8 @@ def claim_lock(timeout_sec: float = 10.0, poll_interval: float = 0.05):
             break
         except FileExistsError:
             if time.time() - start_time >= timeout_sec:
-                # Check for stale lockfile (> 60 seconds old)
-                try:
-                    if lock_file.stat().st_mtime < time.time() - 60.0:
-                        lock_file.unlink(missing_ok=True)
-                        continue
-                except OSError:
-                    pass
+                # Do not break an old lock based on age alone: the owner may
+                # still be removing a slow worktree. Leave recovery explicit.
                 raise TimeoutError(f"Timed out after {timeout_sec}s waiting for claim lock: {lock_file}")
             time.sleep(poll_interval)
     try:
@@ -151,45 +170,99 @@ def find_harness_binary() -> str | None:
 
 
 def query_active_claims() -> list[dict]:
-    """Query active non-expired claims via 'harness claim inspect --json', falling back to load_claims()."""
-    harness_bin = find_harness_binary()
-
-    if harness_bin:
-        try:
-            proc = subprocess.run(
-                [harness_bin, "claim", "inspect", "--json"],
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                check=False,
-                cwd=str(PRIMARY_ROOT),
-            )
-            if proc.returncode == 0 and proc.stdout.strip():
-                data = json.loads(proc.stdout)
-                claims = data.get("claims", [])
-                active = []
-                for c in claims:
-                    # Ignore stale or expired claims during collision checks
-                    if not c.get("is_stale", False):
-                        active.append(c)
-                return active
-        except Exception:
-            pass
-
-    # Fallback to local load_claims with TTL / lease expiry check
+    """Return unexpired claims and expired claims whose checkout cannot be ruled out."""
+    claims = load_claims()
+    if not claims:
+        return []
     now_utc = dt.datetime.now(dt.timezone.utc)
+    registrations: list[dict[str, str]] | None = None
+    registrations_checked = False
     active = []
-    for c in load_claims():
+    for c in claims:
         exp_str = c.get("expires_at")
         if exp_str:
             try:
                 exp_dt = dt.datetime.fromisoformat(exp_str.replace("Z", "+00:00"))
                 if now_utc > exp_dt:
-                    continue  # Expired lease
+                    # Expiry makes an orphan claim stale; it never releases a
+                    # claim while its checkout remains on disk or in Git.
+                    if not registrations_checked:
+                        registrations = registered_worktrees()
+                        registrations_checked = True
+                    if not claim_worktree_exists(c, registrations):
+                        continue
             except Exception:
                 pass
         active.append(c)
     return active
+
+
+def registered_worktrees() -> list[dict[str, str]] | None:
+    """Return Git worktree path/branch pairs, or None if state cannot be verified."""
+    try:
+        proc = run_git(["worktree", "list", "--porcelain"], check=False)
+    except OSError:
+        return None
+    if proc.returncode != 0:
+        return None
+    if not isinstance(proc.stdout, str):
+        return None
+
+    entries: list[dict[str, str]] = []
+    entry: dict[str, str] = {}
+    for line in proc.stdout.splitlines():
+        if not line:
+            if entry:
+                entries.append(entry)
+                entry = {}
+        elif line.startswith("worktree "):
+            entry["path"] = line[len("worktree "):]
+        elif line.startswith("branch "):
+            entry["branch"] = line[len("branch "):]
+    if entry:
+        entries.append(entry)
+    if not entries or any(not item.get("path") for item in entries):
+        return None
+    return entries
+
+
+def claim_worktree_exists(claim: dict, registrations: list[dict[str, str]] | None) -> bool:
+    """Check whether a claim's worktree exists by path or Git registration.
+
+    Unknown registration state fails closed for an expired claim.
+    """
+    raw_path = claim.get("path") or worktree_path(str(claim.get("slug", "")))
+    try:
+        path = Path(raw_path)
+    except (TypeError, ValueError):
+        return True
+    if path_exists(path) is not False:
+        return True
+
+    if registrations is None:
+        return True
+
+    try:
+        wanted_path = os.path.normcase(str(path.resolve(strict=False)))
+    except (OSError, RuntimeError, TypeError, ValueError):
+        return True
+    wanted_branch = claim.get("branch")
+    if wanted_branch and not isinstance(wanted_branch, str):
+        return True
+    if wanted_branch and not wanted_branch.startswith("refs/heads/"):
+        wanted_branch = f"refs/heads/{wanted_branch}"
+    for entry in registrations:
+        entry_path = entry.get("path")
+        if entry_path:
+            try:
+                registered_path = os.path.normcase(str(Path(entry_path).resolve(strict=False)))
+            except (OSError, RuntimeError, TypeError, ValueError):
+                return True
+            if registered_path == wanted_path:
+                return True
+        if wanted_branch and entry.get("branch") == wanted_branch:
+            return True
+    return False
 
 
 def overlapping(areas: list[str], claims: list[dict], *, ignore_slug: str | None = None) -> list[dict]:
@@ -198,10 +271,35 @@ def overlapping(areas: list[str], claims: list[dict], *, ignore_slug: str | None
     for claim in claims:
         if ignore_slug and claim.get("slug") == ignore_slug:
             continue
-        other = set(claim.get("areas") or [])
+        raw_areas = claim.get("areas")
+        if (
+            not isinstance(raw_areas, list)
+            or not raw_areas
+            or any(not isinstance(area, str) or not area.strip() for area in raw_areas)
+        ):
+            hits.append(claim)
+            continue
+        other = set(raw_areas)
         if want & other:
             hits.append(claim)
     return hits
+
+
+def claim_overlap_detail(claim: dict) -> str:
+    """Format a collision and give repair guidance for malformed area metadata."""
+    slug = claim.get("slug", "unknown")
+    areas = claim.get("areas")
+    if (
+        not isinstance(areas, list)
+        or not areas
+        or any(not isinstance(area, str) or not area.strip() for area in areas)
+    ):
+        location = claim.get("path") or str(claim_path(str(slug)))
+        return (
+            f"{slug}: claim has missing or invalid areas; inspect {location} and repair it "
+            "after verifying its worktree path and Git registration"
+        )
+    return f"{slug} areas={areas}"
 
 
 def cmd_list(as_json: bool) -> int:
@@ -233,7 +331,7 @@ def cmd_check(areas: list[str], as_json: bool) -> int:
     elif hits:
         print("overlap with active claims:", file=sys.stderr)
         for claim in hits:
-            print(f"  {claim.get('slug')} areas={claim.get('areas')}", file=sys.stderr)
+            print(f"  {claim_overlap_detail(claim)}", file=sys.stderr)
     else:
         print("ok: no overlapping claims")
     return 1 if hits else 0
@@ -274,7 +372,7 @@ def cmd_add(
         if hits and not force:
             print("error: overlapping areas with active claims (pass --force to override):", file=sys.stderr)
             for claim in hits:
-                print(f"  {claim.get('slug')} areas={claim.get('areas')}", file=sys.stderr)
+                print(f"  {claim_overlap_detail(claim)}", file=sys.stderr)
             return 3
         claim = {
             "slug": slug,
@@ -300,7 +398,7 @@ def cmd_add(
             if hits and not force:
                 print("error: overlapping areas with active claims (pass --force to override):", file=sys.stderr)
                 for claim in hits:
-                    print(f"  {claim.get('slug')} areas={claim.get('areas')}", file=sys.stderr)
+                    print(f"  {claim_overlap_detail(claim)}", file=sys.stderr)
                 return 3
             if dest.exists():
                 print(f"error: worktree path already exists: {dest}", file=sys.stderr)
@@ -321,15 +419,27 @@ def cmd_add(
                 "expires_at": expires_str,
             }
             WORKTREES.mkdir(parents=True, exist_ok=True)
+            claim_file = claim_path(slug)
+            write_claim_atomically(claim_file, claim)
             try:
                 run_git(["worktree", "add", "-b", branch, str(dest)])
             except subprocess.CalledProcessError as exc:
                 print(exc.stderr or exc.stdout, file=sys.stderr)
+                registrations = registered_worktrees()
+                if registrations is None or claim_worktree_exists(claim, registrations):
+                    print("error: cannot verify failed worktree add cleanup; preserving claim", file=sys.stderr)
+                    return 1
+                try:
+                    claim_file.unlink(missing_ok=True)
+                except OSError as unlink_error:
+                    print(f"error: failed to remove unused claim: {unlink_error}", file=sys.stderr)
                 return 1
-            claim_path(slug).write_text(json.dumps(claim, indent=2) + "\n", encoding="utf-8")
     except TimeoutError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 4
+    except OSError as exc:
+        print(f"error: unable to complete worktree add safely: {exc}", file=sys.stderr)
+        return 1
 
     if as_json:
         print(json.dumps(claim, indent=2))
@@ -343,30 +453,82 @@ def cmd_add(
 def cmd_remove(slug: str, dry_run: bool, force: bool) -> int:
     dest = worktree_path(slug)
     if dry_run:
-        print(f"dry-run: git worktree remove {dest}")
+        command = ["git", "worktree", "remove", str(dest)]
+        if force:
+            command.append("--force")
+        print(f"dry-run: {' '.join(command)}")
         print(f"dry-run: delete {claim_path(slug)}")
         return 0
-    args = ["worktree", "remove", str(dest)]
-    if force:
-        args.append("--force")
-    try:
-        run_git(args)
-    except subprocess.CalledProcessError as exc:
-        # Still drop the claim if the worktree is already gone.
-        if dest.exists():
-            print(exc.stderr or exc.stdout, file=sys.stderr)
-            return 1
-        print("warning: git worktree remove failed; removing claim anyway", file=sys.stderr)
     try:
         with claim_lock():
             claim = claim_path(slug)
+            claim_data: dict = {}
+            if claim.exists():
+                try:
+                    loaded = json.loads(claim.read_text(encoding="utf-8"))
+                except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+                    print(f"error: cannot read claim metadata; preserving claim: {exc}", file=sys.stderr)
+                    return 1
+                if (
+                    not isinstance(loaded, dict)
+                    or loaded.get("slug") != slug
+                    or not isinstance(loaded.get("path"), str)
+                    or not loaded["path"]
+                    or not isinstance(loaded.get("branch"), str)
+                    or not loaded["branch"]
+                ):
+                    print("error: invalid claim metadata; preserving claim", file=sys.stderr)
+                    return 1
+                claim_data = loaded
+
+            identity = {
+                "slug": slug,
+                "path": claim_data.get("path") or str(dest),
+                "branch": claim_data.get("branch"),
+            }
+            registrations = registered_worktrees()
+            if registrations is None:
+                print("error: cannot verify Git worktree registration; preserving claim", file=sys.stderr)
+                return 1
+
+            dest_state = path_exists(dest)
+            if dest_state is None:
+                print("error: cannot verify worktree path; preserving claim", file=sys.stderr)
+                return 1
+            if dest_state is False and not claim_worktree_exists(identity, registrations):
+                if claim.exists():
+                    claim.unlink()
+                print(f"removed {slug}")
+                return 0
+
+            args = ["worktree", "remove", str(dest)]
+            if force:
+                args.append("--force")
+            try:
+                run_git(args)
+            except subprocess.CalledProcessError as exc:
+                print(exc.stderr or exc.stdout, file=sys.stderr)
+                print("error: worktree removal failed; preserving claim", file=sys.stderr)
+                return 1
+
+            registrations = registered_worktrees()
+            if registrations is None:
+                print("error: cannot verify Git worktree registration; preserving claim", file=sys.stderr)
+                return 1
+
+            dest_state = path_exists(dest)
+            if dest_state is not False or claim_worktree_exists(identity, registrations):
+                print("error: Git reported removal success but worktree remains; preserving claim", file=sys.stderr)
+                return 1
+
             if claim.exists():
                 claim.unlink()
     except TimeoutError as exc:
-        print(f"warning: failed to acquire lock for claim deletion: {exc}", file=sys.stderr)
-        claim = claim_path(slug)
-        if claim.exists():
-            claim.unlink()
+        print(f"error: failed to acquire claim lock; preserving claim: {exc}", file=sys.stderr)
+        return 4
+    except OSError as exc:
+        print(f"error: failed to remove claim: {exc}", file=sys.stderr)
+        return 1
     print(f"removed {slug}")
     return 0
 

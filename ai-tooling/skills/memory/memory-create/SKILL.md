@@ -47,10 +47,10 @@ High: session-end gate 2. Agent memory prevents recurring operational traps and 
 
 ## Source of truth
 
-- [`ai-tooling/memory/AGENTS.md`](../../../memory/AGENTS.md)
-- [`ai-tooling/memory/user/AGENTS.md`](../../../memory/user/AGENTS.md)
-- [`ai-tooling/memory/agent/AGENTS.md`](../../../memory/agent/AGENTS.md)
-- [`ai-tooling/memory/README.md`](../../../memory/README.md)
+- `ai-tooling/memory/AGENTS.md` (`../../../memory/AGENTS.md`; ai-router-only, optional provenance)
+- `ai-tooling/memory/user/AGENTS.md` (`../../../memory/user/AGENTS.md`; ai-router-only, optional provenance)
+- `ai-tooling/memory/agent/AGENTS.md` (`../../../memory/agent/AGENTS.md`; ai-router-only, optional provenance)
+- `ai-tooling/memory/README.md` (`../../../memory/README.md`; ai-router-only, optional provenance)
 - Root `AGENTS.md` session-end gates
 
 ## Isolation

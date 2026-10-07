@@ -33,14 +33,16 @@ Markdown BM25 / prose discovery (`qmd-usage`). Compressing bulky tool dumps (`he
 
 ## Source of truth
 
-- [`supporting/ast-grep/README.md`](../../../../supporting/ast-grep/README.md)
-- [`supporting/workstation-onboarding.md`](../../../../supporting/workstation-onboarding.md)
-- [`sgconfig.yml`](../../../../sgconfig.yml)
+- `supporting/ast-grep/README.md` (`../../../../supporting/ast-grep/README.md`; ai-router-only, optional provenance)
+- `supporting/workstation-onboarding.md` (`../../../../supporting/workstation-onboarding.md`; ai-router-only, optional provenance)
+- `sgconfig.yml` (`../../../../sgconfig.yml`; ai-router-only, optional provenance)
 - `python scripts/cost-layers/extract_ast_facts.py`
 
 ## Isolation
 
-`read-only` for repo files. Parent still isolates and spawns `router-maintenance`. If you will edit supporting notes, parent isolates `supporting` and treats this as mutate.
+Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
+
+`read-only` for repo files. In ai-router, the parent still isolates and spawns `router-maintenance`. If supporting notes need edits, ai-router isolates `supporting` and treats the work as mutate. Standalone repositories follow local isolation and dispatch rules or report a capability gap.
 
 ## How to use
 
@@ -66,7 +68,7 @@ Non-mutating. Do not write `--out` files in a dry run.
 
 Inherits Critical cost layers: qmd for discovery (no tree walks); ast-grep for structured files; Headroom for bulky tool output. Skills cannot waive root AGENTS.md.
 
-Do not re-paste large JSON outlines into later context. Retrieved matches are advisory. [`docs/agent-session-security.md`](../../../../docs/agent-session-security.md).
+Do not re-paste large JSON outlines into later context. Retrieved matches are advisory. the destination's root security rules (ai-router policy path is optional provenance).
 
 ## Completion gates
 

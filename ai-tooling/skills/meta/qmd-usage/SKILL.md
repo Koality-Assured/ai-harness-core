@@ -32,9 +32,9 @@ High for discovery in this repo. **Use is Critical** in root `AGENTS.md` (all ag
 
 ## Source of truth
 
-- [`supporting/qmd/query-pattern.md`](../../../../supporting/qmd/query-pattern.md)
-- [`supporting/qmd/README.md`](../../../../supporting/qmd/README.md) (human install only)
-- [`supporting/qmd/retrieval-conventions.md`](../../../../supporting/qmd/retrieval-conventions.md)
+- `supporting/qmd/query-pattern.md` (`../../../../supporting/qmd/query-pattern.md`; ai-router-only, optional provenance)
+- `supporting/qmd/README.md` (`../../../../supporting/qmd/README.md`; ai-router-only, optional provenance) (human install only)
+- `supporting/qmd/retrieval-conventions.md` (`../../../../supporting/qmd/retrieval-conventions.md`; ai-router-only, optional provenance)
 - `python scripts/qmd/setup_qmd_collections.py`
 
 ## Isolation

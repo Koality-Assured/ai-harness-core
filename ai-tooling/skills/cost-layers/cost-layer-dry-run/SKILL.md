@@ -39,9 +39,9 @@ High whenever measuring savings. The **use** of qmd, Headroom, and ast-grep in n
 - `python scripts/cost-layers/validate_headroom_compression.py`
 - `python scripts/cost-layers/extract_ast_facts.py`
 - `python scripts/cost-layers/validate_ast_grep.py`
-- [`supporting/qmd/README.md`](../../../../supporting/qmd/README.md)
-- [`supporting/headroom/README.md`](../../../../supporting/headroom/README.md)
-- [`supporting/ast-grep/README.md`](../../../../supporting/ast-grep/README.md)
+- `supporting/qmd/README.md` (`../../../../supporting/qmd/README.md`; ai-router-only, optional provenance)
+- `supporting/headroom/README.md` (`../../../../supporting/headroom/README.md`; ai-router-only, optional provenance)
+- `supporting/ast-grep/README.md` (`../../../../supporting/ast-grep/README.md`; ai-router-only, optional provenance)
 
 ## Isolation
 

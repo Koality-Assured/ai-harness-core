@@ -15,7 +15,7 @@ What this repo needs on a workstation, plus the gotchas that fail silently if sk
 
 ## Expected tools
 
-This repo expects a real CPython, Node for qmd, and the cost-layer CLIs. Optional tools matter only when you run those workflows.
+Use the `Need` column to distinguish repository-wide prerequisites (`required`) from tools needed only for specific workflows (`optional`).
 
 | Tool | Need | Min | Why | Notes |
 | --- | --- | --- | --- | --- |
@@ -24,8 +24,8 @@ This repo expects a real CPython, Node for qmd, and the cost-layer CLIs. Optiona
 | qmd | required | current `@tobilu/qmd` | Markdown search | [`qmd/query-pattern.md`](./qmd/query-pattern.md) |
 | Git | required | 2.40+ | Worktrees, branches | Vendor install |
 | ast-grep | required | 0.40+ | Structured-file lookup | [`ast-grep/precision-retrieval.md`](./ast-grep/precision-retrieval.md) |
-| uv | recommended | 0.4+ | Isolated Python tools (Headroom) | Vendor install |
-| Headroom | recommended | 0.35+ | Compress bulky dumps | Else `scripts/_lib/tool_output.py`. [`headroom/proxy-mcp.md`](./headroom/proxy-mcp.md) |
+| uv | required | 0.4+ | Install and manage isolated Python tools, including Headroom | Install from Astral; see the setup below |
+| Headroom | required | 0.35+ | Compress bulky tool outputs | Install `headroom-ai[proxy,mcp]`; [`headroom/proxy-mcp.md`](./headroom/proxy-mcp.md) |
 | GitHub CLI (`gh`) | if you use GitHub | current | Auth, PRs | [`github/gh-workflow-notes.md`](./github/gh-workflow-notes.md) |
 | AWS CLI (`aws`) | optional (cloud-admin) | 2.15+ | AWS Organizations & SSO | [`../docs/guidance/cloud-aws-setup.md`](../docs/guidance/cloud-aws-setup.md) |
 | Google Cloud SDK (`gcloud`) | optional (cloud-admin) | current | GCP Resource Manager & ADC | [`../docs/guidance/cloud-gcp-setup.md`](../docs/guidance/cloud-gcp-setup.md) |
@@ -35,7 +35,51 @@ This repo expects a real CPython, Node for qmd, and the cost-layer CLIs. Optiona
 | Docker / Noir | optional | — | Attack-surface inventory | Wrapper only. [`noir/agent-scan.md`](./noir/agent-scan.md) |
 | Web distillation (`trafilatura`, `readability-lxml`, `markdownify`, `httpx`) | required | current | Local HTML distillation & prompt injection defense | `pip install trafilatura readability-lxml markdownify httpx`. Used by `scripts/research/local_webfetch.py`. |
 
-Use the vendor’s installer. `--version` is enough to confirm.
+Use each vendor’s installer for required tools. The commands below cover uv and Headroom.
+
+## Install uv and Headroom
+
+Install uv from [Astral’s official instructions](https://docs.astral.sh/uv/getting-started/installation/), then use uv’s isolated tool environment for Headroom. On Windows, run the standalone installer in PowerShell; on macOS or Linux, use Astral’s shell installer:
+
+```powershell
+# Windows PowerShell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+```sh
+# macOS or Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Open a fresh terminal after installing uv. Install Headroom with the proxy and MCP extras required by this repo; do not use `[all]` because it installs unrelated ML dependencies:
+
+```powershell
+uv tool install --python 3.13 "headroom-ai[proxy,mcp]"
+uv tool update-shell  # if the Headroom executable directory is not on PATH
+```
+
+If Windows uv downloads CPython 3.13 but reports `Missing expected target directory for Python minor version link`, install from the downloaded interpreter’s versioned path:
+
+```powershell
+$uvExe = Join-Path $env:USERPROFILE '.local\bin\uv.exe'
+$pythonDir = & $uvExe python dir
+$python313Dir = Get-ChildItem -Path $pythonDir -Directory -Filter 'cpython-3.13.*-windows-x86_64-none' |
+    Sort-Object Name -Descending | Select-Object -First 1
+$python313 = Join-Path $python313Dir.FullName 'python.exe'
+& $uvExe tool install --python $python313 "headroom-ai[proxy,mcp]"
+```
+
+The Windows tools are normally installed under `%USERPROFILE%\.local\bin`. If the new command is not visible, confirm that directory is on `PATH` and open a fresh terminal. If selecting a system Python, use a real CPython 3.13 installation; do not select the Windows Store execution-alias stub.
+
+Verify the install without starting a proxy:
+
+```powershell
+uv --version
+headroom --version
+headroom --help
+```
+
+The proxy stays stopped until a workflow explicitly needs it. Headroom is still a required workstation tool even when a session must use the summarization fallback in [`scripts/_lib/tool_output.py`](../scripts/_lib/tool_output.py). See [Headroom’s install guide](https://headroom-docs.vercel.app/docs/installation) for vendor details.
 
 ## Agent host
 

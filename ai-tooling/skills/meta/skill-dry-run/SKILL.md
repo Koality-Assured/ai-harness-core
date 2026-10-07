@@ -38,6 +38,8 @@ High for any new skill going into the catalog. A skill that cannot dry-run is no
 
 ## Isolation
 
+Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
+
 `read-only` on the primary checkout. If a target skill's dry run would create files, it must use `--dry-run` or a throwaway worktree via `isolate-work` — never the primary tree.
 
 ## How to use
@@ -62,4 +64,4 @@ Do not execute a skill's **How to use** mutating steps under the guise of a dry 
 
 ## Completion gates
 
-No change-history for a clean dry run. If the template check fails, hand off to `skill-builder` (parent spawns). Memory only if a tracked thread was about the skill.
+No change-history for a clean dry run. In ai-router, hand a failed template check to `skill-builder`. Standalone repositories follow local skill-authoring and validation rules or report a capability gap. Memory only if a tracked thread was about the skill.

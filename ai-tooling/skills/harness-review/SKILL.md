@@ -48,14 +48,16 @@ High: distinguish an observed host symptom from a portable harness defect before
 
 ## Source of truth
 
-- Root [`AGENTS.md`](../../../AGENTS.md) and [`routing/skill-dispatch.md`](../../../routing/skill-dispatch.md)
-- [`ai-tooling/skills/skill-conventions.md`](../skill-conventions.md) and [`ai-tooling/a2a/interaction-protocol.md`](../../a2a/interaction-protocol.md)
+- Root `AGENTS.md` (`../../../AGENTS.md`; ai-router-only, optional provenance) and `routing/skill-dispatch.md` (`../../../routing/skill-dispatch.md`; ai-router-only, optional provenance)
+- [`ai-tooling/skills/skill-conventions.md`](../skill-conventions.md) and `ai-tooling/a2a/interaction-protocol.md` (`../../a2a/interaction-protocol.md`; ai-router-only, optional provenance)
 - `python scripts/ai-tooling/validate_skill.py --all`, `validate_agent.py --all`, and `python scripts/docs/validate_router_structure.py`
 - `python scripts/cost-layers/validate_cost_layers.py`, `python scripts/tests/test_harness_core.py`, and `python scripts/sync/sync_public_repos.py --dry-run`
 
 ## Isolation
 
-`mutate`. Parent runs `isolate-work` first for every area that may change, then spawns `ai-tooling-ops`. The specialist fixes only its owned area; it returns cross-area findings to the parent for the owning specialist. Remote downstream publication needs explicit human authorization and the downstream sync skill.
+Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
+
+`mutate`. In ai-router, the parent runs `isolate-work` first for every area that may change, then spawns `ai-tooling-ops`. The specialist fixes only its owned area; it returns cross-area findings to the parent for the owning specialist. Remote downstream publication needs explicit human authorization and the downstream sync skill.
 
 ## How to use
 

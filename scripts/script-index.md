@@ -2,13 +2,13 @@
 doc_kind: routing_map
 canonical_id: script-index
 topics: [scripts, routing]
-generated_at_utc: 2026-09-22T16:40:37Z
+generated_at_utc: export
 generator: scripts/routing/generate_script_index.py
 ---
 
 # Script index
 
-Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit — run `python scripts/routing/generate_script_index.py`.
+Generated from dest `scripts/` after harness-template export (kept trees only). Do not hand-edit — run `python scripts/routing/generate_script_index.py` from the dest checkout after feeding scripts.
 
 | Script | Tags | Hints | Summary |
 | --- | --- | --- | --- |
@@ -23,12 +23,19 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 | [`benchmarks/run_benchmark_suite.py`](./benchmarks/run_benchmark_suite.py) | `benchmarks`, `fleet`, `cost-layers`, `eval`, `retrieval`, `orchestration` | benchmark-suite, run-benchmarks, combined-benchmark, master-eval | Unified master orchestrator to execute benchmark suites and generate consolidated reports. |
 | [`change-history/append_change_history.py`](./change-history/append_change_history.py) | `change-history` | provenance, session-end, completion-gate | Append a change-history entry for the active year/quarter. |
 | [`change-history/ensure_change_history_quarter.py`](./change-history/ensure_change_history_quarter.py) | `change-history` | provenance, scaffold | Ensure change-history year/quarter entries file exists. |
+| [`cli/adapters.py`](./cli/adapters.py) | `harness`, `cli`, `gateway`, `acp`, `adapter` | harness, cli, gateway, acp, session, streaming | Slice 15 HTTP/SSE and ACP v1 entry points over the shared conversation loop. |
 | [`cli/auth/keyring_vault.py`](./cli/auth/keyring_vault.py) | `harness`, `cli`, `auth`, `keyring`, `vault`, `security` | auth, keyring, vault, credential, security, wincred, keychain, libsecret | Universal Keyring & Encrypted File Vault for Harness CLI. |
 | [`cli/auth/oauth_flows.py`](./cli/auth/oauth_flows.py) | `harness`, `cli`, `auth`, `oauth`, `pkce`, `anthropic`, `cursor`, `gemini`, `openai` | auth, oauth, pkce, loopback, device-flow, anthropic, cursor, gemini, openai | Universal OAuth 2.0 and Provider Authentication Flows for Harness CLI. |
-| [`cli/harness.py`](./cli/harness.py) | `harness`, `cli`, `routing`, `isolation`, `auth`, `keyring` | harness, cli, status, branch, agent, pr, clean, auth, login, logout | In-repo Python CLI control plane for ai-router. |
+| [`cli/command_registry.py`](./cli/command_registry.py) | `harness`, `cli`, `slash`, `commands`, `registry` | slash, commands, help, status, model, sessions, title, busy, quit | Slash-command registry shared by the harness REPL and `harness commands`. |
+| [`cli/conversation.py`](./cli/conversation.py) | `harness`, `cli`, `conversation`, `turn`, `chat` | conversation, turn, chat, resume, repl | Single-turn conversation loop over the session store and provider client. |
+| [`cli/harness.py`](./cli/harness.py) | `harness`, `cli`, `routing`, `isolation`, `auth`, `keyring`, `chat`, `session` | harness, cli, status, branch, agent, pr, clean, auth, login, logout, chat, sessions, commands | In-repo Python CLI control plane and conversation harness for ai-router. |
+| [`cli/mcp_stdio.py`](./cli/mcp_stdio.py) | `harness`, `cli`, `mcp`, `acp`, `stdio`, `tools` | harness, mcp, acp, tool-registry, subprocess | Bounded stdio MCP client support for ACP-provided tool servers. |
+| [`cli/provider_client.py`](./cli/provider_client.py) | `harness`, `cli`, `provider`, `anthropic`, `openai`, `gemini` | provider, complete, messages, chat, transport | HTTP provider clients for harness conversation turns (stdlib only). |
 | [`cli/registry.py`](./cli/registry.py) | `harness`, `cli`, `registry`, `multi-harness`, `switcher` | harness, registry, switch, scan, list, register, deregister | Harness registry manager for multi-harness discovery and switching. |
 | [`cli/run_agent_isolated.py`](./cli/run_agent_isolated.py) | `cli`, `isolation`, `security`, `credentials`, `agent` | exec, agent, keyring, vault, in-memory, zero-disk | Execute subagent commands with provider API keys injected strictly in-memory. |
 | [`cli/schema_adapter.py`](./cli/schema_adapter.py) | `harness`, `cli`, `schema`, `adapter`, `multi-harness` | harness, schema, adapter, areas, skills, agents | Dynamic schema inspection and adapter for multi-harness repositories. |
+| [`cli/session_store.py`](./cli/session_store.py) | `harness`, `cli`, `session`, `sqlite`, `conversation` | session, store, resume, chat, state.db | SQLite session store for harness conversation resume. |
+| [`cli/tool_registry.py`](./cli/tool_registry.py) | `harness`, `cli`, `tools`, `registry`, `conversation` | tools, tool-registry, conversation | Injectable, provider-neutral registry for conversation tools. |
 | [`cli/tui.py`](./cli/tui.py) | `harness`, `cli`, `tui`, `switcher`, `interactive` | harness, tui, switcher, switch, menu | Interactive Terminal User Interface (TUI) and Harness Switcher. |
 | [`cost-layers/extract_ast_facts.py`](./cost-layers/extract_ast_facts.py) | `qmd`, `headroom`, `ast-grep` | structural-facts, outline, cost-layers | Extract structural facts via ast-grep outline/kind JSON (not full files). |
 | [`cost-layers/validate_ast_grep.py`](./cost-layers/validate_ast_grep.py) | `qmd`, `headroom`, `ast-grep` | validation, dry-run, tokens, structural-facts | Dry-run ast-grep precision retrieval and Headroom structural-fact survival. |
@@ -84,24 +91,28 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 
 ## By tag
 
-- **adapter:** `cli/schema_adapter.py`
+- **acp:** `cli/adapters.py`, `cli/mcp_stdio.py`
+- **adapter:** `cli/adapters.py`, `cli/schema_adapter.py`
 - **agent:** `cli/run_agent_isolated.py`, `tests/test_run_agent_isolated.py`
 - **agents:** `ai-tooling/validate_agent.py`, `benchmarks/benchmark_agent_fleet.py`, `benchmarks/estimate_agent_costs.py`, `cost-layers/validate_prompt_caching.py`, `tests/test_benchmarks.py`, `tests/test_validate_agent.py`
 - **ai-tooling:** `ai-tooling/model_memory.py`, `ai-tooling/validate_agent.py`, `ai-tooling/validate_skill.py`, `routing/generate_skill_dispatch.py`, `routing/hybrid_dispatch.py`, `tests/test_hybrid_dispatch.py`, `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
 - **analysis:** `research/community_analyzer.py`
-- **anthropic:** `cli/auth/oauth_flows.py`
+- **anthropic:** `cli/auth/oauth_flows.py`, `cli/provider_client.py`
 - **ast-grep:** `benchmarks/benchmark_tool_efficiency.py`, `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`
 - **auth:** `cli/auth/keyring_vault.py`, `cli/auth/oauth_flows.py`, `cli/harness.py`, `tests/test_harness_auth.py`
 - **benchmarks:** `benchmarks/benchmark_agent_fleet.py`, `benchmarks/benchmark_retrieval.py`, `benchmarks/benchmark_task_eval.py`, `benchmarks/benchmark_tool_efficiency.py`, `benchmarks/estimate_agent_costs.py`, `benchmarks/run_benchmark_suite.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `qmd/validate_qmd_retrieval.py`, `research/benchlm_lookup.py`, `research/local_webfetch.py`, `tests/test_benchmarks.py`
 - **briefing:** `research/ai_vendor_briefing.py`
 - **change-history:** `change-history/append_change_history.py`, `change-history/ensure_change_history_quarter.py`
+- **chat:** `cli/conversation.py`, `cli/harness.py`
 - **claims:** `daemon/register_watcher.py`
-- **cli:** `cli/auth/keyring_vault.py`, `cli/auth/oauth_flows.py`, `cli/harness.py`, `cli/registry.py`, `cli/run_agent_isolated.py`, `cli/schema_adapter.py`, `cli/tui.py`, `tests/test_harness_auth.py`, `tests/test_harness_cli.py`, `tests/test_run_agent_isolated.py`
+- **cli:** `cli/adapters.py`, `cli/auth/keyring_vault.py`, `cli/auth/oauth_flows.py`, `cli/command_registry.py`, `cli/conversation.py`, `cli/harness.py`, `cli/mcp_stdio.py`, `cli/provider_client.py`, `cli/registry.py`, `cli/run_agent_isolated.py`, `cli/schema_adapter.py`, `cli/session_store.py`, `cli/tool_registry.py`, `cli/tui.py`, `tests/test_harness_auth.py`, `tests/test_harness_cli.py`, `tests/test_run_agent_isolated.py`
 - **coding-agent:** `benchmarks/benchmark_task_eval.py`
+- **commands:** `cli/command_registry.py`
 - **communities:** `research/community_analyzer.py`, `research/manage_social_registry.py`
 - **compression:** `benchmarks/benchmark_tool_efficiency.py`
 - **config:** `tests/test_subagent_context_config.py`
 - **context:** `tests/test_subagent_context_config.py`
+- **conversation:** `cli/conversation.py`, `cli/session_store.py`, `cli/tool_registry.py`
 - **cost-layers:** `benchmarks/benchmark_tool_efficiency.py`, `benchmarks/estimate_agent_costs.py`, `benchmarks/run_benchmark_suite.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `cost-layers/validate_prompt_caching.py`, `docs/validate_context_budget.py`, `qmd/validate_qmd_retrieval.py`, `research/local_webfetch.py`, `tests/test_benchmarks.py`, `tests/test_local_webfetch.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_prompt_caching.py`
 - **credentials:** `cli/run_agent_isolated.py`, `tests/test_run_agent_isolated.py`
 - **cross-platform:** `daemon/register_watcher.py`
@@ -115,10 +126,11 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 - **eval:** `benchmarks/benchmark_task_eval.py`, `benchmarks/run_benchmark_suite.py`
 - **export:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`
 - **fleet:** `benchmarks/benchmark_agent_fleet.py`, `benchmarks/run_benchmark_suite.py`, `tests/test_benchmarks.py`
-- **gemini:** `cli/auth/oauth_flows.py`
+- **gateway:** `cli/adapters.py`
+- **gemini:** `cli/auth/oauth_flows.py`, `cli/provider_client.py`
 - **git:** `sync/sync_and_push_downstreams.py`
 - **github:** `github/resolve_github_path.py`, `repos/scaffold_public_repos.py`, `tests/test_pretty_docs_security.py`
-- **harness:** `cli/auth/keyring_vault.py`, `cli/auth/oauth_flows.py`, `cli/harness.py`, `cli/registry.py`, `cli/schema_adapter.py`, `cli/tui.py`, `sync/propose_core_update.py`, `sync/pull_harness_core.py`, `sync/scaffold_harness.py`, `tests/test_harness_auth.py`, `tests/test_harness_cli.py`, `tests/test_harness_core_sync.py`, `tests/test_harness_registry.py`
+- **harness:** `cli/adapters.py`, `cli/auth/keyring_vault.py`, `cli/auth/oauth_flows.py`, `cli/command_registry.py`, `cli/conversation.py`, `cli/harness.py`, `cli/mcp_stdio.py`, `cli/provider_client.py`, `cli/registry.py`, `cli/schema_adapter.py`, `cli/session_store.py`, `cli/tool_registry.py`, `cli/tui.py`, `sync/propose_core_update.py`, `sync/pull_harness_core.py`, `sync/scaffold_harness.py`, `tests/test_harness_auth.py`, `tests/test_harness_cli.py`, `tests/test_harness_core_sync.py`, `tests/test_harness_registry.py`
 - **headroom:** `benchmarks/benchmark_tool_efficiency.py`, `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`
 - **intelligence:** `research/ai_vendor_briefing.py`
 - **interactive:** `cli/tui.py`
@@ -127,11 +139,12 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 - **lint:** `docs/validate_structure_fast.py`
 - **maintenance:** `research/manage_social_registry.py`
 - **markdown:** `docs/run_markdownlint.py`
+- **mcp:** `cli/mcp_stdio.py`
 - **memory:** `ai-tooling/model_memory.py`
 - **models:** `research/benchlm_lookup.py`
 - **multi-harness:** `cli/registry.py`, `cli/schema_adapter.py`
 - **oauth:** `cli/auth/oauth_flows.py`, `tests/test_harness_auth.py`
-- **openai:** `cli/auth/oauth_flows.py`
+- **openai:** `cli/auth/oauth_flows.py`, `cli/provider_client.py`
 - **orchestration:** `benchmarks/run_benchmark_suite.py`
 - **osint:** `research/community_analyzer.py`
 - **pacing:** `tests/test_pacing.py`
@@ -140,11 +153,12 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 - **pricing:** `benchmarks/estimate_agent_costs.py`, `research/benchlm_lookup.py`
 - **prompt-caching:** `tests/test_validate_prompt_caching.py`
 - **propose:** `sync/propose_core_update.py`
+- **provider:** `cli/provider_client.py`
 - **pull:** `sync/pull_harness_core.py`
 - **qmd:** `benchmarks/benchmark_retrieval.py`, `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `qmd/qmd_preflight.py`, `qmd/refresh_qmd_index.py`, `qmd/setup_qmd_collections.py`, `qmd/validate_qmd_retrieval.py`, `tests/test_qmd_preflight.py`
 - **quota:** `tests/test_pacing.py`
 - **rag:** `benchmarks/benchmark_retrieval.py`
-- **registry:** `cli/registry.py`, `research/manage_social_registry.py`, `tests/test_harness_registry.py`
+- **registry:** `cli/command_registry.py`, `cli/registry.py`, `cli/tool_registry.py`, `research/manage_social_registry.py`, `tests/test_harness_registry.py`
 - **repos:** `repos/scaffold_public_repos.py`
 - **research:** `cost-layers/validate_cost_layers.py`, `research/ai_vendor_briefing.py`, `research/benchlm_lookup.py`, `research/community_analyzer.py`, `research/local_webfetch.py`, `research/manage_social_registry.py`, `tests/test_local_webfetch.py`
 - **results:** `tests/test_validate_router_structure.py`
@@ -154,16 +168,22 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 - **schema:** `cli/schema_adapter.py`
 - **schema-v2:** `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
 - **security:** `cli/auth/keyring_vault.py`, `cli/run_agent_isolated.py`, `sync/sync_public_repos.py`, `tests/test_harness_auth.py`, `tests/test_pretty_docs_security.py`, `tests/test_run_agent_isolated.py`
+- **session:** `cli/harness.py`, `cli/session_store.py`
 - **simulation:** `benchmarks/benchmark_agent_fleet.py`
 - **skills:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`, `tests/test_validate_skill.py`
+- **slash:** `cli/command_registry.py`
 - **socials:** `research/community_analyzer.py`, `research/manage_social_registry.py`
+- **sqlite:** `cli/session_store.py`
+- **stdio:** `cli/mcp_stdio.py`
 - **subagents:** `tests/test_subagent_context_config.py`
 - **switcher:** `cli/registry.py`, `cli/tui.py`, `tests/test_harness_registry.py`
 - **sync:** `sync/propose_core_update.py`, `sync/pull_harness_core.py`, `sync/scaffold_harness.py`, `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`, `tests/test_harness_core_sync.py`
 - **tasks:** `benchmarks/benchmark_task_eval.py`
 - **tests:** `tests/test_benchmarks.py`, `tests/test_harness_auth.py`, `tests/test_harness_cli.py`, `tests/test_harness_core_sync.py`, `tests/test_harness_registry.py`, `tests/test_hybrid_dispatch.py`, `tests/test_local_webfetch.py`, `tests/test_pacing.py`, `tests/test_pretty_docs_security.py`, `tests/test_qmd_preflight.py`, `tests/test_run_agent_isolated.py`, `tests/test_skill_graph.py`, `tests/test_subagent_context_config.py`, `tests/test_validate_agent.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_prompt_caching.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`
 - **tokens:** `benchmarks/benchmark_retrieval.py`, `benchmarks/benchmark_tool_efficiency.py`, `benchmarks/estimate_agent_costs.py`
+- **tools:** `cli/mcp_stdio.py`, `cli/tool_registry.py`
 - **tui:** `cli/tui.py`, `tests/test_harness_registry.py`
+- **turn:** `cli/conversation.py`
 - **validation:** `docs/validate_context_budget.py`, `docs/validate_structure_fast.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`
 - **vault:** `cli/auth/keyring_vault.py`
 - **watcher:** `daemon/register_watcher.py`

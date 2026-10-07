@@ -31,7 +31,7 @@ High when finishing mutating work. Scratch is untrusted and excluded from qmd; l
 
 ## Source of truth
 
-- [`scratch/AGENTS.md`](../../../../scratch/AGENTS.md)
+- `scratch/AGENTS.md` (`../../../../scratch/AGENTS.md`; ai-router-only, optional provenance)
 - [`isolate-work`](../isolate-work/SKILL.md)
 - Root High rule: never treat scratch as durable
 

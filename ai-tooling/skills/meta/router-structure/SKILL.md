@@ -32,8 +32,8 @@ High when structure or catalogs changed. Failures block "done" for enablement wo
 
 ## Source of truth
 
-- [`routing/area-map.md`](../../../../routing/area-map.md)
-- [`docs/AGENTS.md`](../../../../docs/AGENTS.md)
+- `routing/area-map.md` (`../../../../routing/area-map.md`; ai-router-only, optional provenance)
+- `docs/AGENTS.md` (`../../../../docs/AGENTS.md`; ai-router-only, optional provenance)
 - [`ai-tooling/skills/skill-conventions.md`](../../skill-conventions.md)
 - `python scripts/docs/validate_router_structure.py`
 - Rebuild maps: `python scripts/routing/generate_routing_index.py`

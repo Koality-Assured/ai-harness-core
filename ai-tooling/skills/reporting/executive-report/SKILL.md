@@ -38,12 +38,14 @@ Medium: keep short and actionable; do not pad. Exec is **not** the only artifact
 - `python scripts/results/new_run_dir.py --family reports --topic <slug> --type executive`
 - `python scripts/results/build_document.py --type executive --sections <dir> --out results/reports/executive/<topic>/<YYYY-MM-DD>/`
 - Stakeholder view: [`foundation-site`](../foundation-site/SKILL.md) → `index.html`
-- [`supporting/foundation/agent-site-package.md`](../../../../supporting/foundation/agent-site-package.md)
+- `supporting/foundation/agent-site-package.md` (`../../../../supporting/foundation/agent-site-package.md`; ai-router-only, optional provenance)
 - Cross-repo file links in artifacts: [`github-paths`](../../git/github-paths/SKILL.md)
 
 ## Isolation
 
-`mutate`. Parent spawns `artifact-agent` with area `results`.
+Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
+
+`mutate`. In ai-router, the parent spawns `artifact-agent` with area `results`.
 
 ## How to use
 

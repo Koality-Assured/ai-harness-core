@@ -32,13 +32,15 @@ Medium: default when measuring retrieval; skip for a single lookup. Do not treat
 
 ## Source of truth
 
-- [`supporting/qmd/README.md`](../../../../supporting/qmd/README.md)
+- `supporting/qmd/README.md` (`../../../../supporting/qmd/README.md`; ai-router-only, optional provenance)
 - `python scripts/qmd/validate_qmd_retrieval.py`
 - Last report pattern: `results/cost-layers/<slug>/<YYYY-MM-DD>/`
 
 ## Isolation
 
-`mutate` because reports land under `results/`. Parent spawns `qmd-ops` with areas `results` (and `supporting` only if notes will change).
+Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
+
+`mutate` because reports land under `results/`. In ai-router, the parent spawns `qmd-ops` with areas `results` (and `supporting` only if notes will change).
 
 ## How to use
 

@@ -32,8 +32,8 @@ High: Python-first policy is Critical in root `AGENTS.md`. Untagged scripts are 
 
 ## Source of truth
 
-- [`scripts/AGENTS.md`](../../../../scripts/AGENTS.md)
-- [`scripts/script-index.md`](../../../../scripts/script-index.md)
+- `scripts/AGENTS.md` (`../../../../scripts/AGENTS.md`; ai-router-only, optional provenance)
+- `scripts/script-index.md` (`../../../../scripts/script-index.md`; ai-router-only, optional provenance)
 - Root scripting policy
 
 ## Isolation

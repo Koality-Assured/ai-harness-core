@@ -1,6 +1,6 @@
 # Writing patterns (anti-slop)
 
-Improved extract from public baselines ([no-ai-slop](https://github.com/petergyang/no-ai-slop), [anti-ai-slop-writing](https://github.com/jalaalrd/anti-ai-slop-writing)). Advisory — follow [`../../../../docs/anti-slop.md`](../../../../../docs/anti-slop.md).
+Improved extract from public baselines ([no-ai-slop](https://github.com/petergyang/no-ai-slop), [anti-ai-slop-writing](https://github.com/jalaalrd/anti-ai-slop-writing)). Advisory — follow `../../../../docs/anti-slop.md` (`../../../../../docs/anti-slop.md`; ai-router-only, optional provenance).
 
 ## Edit principles
 

@@ -32,18 +32,20 @@ Medium: draft quality matters for handoff; missing frontmatter-shaped notes slow
 
 ## Source of truth
 
-- [`results/AGENTS.md`](../../../../results/AGENTS.md)
-- [`docs/AGENTS.md`](../../../../docs/AGENTS.md) (handoff target)
+- `results/AGENTS.md` (`../../../../results/AGENTS.md`; ai-router-only, optional provenance)
+- `docs/AGENTS.md` (`../../../../docs/AGENTS.md`; ai-router-only, optional provenance) (handoff target)
 - `python scripts/results/new_run_dir.py --family reports --topic <slug> --type corpus-draft`
 - `python scripts/results/build_document.py --type corpus-draft --sections <dir> --out results/reports/corpus-draft/<topic>/<YYYY-MM-DD>/`
 
 ## Isolation
 
-`mutate`. Parent spawns `artifact-agent` with area `results`.
+Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
+
+`mutate`. In ai-router, the parent spawns `artifact-agent` with area `results`.
 
 ## How to use
 
-1. Confirm this is a draft, not a `docs/` landing — if ready for SoT, stop and ask parent to spawn `doc-builder`.
+1. Confirm this is a draft, not a `docs/` landing. In ai-router, hand ready-to-publish material to the parent for `doc-builder`; standalone repositories follow their local documentation process or report a capability gap.
 2. `qmd search` related in-repo pages to avoid near-duplicates — no tree walks, no README for ops.
 3. `python scripts/results/new_run_dir.py --family reports --topic <slug> --type corpus-draft` → `results/reports/corpus-draft/<topic>/<YYYY-MM-DD>/`.
 4. `python scripts/results/build_document.py --type corpus-draft --sections <dir> --out results/reports/corpus-draft/<topic>/<YYYY-MM-DD>/`.

@@ -1,7 +1,7 @@
-"""In-repo Python CLI control plane for ai-router.
+"""In-repo Python CLI control plane and conversation harness for ai-router.
 
-tags: [harness, cli, routing, isolation, auth, keyring]
-routing_hints: [harness, cli, status, branch, agent, pr, clean, auth, login, logout]
+tags: [harness, cli, routing, isolation, auth, keyring, chat, session]
+routing_hints: [harness, cli, status, branch, agent, pr, clean, auth, login, logout, chat, sessions, commands]
 """
 
 from __future__ import annotations
@@ -10,10 +10,12 @@ import argparse
 import datetime as dt
 import json
 import os
+import queue
 import re
 import shutil
 import subprocess
 import sys
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +29,13 @@ for _p in (str(_LIB_DIR), str(_SCRIPTS_DIR)):
 from areas import AreasYamlError, load_area_ids, load_area_records  # noqa: E402
 from md import agent_paths, load_agent_record  # noqa: E402
 from paths import REPO_ROOT  # noqa: E402
+
+from cli.provider_client import (  # noqa: E402
+    ANTHROPIC_DEFAULT_MODEL,
+    PROVIDER_ALIASES,
+    ProviderError,
+    normalize_provider,
+)
 
 SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 CONVENTIONAL_COMMIT_PATTERN = re.compile(
@@ -131,6 +140,74 @@ def format_branch_name(slug: str, branch_type: str = "agent") -> str:
 def is_conventional_commit(msg: str) -> bool:
     """Validate whether a commit subject conforms to Conventional Commits."""
     return bool(CONVENTIONAL_COMMIT_PATTERN.match(msg.strip()))
+
+
+def worktree_delete_blocked(status_porcelain: str, commits_not_in_base: int) -> str | None:
+    """Return a refuse reason, or None when deletion is safe.
+
+    Untracked-only (`??`) and ignored (`!!`) lines do not block. Any other
+    porcelain status with a tracked change code blocks, as does
+    `commits_not_in_base > 0`.
+
+    Lines that are not valid `git status --porcelain` status pairs are ignored
+    so unrelated git stdout (e.g. branch listings) cannot false-positive.
+    """
+    porcelain_codes = set(" MADRCUT?!")
+    for line in (status_porcelain or "").splitlines():
+        if not line.strip():
+            continue
+        if len(line) < 2:
+            continue
+        xy = line[:2]
+        if not all(c in porcelain_codes for c in xy):
+            continue
+        if xy in ("??", "!!"):
+            continue
+        if xy == "  ":
+            continue
+        return "worktree has uncommitted tracked changes"
+    if commits_not_in_base > 0:
+        return (
+            f"worktree has {commits_not_in_base} commit(s) not contained in the base branch"
+        )
+    return None
+
+
+def _worktree_commits_not_in_base(wt_path: Path, base: str = "main") -> int:
+    try:
+        proc = run_git(["rev-list", "--count", f"{base}..HEAD"], cwd=wt_path)
+    except (OSError, subprocess.CalledProcessError) as exc:
+        detail = (getattr(exc, "stderr", None) or getattr(exc, "stdout", None) or str(exc)).strip()
+        raise RuntimeError(
+            f"could not compare worktree commits with base branch {base!r}: {detail}"
+        ) from exc
+
+    raw_count = (proc.stdout or "").strip()
+    try:
+        count = int(raw_count)
+    except ValueError as exc:
+        raise RuntimeError(
+            f"git rev-list returned an invalid commit count for base branch {base!r}: {raw_count!r}"
+        ) from exc
+    if count < 0:
+        raise RuntimeError(
+            f"git rev-list returned a negative commit count for base branch {base!r}: {count}"
+        )
+    return count
+
+
+def _inspect_worktree_delete_gate(wt_path: Path, base: str = "main") -> tuple[str | None, bool]:
+    if not wt_path.exists():
+        return None, False
+    try:
+        status = run_git(["status", "--porcelain"], cwd=wt_path)
+    except (OSError, subprocess.CalledProcessError) as exc:
+        detail = (getattr(exc, "stderr", None) or getattr(exc, "stdout", None) or str(exc)).strip()
+        raise RuntimeError(f"could not read worktree status: {detail}") from exc
+    commits = _worktree_commits_not_in_base(wt_path, base=base)
+    status_porcelain = status.stdout or ""
+    has_untracked = any(line[:2] == "??" for line in status_porcelain.splitlines())
+    return worktree_delete_blocked(status_porcelain, commits), has_untracked
 
 
 # --- Command Handlers ---
@@ -610,24 +687,39 @@ def cmd_clean(args: argparse.Namespace) -> int:
         print("No matching worktrees found to clean.")
         return 0
 
-    from routing.spawn_worktree import cmd_remove  # noqa: E402
+    from routing.spawn_worktree import cmd_remove, worktree_path  # noqa: E402
 
     print(f"Cleaning {len(targets)} worktree(s): {', '.join(targets)}")
+    blocked_any = False
     for slug in targets:
-        cmd_remove(slug=slug, dry_run=args.dry_run, force=args.force)
+        wt_path = worktree_path(slug)
+        try:
+            reason, has_untracked = _inspect_worktree_delete_gate(wt_path, base="main")
+        except (OSError, RuntimeError, subprocess.CalledProcessError) as exc:
+            reason = f"could not verify deletion safety: {exc}"
+            has_untracked = False
+        if reason and not args.force:
+            print(
+                f"error: refusing to remove '{slug}': {reason} (pass --force to override)",
+                file=sys.stderr,
+            )
+            blocked_any = True
+            continue
+        if reason and args.force:
+            print(f"warning: forcing remove of '{slug}' despite: {reason}", file=sys.stderr)
+        # Git refuses even untracked-only worktrees unless --force is passed.
+        # The app gate has already cleared tracked changes and unmerged commits.
+        remove_status = cmd_remove(slug=slug, dry_run=args.dry_run, force=args.force or has_untracked)
+        if remove_status != 0:
+            print(
+                f"error: failed to remove worktree '{slug}' (exit status {remove_status})",
+                file=sys.stderr,
+            )
+            blocked_any = True
 
-    return 0
+    return 1 if blocked_any else 0
 
 
-PROVIDER_ALIASES: dict[str, str] = {
-    "claude": "anthropic",
-    "anthropic": "anthropic",
-    "cursor": "cursor",
-    "gemini": "gemini",
-    "google": "gemini",
-    "openai": "openai",
-    "gpt": "openai",
-}
 SUPPORTED_PROVIDERS: list[str] = ["anthropic", "cursor", "gemini", "openai"]
 
 
@@ -650,7 +742,7 @@ def cmd_auth_login(args: argparse.Namespace) -> int:
     )
 
     raw_provider = getattr(args, "provider", "").lower().strip()
-    provider = PROVIDER_ALIASES.get(raw_provider)
+    provider = normalize_provider(raw_provider)
     if not provider:
         print(f"error: unsupported provider '{raw_provider}'. Supported: {', '.join(SUPPORTED_PROVIDERS)}", file=sys.stderr)
         return 2
@@ -765,7 +857,7 @@ def cmd_auth_logout(args: argparse.Namespace) -> int:
         print("error: specify a provider to logout or pass --all to clear all credentials.", file=sys.stderr)
         return 2
 
-    provider = PROVIDER_ALIASES.get(raw_provider.lower().strip())
+    provider = normalize_provider(raw_provider.lower().strip())
     if not provider:
         print(f"error: unsupported provider '{raw_provider}'. Supported: {', '.join(SUPPORTED_PROVIDERS)}", file=sys.stderr)
         return 2
@@ -939,6 +1031,533 @@ def cmd_tui(args: argparse.Namespace) -> int:
     return run_switcher_tui(reg)
 
 
+def _resolve_chat_credential(provider: str) -> tuple[str | None, int]:
+    """Return (access_token, exit_code). Never prints raw tokens."""
+    from cli.auth.keyring_vault import get_vault
+    from cli.auth.oauth_flows import ensure_fresh_token
+
+    vault = get_vault()
+    cred = ensure_fresh_token(provider, vault=vault)
+    if not cred or not cred.get("access_token"):
+        print(
+            f"error: no credentials for '{provider}'. Run: harness auth login {provider}",
+            file=sys.stderr,
+        )
+        return None, 1
+    return str(cred["access_token"]), 0
+
+
+def _load_query_text(args: argparse.Namespace) -> str | None:
+    q = getattr(args, "query", None)
+    qf = getattr(args, "query_file", None)
+    if q and qf:
+        print("error: pass either -q/--query or --query-file, not both", file=sys.stderr)
+        return None
+    if qf:
+        path = Path(qf)
+        if not path.is_file():
+            print(f"error: query file not found: {qf}", file=sys.stderr)
+            return None
+        return path.read_text(encoding="utf-8")
+    if q is not None:
+        return str(q)
+    return None
+
+
+def _open_or_resume_session(args: argparse.Namespace, store: Any) -> tuple[dict[str, Any] | None, int]:
+    resume_id = getattr(args, "resume", None)
+    cont = getattr(args, "continue_session", False)
+    if resume_id and cont:
+        print("error: pass either --resume or --continue, not both", file=sys.stderr)
+        return None, 2
+    if resume_id:
+        session = store.get_session(resume_id)
+        if session is None:
+            print(f"error: session not found: {resume_id}", file=sys.stderr)
+            return None, 1
+        return session, 0
+    if cont:
+        session = store.latest_session()
+        if session is None:
+            print("error: no sessions to continue", file=sys.stderr)
+            return None, 1
+        return session, 0
+
+    raw_provider = getattr(args, "provider", None) or "anthropic"
+    provider = normalize_provider(raw_provider)
+    if not provider:
+        print(
+            f"error: unsupported provider '{raw_provider}'. Supported: {', '.join(SUPPORTED_PROVIDERS)}",
+            file=sys.stderr,
+        )
+        return None, 1
+    model = getattr(args, "model", None) or ""
+    if provider == "anthropic" and not model:
+        model = ANTHROPIC_DEFAULT_MODEL
+    title = getattr(args, "title", None) or ""
+    session = store.create_session(
+        title=title,
+        cwd=str(Path.cwd()),
+        provider=provider,
+        model=model,
+    )
+    return session, 0
+
+
+def _handle_slash(
+    line: str,
+    *,
+    store: Any,
+    session: dict[str, Any],
+    model_holder: list[str],
+    compact_session_handler: Any = None,
+) -> tuple[bool, int | None]:
+    """Handle a slash line. Returns (handled, exit_code_or_None)."""
+    from cli.command_registry import list_commands, parse_slash
+    from cli.conversation import session_status_payload
+
+    parsed = parse_slash(line)
+    if parsed is None:
+        return False, None
+    name, arg = parsed
+    if name in ("quit", "exit", "q"):
+        return True, 0
+    if name in ("help", ""):
+        for cmd in list_commands():
+            print(f"  /{cmd['name']:<12} {cmd['summary']}")
+        return True, None
+    if name == "status":
+        payload = session_status_payload(store, session["id"])
+        print(_format_chat_status(payload, model=model_holder[0]))
+        return True, None
+    if name == "model":
+        if arg:
+            model_holder[0] = arg
+            store.touch_session(session["id"], model=arg)
+            print(f"model set to {arg}")
+        else:
+            print(f"model={model_holder[0] or session.get('model') or '(unset)'}")
+        return True, None
+    if name == "sessions":
+        for s in store.list_sessions(limit=20):
+            print(f"  {s['id']}  {s.get('updated_at', '')}  {s.get('title') or '(untitled)'}")
+        return True, None
+    if name == "compact":
+        if arg:
+            print("usage: /compact", file=sys.stderr)
+            return True, None
+        if compact_session_handler is None:
+            print("error: context compression is unavailable", file=sys.stderr)
+            return True, None
+        try:
+            result = compact_session_handler()
+        except ProviderError as exc:
+            excerpt = f" — {exc.body_excerpt}" if exc.body_excerpt else ""
+            print(f"error: context compression failed: {exc}{excerpt}", file=sys.stderr)
+            return True, None
+        except ValueError as exc:
+            print(f"error: context compression failed: {exc}", file=sys.stderr)
+            return True, None
+        if result is None:
+            print("nothing to compact: need at least three complete user-led turns")
+            return True, None
+        previous_id = session["id"]
+        new_session = result["session"]
+        session.clear()
+        session.update(new_session)
+        model_holder[0] = session.get("model") or ""
+        print(
+            f"compacted {result['compacted_turns']} middle turn(s) from {previous_id}; "
+            f"active session={session['id']}"
+        )
+        return True, None
+    if name == "title":
+        if not arg:
+            print("usage: /title <text>", file=sys.stderr)
+            return True, None
+        store.rename_session(session["id"], arg)
+        session["title"] = arg
+        print(f"title set to {arg}")
+        return True, None
+    if name == "busy":
+        from cli.session_store import BUSY_MODES
+
+        if not arg or arg.lower() == "status":
+            print(f"busy={session.get('busy_mode') or 'interrupt'}")
+            return True, None
+        if arg.lower() == "help":
+            print(_BUSY_HELP)
+            return True, None
+        mode = arg.lower()
+        if mode not in BUSY_MODES:
+            print(_BUSY_HELP, file=sys.stderr)
+            return True, None
+        store.set_busy_mode(session["id"], mode)
+        session["busy_mode"] = mode
+        print(f"busy={mode}")
+        return True, None
+    print(f"unknown command: /{name} (try /help)", file=sys.stderr)
+    return True, None
+
+
+_BUSY_HELP = (
+    "usage: /busy [status|interrupt|queue|steer|help]\n"
+    "interrupt (default) aborts a turn with Ctrl+C; queue sends waiting lines in order; "
+    "steer sends one waiting line after the current answer. True steer-at-tool-boundary "
+    "will be available in slice 13."
+)
+
+
+def _format_chat_status(payload: dict[str, Any], *, model: str = "") -> str:
+    input_tokens = payload.get("input_tokens")
+    output_tokens = payload.get("output_tokens")
+    input_display = "n/a" if input_tokens is None else str(input_tokens)
+    output_display = "n/a" if output_tokens is None else str(output_tokens)
+    return (
+        f"session={payload.get('session_id')} provider={payload.get('provider')} "
+        f"model={model or payload.get('model')} messages={payload.get('message_count')} "
+        f"input_tokens={input_display} output_tokens={output_display} cost=n/a"
+    )
+
+
+class _LinePump:
+    """Read terminal lines in the background while a provider stream is active."""
+
+    def __init__(self, source: Any) -> None:
+        self._source = source
+        self._lines: queue.Queue[str | None] = queue.Queue()
+        self._closed = False
+
+    def start(self) -> None:
+        threading.Thread(target=self._read, daemon=True, name="harness-chat-input").start()
+
+    def _read(self) -> None:
+        try:
+            while True:
+                line = self._source.readline()
+                if not line:
+                    self._lines.put(None)
+                    return
+                self._lines.put(line.rstrip("\r\n"))
+        except (EOFError, OSError):
+            self._lines.put(None)
+
+    def get(self) -> str | None:
+        if self._closed:
+            return None
+        line = self._lines.get()
+        if line is None:
+            self._closed = True
+        return line
+
+    def take_available(self, limit: int | None = None) -> list[str]:
+        lines: list[str] = []
+        while limit is None or len(lines) < limit:
+            try:
+                line = self._lines.get_nowait()
+            except queue.Empty:
+                break
+            if line is None:
+                self._closed = True
+                break
+            lines.append(line)
+        return lines
+
+
+def cmd_chat(
+    args: argparse.Namespace,
+    transport: Any = None,
+    stream_transport: Any = None,
+    tool_registry: Any = None,
+) -> int:
+    from cli.conversation import compact_session, run_turn
+    from cli.session_store import SessionStore
+
+    store = SessionStore()
+    try:
+        session, code = _open_or_resume_session(args, store)
+        if session is None:
+            return code
+
+        provider = session.get("provider") or "anthropic"
+        if getattr(args, "provider", None):
+            resolved = normalize_provider(args.provider)
+            if not resolved:
+                print(
+                    f"error: unsupported provider '{args.provider}'. Supported: {', '.join(SUPPORTED_PROVIDERS)}",
+                    file=sys.stderr,
+                )
+                return 1
+            provider = resolved
+
+        model_holder = [getattr(args, "model", None) or session.get("model") or ""]
+        if provider == "anthropic" and not model_holder[0]:
+            model_holder[0] = ANTHROPIC_DEFAULT_MODEL
+        if provider in ("openai", "gemini") and not model_holder[0]:
+            print(
+                f"error: provider '{provider}' requires --model "
+                "(no safe default confirmed from official docs)",
+                file=sys.stderr,
+            )
+            return 1
+
+        api_key, cred_code = _resolve_chat_credential(provider)
+        if api_key is None:
+            return cred_code
+
+        if getattr(args, "title", None) and session.get("title") != args.title:
+            store.rename_session(session["id"], args.title)
+
+        query = _load_query_text(args)
+        if query is None and (getattr(args, "query", None) is not None or getattr(args, "query_file", None)):
+            return 1
+
+        if query is not None:
+            stream_enabled = not getattr(args, "no_stream", False)
+            active_stream_transport = stream_transport or (transport if stream_enabled else None)
+            try:
+                assistant = run_turn(
+                    store,
+                    session["id"],
+                    query,
+                    provider=provider,
+                    model=model_holder[0] or None,
+                    api_key=api_key,
+                    transport=transport,
+                    stream=stream_enabled,
+                    stream_transport=active_stream_transport,
+                    on_delta=lambda delta: print(delta, end="", flush=True),
+                    tool_registry=tool_registry,
+                )
+            except KeyboardInterrupt:
+                print("\ninterrupted", file=sys.stderr)
+                return 130
+            except ProviderError as exc:
+                if stream_enabled:
+                    print()
+                excerpt = f" — {exc.body_excerpt}" if exc.body_excerpt else ""
+                print(f"error: {exc}{excerpt}", file=sys.stderr)
+                return 1
+            if stream_enabled:
+                print()
+            print(assistant)
+            from cli.conversation import session_status_payload
+
+            print(
+                _format_chat_status(
+                    session_status_payload(store, session["id"]),
+                    model=model_holder[0],
+                ),
+                file=sys.stderr,
+            )
+            return 0
+
+        if not (hasattr(sys.stdin, "isatty") and sys.stdin.isatty()):
+            print(
+                "error: interactive chat requires a TTY; pass -q/--query or --query-file",
+                file=sys.stderr,
+            )
+            return 1
+
+        from cli.conversation import session_status_payload
+
+        def compact_active_session() -> dict[str, Any] | None:
+            return compact_session(
+                store,
+                session["id"],
+                provider,
+                model_holder[0] or None,
+                api_key,
+                transport,
+            )
+
+        print(_format_chat_status(session_status_payload(store, session["id"]), model=model_holder[0]))
+        print("Type /help for commands, /quit to exit.")
+        line_pump = _LinePump(sys.stdin)
+        line_pump.start()
+        pending_lines: list[str] = []
+        while True:
+            try:
+                if pending_lines:
+                    line = pending_lines.pop(0)
+                else:
+                    print("> ", end="", flush=True)
+                    line = line_pump.get()
+                if line is None:
+                    print()
+                    return 0
+            except KeyboardInterrupt:
+                print()
+                return 0
+            if not line.strip():
+                continue
+            handled, exit_code = _handle_slash(
+                line,
+                store=store,
+                session=session,
+                model_holder=model_holder,
+                compact_session_handler=compact_active_session,
+            )
+            if handled:
+                if exit_code is not None:
+                    return exit_code
+                continue
+            try:
+                steered_during_turn: list[str] = []
+
+                def steer_after_tool_batch() -> str | None:
+                    if (session.get("busy_mode") or "interrupt") != "steer" or steered_during_turn:
+                        return None
+                    waiting = line_pump.take_available(limit=1)
+                    if waiting and waiting[0].strip():
+                        steered_during_turn.append(waiting[0])
+                        return waiting[0]
+                    return None
+
+                assistant = run_turn(
+                    store,
+                    session["id"],
+                    line,
+                    provider=provider,
+                    model=model_holder[0] or None,
+                    api_key=api_key,
+                    transport=transport,
+                    stream=not getattr(args, "no_stream", False),
+                    stream_transport=stream_transport or transport,
+                    on_delta=lambda delta: print(delta, end="", flush=True),
+                    tool_registry=tool_registry,
+                    on_tool_batch=steer_after_tool_batch,
+                )
+            except KeyboardInterrupt:
+                if "steered_during_turn" in locals() and steered_during_turn:
+                    pending_lines[0:0] = steered_during_turn
+                print("\nTurn interrupted.")
+                continue
+            except ProviderError as exc:
+                if "steered_during_turn" in locals() and steered_during_turn:
+                    pending_lines[0:0] = steered_during_turn
+                if not getattr(args, "no_stream", False):
+                    print()
+                excerpt = f" — {exc.body_excerpt}" if exc.body_excerpt else ""
+                print(f"error: {exc}{excerpt}", file=sys.stderr)
+                continue
+            if not getattr(args, "no_stream", False):
+                print()
+            else:
+                print(assistant)
+            busy_mode = session.get("busy_mode") or "interrupt"
+            if busy_mode == "queue":
+                pending_lines.extend(line_pump.take_available())
+            elif busy_mode == "steer":
+                if not steered_during_turn:
+                    pending_lines.extend(line_pump.take_available(limit=1))
+        return 0
+    finally:
+        store.close()
+
+
+def cmd_gateway(
+    args: argparse.Namespace,
+    transport: Any = None,
+    stream_transport: Any = None,
+    tool_registry: Any = None,
+) -> int:
+    from cli.adapters import AdapterRuntime, serve_gateway
+
+    runtime = AdapterRuntime(
+        provider=args.provider,
+        model=args.model,
+        transport=transport,
+        stream_transport=stream_transport,
+        tool_registry=tool_registry,
+    )
+    serve_gateway(runtime, host=args.host, port=args.port)
+    return 0
+
+
+def cmd_acp(
+    args: argparse.Namespace,
+    transport: Any = None,
+    stream_transport: Any = None,
+    tool_registry: Any = None,
+) -> int:
+    from cli.adapters import AdapterRuntime, run_acp_stdio
+
+    runtime = AdapterRuntime(
+        provider=args.provider,
+        model=args.model,
+        transport=transport,
+        stream_transport=stream_transport,
+        tool_registry=tool_registry,
+    )
+    run_acp_stdio(runtime)
+    return 0
+
+
+def cmd_sessions(args: argparse.Namespace) -> int:
+    from cli.session_store import SessionStore
+
+    store = SessionStore()
+    try:
+        action = getattr(args, "sessions_cmd", None)
+        as_json = getattr(args, "json", False)
+        if action == "list" or action is None:
+            rows = store.list_sessions()
+            if as_json:
+                print(json.dumps({"sessions": rows}, indent=2))
+            else:
+                if not rows:
+                    print("(no sessions)")
+                for s in rows:
+                    print(
+                        f"{s['id']}  {s.get('updated_at', '')}  "
+                        f"{s.get('provider', '')}/{s.get('model', '')}  "
+                        f"{s.get('title') or '(untitled)'}"
+                    )
+            return 0
+        if action == "rename":
+            sid = args.session_id
+            title = args.title_text
+            row = store.rename_session(sid, title)
+            if row is None:
+                print(f"error: session not found: {sid}", file=sys.stderr)
+                return 1
+            if as_json:
+                print(json.dumps(row, indent=2))
+            else:
+                print(f"renamed {sid} -> {title}")
+            return 0
+        if action == "search":
+            hits = store.search_messages(args.query)
+            if as_json:
+                print(json.dumps({"matches": hits}, indent=2))
+            else:
+                if not hits:
+                    print("(no matches)")
+                for h in hits:
+                    snippet = (h.get("content") or "").replace("\n", " ")
+                    if len(snippet) > 100:
+                        snippet = snippet[:97] + "..."
+                    print(f"{h['session_id']}  {h['role']}  {snippet}")
+            return 0
+        print(f"error: unknown sessions action '{action}'", file=sys.stderr)
+        return 2
+    finally:
+        store.close()
+
+
+def cmd_commands(args: argparse.Namespace) -> int:
+    from cli.command_registry import list_commands
+
+    cmds = list_commands()
+    if getattr(args, "json", False):
+        print(json.dumps({"commands": cmds}, indent=2))
+    else:
+        for c in cmds:
+            print(f"/{c['name']:<12} {c['summary']}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     shared = argparse.ArgumentParser(add_help=False)
     shared.add_argument("--json", action="store_true", help="Format output as machine-readable JSON")
@@ -1030,18 +1649,72 @@ def build_parser() -> argparse.ArgumentParser:
     # tui
     sub.add_parser("tui", aliases=["switcher"], help="Launch interactive terminal UI switcher", parents=[shared])
 
+    # chat
+    p_chat = sub.add_parser("chat", help="One-shot or interactive agent conversation", parents=[shared])
+    p_chat.add_argument("-q", "--query", dest="query", default=None, help="One-shot user message")
+    p_chat.add_argument("--query-file", dest="query_file", default=None, help="Read one-shot user message from file")
+    p_chat.add_argument("--resume", dest="resume", default=None, help="Resume session by id")
+    p_chat.add_argument("--continue", dest="continue_session", action="store_true", help="Resume latest session")
+    p_chat.add_argument("--model", default=None, help="Model id (required for openai/gemini)")
+    p_chat.add_argument(
+        "--provider",
+        default=None,
+        choices=["anthropic", "claude", "cursor", "gemini", "google", "openai", "gpt"],
+        help="Model provider (default: anthropic)",
+    )
+    p_chat.add_argument("--title", default=None, help="Session title")
+    p_chat.add_argument(
+        "--no-stream",
+        action="store_true",
+        help="Wait for the complete response and print it once",
+    )
+
+    # Gateway: documented OpenAI-compatible Chat Completions HTTP/SSE route.
+    gateway_help = (
+        "Serve a text-only OpenAI-compatible Chat Completions/SSE subset; "
+        "uses tools registered by the server and rejects client tools or image content"
+    )
+    p_gateway = sub.add_parser("gateway", help=gateway_help, description=gateway_help, parents=[shared])
+    p_gateway.add_argument("--host", default="127.0.0.1", help="Bind address (default: loopback only)")
+    p_gateway.add_argument("--port", type=int, default=8642, help="Listen port (default: 8642)")
+    p_gateway.add_argument("--provider", default="anthropic", choices=["anthropic", "gemini", "openai"], help="Provider used by the shared conversation loop")
+    p_gateway.add_argument("--model", default=None, help="Default model for the configured provider")
+
+    # ACP v1 stdio JSON-RPC adapter.
+    p_acp = sub.add_parser("acp", help="Run the ACP v1 stdio JSON-RPC adapter", parents=[shared])
+    p_acp.add_argument("--provider", default="anthropic", choices=["anthropic", "gemini", "openai"], help="Provider used by the shared conversation loop")
+    p_acp.add_argument("--model", default=None, help="Model for the configured provider")
+
+    # sessions
+    p_sessions = sub.add_parser("sessions", help="List, rename, or search conversation sessions", parents=[shared])
+    sess_sub = p_sessions.add_subparsers(dest="sessions_cmd")
+    sess_sub.add_parser("list", help="List recent sessions", parents=[shared])
+    p_sess_rename = sess_sub.add_parser("rename", help="Rename a session", parents=[shared])
+    p_sess_rename.add_argument("session_id", help="Session id")
+    p_sess_rename.add_argument("title_text", help="New title")
+    p_sess_search = sess_sub.add_parser("search", help="Search message content", parents=[shared])
+    p_sess_search.add_argument("query", help="Substring to match (SQL LIKE)")
+
+    # commands
+    sub.add_parser("commands", help="List slash commands available in harness chat", parents=[shared])
+
     return parser
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(
+    argv: list[str] | None = None,
+    transport: Any = None,
+    stream_transport: Any = None,
+    tool_registry: Any = None,
+) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
     if args.cmd is None:
-        if hasattr(sys.stdin, "isatty") and sys.stdin.isatty():
-            return cmd_tui(args)
         if getattr(args, "json", False):
             return cmd_list(args)
+        if hasattr(sys.stdin, "isatty") and sys.stdin.isatty():
+            return cmd_tui(args)
         parser.error("the following arguments are required: cmd")
 
     if args.cmd == "status":
@@ -1068,6 +1741,23 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_scan(args)
     if args.cmd in ("tui", "switcher"):
         return cmd_tui(args)
+    if args.cmd == "chat":
+        return cmd_chat(
+            args,
+            transport=transport,
+            stream_transport=stream_transport,
+            tool_registry=tool_registry,
+        )
+    if args.cmd == "gateway":
+        return cmd_gateway(args, transport=transport, stream_transport=stream_transport, tool_registry=tool_registry)
+    if args.cmd == "acp":
+        return cmd_acp(args, transport=transport, stream_transport=stream_transport, tool_registry=tool_registry)
+    if args.cmd == "sessions":
+        if getattr(args, "sessions_cmd", None) is None:
+            args.sessions_cmd = "list"
+        return cmd_sessions(args)
+    if args.cmd == "commands":
+        return cmd_commands(args)
 
     return 2
 

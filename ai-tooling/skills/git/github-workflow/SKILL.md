@@ -28,12 +28,12 @@ Local worktree spawn (`isolate-work`). Authoring Markdown standards (`doc-builde
 
 ## Criticality
 
-High for shared remotes: feature branch → push branch → PR → merge. **Never push directly to default/protected branches (`main`/`master`)** and never merge locally into default branches before pushing. All commit messages and PR titles MUST strictly follow Conventional Commits format (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, etc. — [`references/conventional-commits/`](../../../../references/conventional-commits/)). Never force-push protected default branches unless the human explicitly requests it.
+High for shared remotes: feature branch → push branch → PR → merge. **Never push directly to default/protected branches (`main`/`master`)** and never merge locally into default branches before pushing. All commit messages and PR titles MUST strictly follow Conventional Commits format (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, etc. — `references/conventional-commits/` (`../../../../references/conventional-commits/`; ai-router-only, optional provenance)). Never force-push protected default branches unless the human explicitly requests it.
 
 ## Source of truth
 
-- [`supporting/github/README.md`](../../../../supporting/github/README.md)
-- [`docs/standards/github-iac-security.md`](../../../../docs/standards/github-iac-security.md)
+- `supporting/github/README.md` (`../../../../supporting/github/README.md`; ai-router-only, optional provenance)
+- `docs/standards/github-iac-security.md` (`../../../../docs/standards/github-iac-security.md`; ai-router-only, optional provenance)
 - User commit/PR rules (only commit when asked; `gh` for GitHub)
 
 ## Isolation
@@ -45,7 +45,7 @@ High for shared remotes: feature branch → push branch → PR → merge. **Neve
 1. `gh auth status` before API calls.
 2. Prefer `gh` over raw curl against api.github.com.
 3. PRs: push with `-u` if needed, then `gh pr create` with a real summary and test plan.
-4. Conventional Commits subjects — [`references/conventional-commits/`](../../../../references/conventional-commits/).
+4. Conventional Commits subjects — `references/conventional-commits/` (`../../../../references/conventional-commits/`; ai-router-only, optional provenance).
 5. Record clone/remote facts in the relevant `projects/` spec, not in this skill.
 
 ## Dry run

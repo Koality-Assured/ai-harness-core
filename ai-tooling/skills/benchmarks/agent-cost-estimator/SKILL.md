@@ -37,9 +37,9 @@ High for cost modeling, budget governance, and multi-turn agent capacity plannin
 ## Source of truth
 
 - `python scripts/benchmarks/estimate_agent_costs.py`
-- [`ai-tooling/agents/model-tiers.md`](../../../../ai-tooling/agents/model-tiers.md)
-- [`supporting/benchmarks/README.md`](../../../../supporting/benchmarks/README.md)
-- [`results/cost-layers/`](../../../../results/cost-layers/)
+- `ai-tooling/agents/model-tiers.md` (`../../../../ai-tooling/agents/model-tiers.md`; ai-router-only, optional provenance)
+- `supporting/benchmarks/README.md` (`../../../../supporting/benchmarks/README.md`; ai-router-only, optional provenance)
+- `results/cost-layers/` (`../../../../results/cost-layers/`; ai-router-only, optional provenance)
 
 ## Isolation
 

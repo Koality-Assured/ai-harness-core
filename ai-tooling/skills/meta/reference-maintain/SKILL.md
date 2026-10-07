@@ -33,8 +33,8 @@ High: captures must be versioned, dated (`captured_at_utc`), paraphrased, and ad
 
 ## Source of truth
 
-- [`references/AGENTS.md`](../../../../references/AGENTS.md)
-- [`scripts/references/sources.json`](../../../../scripts/references/sources.json)
+- `references/AGENTS.md` (`../../../../references/AGENTS.md`; ai-router-only, optional provenance)
+- `scripts/references/sources.json` (`../../../../scripts/references/sources.json`; ai-router-only, optional provenance)
 - `python scripts/references/refresh_reference_family.py`
 - `python scripts/references/validate_references.py`
 - Family topic files via `qmd search` / `qmd get` (not family README)
@@ -42,7 +42,9 @@ High: captures must be versioned, dated (`captured_at_utc`), paraphrased, and ad
 
 ## Isolation
 
-`mutate`. Parent spawns `reference-ops` with area `references`.
+Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
+
+`mutate`. In ai-router, the parent spawns `reference-ops` with area `references`.
 
 ## How to use
 

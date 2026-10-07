@@ -37,8 +37,8 @@ High when upgrading compression algorithms, adjusting Headroom rule heuristics, 
 - `python scripts/benchmarks/benchmark_tool_efficiency.py`
 - `python scripts/cost-layers/validate_headroom_compression.py`
 - `python scripts/cost-layers/validate_ast_grep.py`
-- [`supporting/headroom/README.md`](../../../../supporting/headroom/README.md)
-- [`supporting/ast-grep/README.md`](../../../../supporting/ast-grep/README.md)
+- `supporting/headroom/README.md` (`../../../../supporting/headroom/README.md`; ai-router-only, optional provenance)
+- `supporting/ast-grep/README.md` (`../../../../supporting/ast-grep/README.md`; ai-router-only, optional provenance)
 
 ## Isolation
 

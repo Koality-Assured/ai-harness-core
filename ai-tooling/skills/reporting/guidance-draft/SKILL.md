@@ -31,14 +31,16 @@ Medium: default for guidance drafts; human may override destination.
 
 ## Source of truth
 
-- [`results/AGENTS.md`](../../../../results/AGENTS.md)
+- `results/AGENTS.md` (`../../../../results/AGENTS.md`; ai-router-only, optional provenance)
 - Related standards via `qmd search` on kebab-case topic pages
 - `python scripts/results/new_run_dir.py --family reports --topic <slug> --type guidance-draft`
 - `python scripts/results/build_document.py --type guidance-draft --sections <dir> --out results/reports/guidance-draft/<topic>/<YYYY-MM-DD>/`
 
 ## Isolation
 
-`mutate`. Parent spawns `artifact-agent` with area `results`.
+Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
+
+`mutate`. In ai-router, the parent spawns `artifact-agent` with area `results`.
 
 ## How to use
 

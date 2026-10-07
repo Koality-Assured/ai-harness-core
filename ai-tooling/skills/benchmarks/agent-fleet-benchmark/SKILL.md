@@ -34,9 +34,9 @@ High before major version bumps, routing index refreshes, or when auditing fleet
 ## Source of truth
 
 - `python scripts/benchmarks/benchmark_agent_fleet.py`
-- [`ai-tooling/agents/`](../../../../ai-tooling/agents/)
-- [`ai-tooling/skills/`](../../../../ai-tooling/skills/)
-- [`supporting/benchmarks/README.md`](../../../../supporting/benchmarks/README.md)
+- `ai-tooling/agents/` (`../../../../ai-tooling/agents/`; ai-router-only, optional provenance)
+- [`ai-tooling/skills/`](../../)
+- `supporting/benchmarks/README.md` (`../../../../supporting/benchmarks/README.md`; ai-router-only, optional provenance)
 
 ## Isolation
 

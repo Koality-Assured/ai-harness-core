@@ -250,7 +250,17 @@ def build_default_rules(custom_usernames: list[str] | None = None) -> list[Redac
         RedactionRule(
             name="internal_repo_root_abs_path",
             description="Absolute internal repo root directory paths",
-            pattern=re.compile(r"(?i)[a-zA-Z]:[\\/](?:Code|Projects|repos|dev)[\\/]ai-router[\\/]"),
+            # Workspace roots may include one or more grouping directories between
+            # a known source root (for example, Code) and the repository directory.
+            # UNC roots also include a server/share prefix, with an optional extended-path marker.
+            pattern=re.compile(
+                r"(?i)(?:"
+                r"(?:\\\\\?\\)?[a-zA-Z]:[\\/](?:Code|Projects|repos|dev)[\\/]"
+                r"(?:[^\\/\r\n]+[\\/])*?ai-router(?:[\\/]|(?=$|[^\w-]))"
+                r"|(?:\\\\\?\\UNC\\|\\\\)[^\\/\r\n]+\\[^\\/\r\n]+\\"
+                r"(?:[^\\/\r\n]+\\)*?ai-router(?:\\|(?=$|[^\w-]))"
+                r")"
+            ),
             replacement="[REPO_ROOT]/",
         ),
         RedactionRule(
@@ -716,6 +726,8 @@ INTERNAL_ONLY_DOMAINS: set[str] = {
     "scripts/results",
     "scripts/routing",
     "scripts/ai-tooling",
+    "scripts/cli",
+    "scripts/daemon",
     "scripts/tests",
     "scripts/windows-security",
     "scripts/_lib",

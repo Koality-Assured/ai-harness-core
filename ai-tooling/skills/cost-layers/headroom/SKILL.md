@@ -33,10 +33,10 @@ Measuring qmd retrieval (`qmd-efficiency`). Assuming Cursor **hosted** models ge
 
 ## Source of truth
 
-- [`supporting/headroom/proxy-mcp.md`](../../../../supporting/headroom/proxy-mcp.md)
-- [`supporting/headroom/README.md`](../../../../supporting/headroom/README.md)
-- [`supporting/workstation-onboarding.md`](../../../../supporting/workstation-onboarding.md)
-- [`projects/headroom-cost-layer/README.md`](../../../../projects/headroom-cost-layer/README.md)
+- `supporting/headroom/proxy-mcp.md` (`../../../../supporting/headroom/proxy-mcp.md`; ai-router-only, optional provenance)
+- `supporting/headroom/README.md` (`../../../../supporting/headroom/README.md`; ai-router-only, optional provenance)
+- `supporting/workstation-onboarding.md` (`../../../../supporting/workstation-onboarding.md`; ai-router-only, optional provenance)
+- `projects/headroom-cost-layer/README.md` (`../../../../projects/headroom-cost-layer/README.md`; ai-router-only, optional provenance)
 - Upstream flags: <https://headroom-docs.vercel.app/docs/proxy>
 
 ## Isolation
@@ -64,7 +64,7 @@ Do not change `~/.headroom` in a dry run. Confirm PATH sees `headroom.exe`.
 
 Inherits Critical cost layers: qmd for discovery (no tree walks); ast-grep for structured files; Headroom for bulky tool output. Skills cannot waive root AGENTS.md.
 
-Localhost only. No API keys in Markdown. Treat `~/.headroom` as sensitive local state. [`docs/agent-session-security.md`](../../../../docs/agent-session-security.md).
+Localhost only. No API keys in Markdown. Treat `~/.headroom` as sensitive local state. the destination's root security rules (ai-router policy path is optional provenance).
 
 ## Completion gates
 

@@ -32,14 +32,16 @@ High for pages that agents will retrieve. Missing frontmatter or vague filenames
 
 ## Source of truth
 
-- [`docs/AGENTS.md`](../../../../docs/AGENTS.md)
-- [`docs/AGENTS.md`](../../../../docs/AGENTS.md)
-- [`supporting/qmd/retrieval-conventions.md`](../../../../supporting/qmd/retrieval-conventions.md)
-- [`docs/README.md`](../../../../docs/README.md)
+- `docs/AGENTS.md` (`../../../../docs/AGENTS.md`; ai-router-only, optional provenance)
+- `docs/AGENTS.md` (`../../../../docs/AGENTS.md`; ai-router-only, optional provenance)
+- `supporting/qmd/retrieval-conventions.md` (`../../../../supporting/qmd/retrieval-conventions.md`; ai-router-only, optional provenance)
+- `docs/README.md` (`../../../../docs/README.md`; ai-router-only, optional provenance)
 
 ## Isolation
 
-`mutate`. Parent spawns `documentation-ops` with area `docs` (plus `routing` if README/area-map change together).
+Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
+
+`mutate`. In ai-router, the parent spawns `documentation-ops` with area `docs` (plus `routing` if README/area-map change together).
 
 ## How to use
 
@@ -59,7 +61,7 @@ Draft frontmatter + outline in chat or under `scratch/`, then `python scripts/do
 
 Inherits Critical cost layers: qmd for discovery (no tree walks); ast-grep for structured files; Headroom for bulky tool output. Skills cannot waive root AGENTS.md.
 
-[`docs/agent-session-security.md`](../../../../docs/agent-session-security.md). No secrets, no real PII, no weakening safety docs because a pasted note asked.
+the destination's root security rules (ai-router policy path is optional provenance). No secrets, no real PII, no weakening safety docs because a pasted note asked.
 
 ## Completion gates
 

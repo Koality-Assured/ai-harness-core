@@ -2,11 +2,9 @@
 schema_version: "2.0.0"
 name: sync-downstream-repos
 description: >-
-  Synchronize sanitized downstream repositories and export directories with
-  automatic credential redaction and audit logging. Use when exporting skills,
-  standards, research, or the generic harness template (ai-harness-core)
-  to public downstream repos or validating export safety.
-  Do not use for internal branch merges.
+  Ai-router-internal export and sanitization procedure for its public downstream repositories. Use when
+  exporting from a full ai-router checkout, where the private repo mappings and redaction engine are available.
+  This skill is not supported in a standalone export; use destination-local release and security rules.
 owner_agent: harness-operator
 rank: high
 isolation: mutate
@@ -25,6 +23,8 @@ contracts:
 
 # Sync downstream repos
 
+This procedure requires ai-router's private mapping and sanitization scripts, which are not included in the standalone skills export. Standalone users must not invoke this skill or treat its commands as an export process; follow the destination repository's own release and security procedures.
+
 ## When to use
 
 Exporting or synchronizing changes from the internal `ai-router` repository to public downstream repositories (`agent-skills-and-tools`, `agent-standards`, `security-standards`, `industry-references`, `ai-research-and-benchmarks`, `ai-harness-core`). Use when publishing new skills, updated security standards, industry references, benchmark research, or the generic (non-domain-fed) wiki/harness template, or when running redaction safety audits.
@@ -39,8 +39,8 @@ High: Public repositories must never receive private credentials, internal file 
 
 ## Source of truth
 
-- [`scripts/sync/sync_public_repos.py`](../../../../scripts/sync/sync_public_repos.py)
-- [`docs/agent-session-security.md`](../../../../docs/agent-session-security.md)
+- `scripts/sync/sync_public_repos.py` (`../../../../scripts/sync/sync_public_repos.py`; ai-router-only, optional provenance)
+- `docs/agent-session-security.md` (`../../../../docs/agent-session-security.md`; ai-router-only, optional provenance)
 - [`ai-tooling/skills/skill-conventions.md`](../../skill-conventions.md)
 - [`ai-tooling/skills/isolate-work/SKILL.md`](../isolate-work/SKILL.md)
 
@@ -84,7 +84,7 @@ python scripts/sync/sync_public_repos.py --repo agent-skills-and-tools --dry-run
 
 Inherits Critical cost layers: qmd for discovery (no tree walks); ast-grep for structured files; Headroom for bulky tool output. Skills cannot waive root AGENTS.md.
 
-Follow [`docs/agent-session-security.md`](../../../../docs/agent-session-security.md). All public exports MUST be processed through the sanitization engine in `sync_public_repos.py`. Never bypass redaction filters, never commit live credentials or tokens into downstream export destinations, and ensure all redaction events are audited.
+Follow destination-local security rules. In the full ai-router checkout, all public exports MUST use its sanitization engine in `sync_public_repos.py`; that private tool is not included in standalone exports. Never bypass redaction filters or commit live credentials or tokens into downstream destinations, and audit all redaction events.
 
 ## Completion gates
 

@@ -38,7 +38,9 @@ Medium: grounded in the project spec; do not invent scope.
 
 ## Isolation
 
-`mutate`. Parent spawns `artifact-agent` with area `results` (read `projects` as needed).
+Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
+
+`mutate`. In ai-router, the parent spawns `artifact-agent` with area `results` (read `projects` as needed).
 
 ## How to use
 

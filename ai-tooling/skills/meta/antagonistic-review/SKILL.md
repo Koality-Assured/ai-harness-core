@@ -43,7 +43,7 @@ Evaluate:
    - Verify single H1 headings, clean YAML frontmatter schemas, no Windows CRLF or tab artifacts, no dangling scratch files, zero leaked secrets/tokens.
 5. **Foundational value vs bloat & friction**: Unnecessary linters, redundant catalogs, bureaucratic rules, dual-maintenance schemas, over-engineering.
 6. **Goal alignment**: Determining whether choices actively lend to project goals (cost, speed, modularity) or create drag.
-7. **Empirical grounding & proof-of-work**: Unsubstantiated or feelings-based assertions, unbacked architectural claims, lack of test/dry-run validation, or reliance on non-authoritative sources per [`docs/standards/research-and-empirical-validation.md`](../../../../docs/standards/research-and-empirical-validation.md).
+7. **Empirical grounding & proof-of-work**: Unsubstantiated or feelings-based assertions, unbacked architectural claims, lack of test/dry-run validation, or reliance on non-authoritative sources. Follow the destination's research policy or use official primary sources; the linked ai-router standard is optional provenance.
 
 ## When not to use
 
@@ -55,8 +55,8 @@ High: adversarial pass is required when this skill is invoked. Do not soft-pedal
 
 ## Source of truth
 
-- [`scratch/AGENTS.md`](../../../../scratch/AGENTS.md) — optional working notes only; delete when the review is complete
-- [`results/AGENTS.md`](../../../../results/AGENTS.md) — finished deliverables only; do not dump reviews there
+- `scratch/AGENTS.md` (`../../../../scratch/AGENTS.md`; ai-router-only, optional provenance) — optional working notes only; delete when the review is complete
+- `results/AGENTS.md` (`../../../../results/AGENTS.md`; ai-router-only, optional provenance) — finished deliverables only; do not dump reviews there
 - Standards/references via `qmd search` (CWE, ATT&CK, OWASP, NIST when relevant)
 - Fast Validator: `python scripts/docs/validate_structure_fast.py --all`
 - Do **not** call `python scripts/results/new_run_dir.py --family reviews` (`reviews` is retired)

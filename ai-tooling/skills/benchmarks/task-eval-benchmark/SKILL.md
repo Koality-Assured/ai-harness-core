@@ -36,7 +36,7 @@ High when evaluating new foundation models, prompt changes, or assessing regress
 
 - `python scripts/benchmarks/benchmark_task_eval.py`
 - `scratch/ecosystem-repos/ai-research-and-benchmarks/benchmarks/suites/coding_agent_benchmark_v1.json`
-- [`supporting/benchmarks/README.md`](../../../../supporting/benchmarks/README.md)
+- `supporting/benchmarks/README.md` (`../../../../supporting/benchmarks/README.md`; ai-router-only, optional provenance)
 
 ## Isolation
 

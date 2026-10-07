@@ -15,6 +15,7 @@ Provides machine-discoverable and human-readable registries of Tier 1 and Tier 2
 | [`security-and-compliance.md`](./security-and-compliance.md) | NIST, MITRE, OWASP, CIS Controls, CISA |
 | [`identity-and-access.md`](./identity-and-access.md) | Microsoft Entra, Okta, OAuth/OIDC, SAML, IETF RFCs |
 | [`software-and-devops.md`](./software-and-devops.md) | GitHub, GitLab, Python, Go, Rust, Docker |
+| [`us-primary-law.md`](./us-primary-law.md) | Official US federal law publishers and how state pages extend the list |
 
 ## Machine Catalogs
 

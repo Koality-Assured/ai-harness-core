@@ -33,15 +33,17 @@ Medium: default diagram path; human may override storage when attaching to anoth
 
 ## Source of truth
 
-- [`supporting/mermaid/agent-diagram-notes.md`](../../../../supporting/mermaid/agent-diagram-notes.md)
+- `supporting/mermaid/agent-diagram-notes.md` (`../../../../supporting/mermaid/agent-diagram-notes.md`; ai-router-only, optional provenance)
 - `python scripts/results/render_diagram.py`
 - `python scripts/results/new_run_dir.py --family diagrams --topic <slug>`
-- [`results/AGENTS.md`](../../../../results/AGENTS.md)
+- `results/AGENTS.md` (`../../../../results/AGENTS.md`; ai-router-only, optional provenance)
 - Upstream: [mermaid-js/mermaid](https://github.com/mermaid-js/mermaid), [mermaid-cli](https://github.com/mermaid-js/mermaid-cli)
 
 ## Isolation
 
-`mutate`. Parent spawns `artifact-agent` with area `results`.
+Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
+
+`mutate`. In ai-router, the parent spawns `artifact-agent` with area `results`.
 
 ## How to use
 

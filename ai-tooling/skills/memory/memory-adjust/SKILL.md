@@ -45,9 +45,9 @@ High: session-end gate 2. Stale or missing operational memory leads agents to re
 
 ## Source of truth
 
-- [`ai-tooling/memory/AGENTS.md`](../../../memory/AGENTS.md)
-- [`ai-tooling/memory/user/AGENTS.md`](../../../memory/user/AGENTS.md)
-- [`ai-tooling/memory/agent/AGENTS.md`](../../../memory/agent/AGENTS.md)
+- `ai-tooling/memory/AGENTS.md` (`../../../memory/AGENTS.md`; ai-router-only, optional provenance)
+- `ai-tooling/memory/user/AGENTS.md` (`../../../memory/user/AGENTS.md`; ai-router-only, optional provenance)
+- `ai-tooling/memory/agent/AGENTS.md` (`../../../memory/agent/AGENTS.md`; ai-router-only, optional provenance)
 - [`ai-tooling/skills/meta/isolate-work/SKILL.md`](../../meta/isolate-work/SKILL.md) (parent may write memory on primary)
 
 ## Isolation

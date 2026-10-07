@@ -80,7 +80,7 @@ class TestCredentialSanitization(unittest.TestCase):
     """Test zero plaintext token leakage in logs and terminal representations."""
 
     def test_mask_token_long(self) -> None:
-        token = "sk-ant-api03-1234567890abcdefghijklmnopqr"
+        token = "[REDACTED_ANTHROPIC_KEY]"
         masked = mask_token(token)
         self.assertTrue(masked.startswith("sk-ant"))
         self.assertTrue(masked.endswith("nopqr"[-4:]))
@@ -322,14 +322,14 @@ class TestOAuthFlows(unittest.TestCase):
         self.temp_dir.cleanup()
 
     def test_anthropic_api_key_onboarding(self) -> None:
-        res = AnthropicOAuthFlow.login(api_key="sk-ant-test-key-1234567890abcdef")
+        res = AnthropicOAuthFlow.login(api_key="[REDACTED_ANTHROPIC_KEY]")
         self.assertEqual(res["provider"], "anthropic")
         self.assertEqual(res["token_type"], "ApiKey")
-        self.assertEqual(res["access_token"], "sk-ant-test-key-1234567890abcdef")
+        self.assertEqual(res["access_token"], "[REDACTED_ANTHROPIC_KEY]")
 
         saved = self.vault.get_credential("anthropic")
         self.assertIsNotNone(saved)
-        self.assertEqual(saved["access_token"], "sk-ant-test-key-1234567890abcdef")
+        self.assertEqual(saved["access_token"], "[REDACTED_ANTHROPIC_KEY]")
 
     def test_cursor_api_key_onboarding(self) -> None:
         res = CursorAuthFlow.login(api_key="cur_live_token1234567890abcdef")
@@ -357,12 +357,12 @@ class TestOAuthFlows(unittest.TestCase):
         self.assertEqual(saved["access_token"], "AIzaSyTestGeminiKey1234567890")
 
     def test_openai_api_key_onboarding(self) -> None:
-        res = OpenAIAuthFlow.login(api_key="sk-proj-testkey1234567890abcdef123456")
+        res = OpenAIAuthFlow.login(api_key="[REDACTED_OPENAI_KEY]")
         self.assertEqual(res["provider"], "openai")
         self.assertEqual(res["token_type"], "ApiKey")
         saved = self.vault.get_credential("openai")
         self.assertIsNotNone(saved)
-        self.assertEqual(saved["access_token"], "sk-proj-testkey1234567890abcdef123456")
+        self.assertEqual(saved["access_token"], "[REDACTED_OPENAI_KEY]")
 
 
 class TestAuthCLICommands(unittest.TestCase):
@@ -397,7 +397,7 @@ class TestAuthCLICommands(unittest.TestCase):
     def test_auth_status_json(self) -> None:
         # Pre-seed one credential
         self.vault.set_credential("anthropic", {
-            "access_token": "sk-ant-test-token-123456789",
+            "access_token": "[REDACTED_ANTHROPIC_KEY]",
             "token_type": "ApiKey",
             "profile": "test-profile",
             "expires_at": None,
@@ -415,15 +415,15 @@ class TestAuthCLICommands(unittest.TestCase):
         self.assertTrue(anthropic_stat["authenticated"])
         self.assertEqual(anthropic_stat["status"], "VALID")
         # Ensure plaintext secret is NEVER exposed in status JSON
-        self.assertNotIn("sk-ant-test-token-123456789", capture.getvalue())
+        self.assertNotIn("[REDACTED_ANTHROPIC_KEY]", capture.getvalue())
         self.assertTrue(anthropic_stat["token_masked"].startswith("sk-ant"))
 
     def test_auth_login_via_cli(self) -> None:
-        ret = main(["auth", "login", "openai", "--api-key", "sk-proj-testkey1234567890abcdef123456"])
+        ret = main(["auth", "login", "openai", "--api-key", "[REDACTED_OPENAI_KEY]"])
         self.assertEqual(ret, 0)
         saved = self.vault.get_credential("openai")
         self.assertIsNotNone(saved)
-        self.assertEqual(saved["access_token"], "sk-proj-testkey1234567890abcdef123456")
+        self.assertEqual(saved["access_token"], "[REDACTED_OPENAI_KEY]")
 
     def test_auth_logout_single(self) -> None:
         self.vault.set_credential("cursor", {"access_token": "cur_12345"})
@@ -465,7 +465,7 @@ class TestAuthCLICommands(unittest.TestCase):
     def test_auth_login_api_key_warning(self) -> None:
         err_capture = io.StringIO()
         with patch("sys.stderr", err_capture):
-            ret = main(["auth", "login", "openai", "--api-key", "sk-proj-testkey1234567890abcdef123456"])
+            ret = main(["auth", "login", "openai", "--api-key", "[REDACTED_OPENAI_KEY]"])
         self.assertEqual(ret, 0)
         self.assertIn("warning: providing secrets via the '--api-key' CLI argument", err_capture.getvalue())
 
@@ -544,7 +544,7 @@ class TestSilentRefreshTokenRotation(unittest.TestCase):
             vault = UniversalVault(vault_path=vault_file, force_file_vault=True)
 
             # Store an expiring Anthropic OAuth credential
-            old_at = "sk-ant-old-access-token-12345"
+            old_at = "[REDACTED_ANTHROPIC_KEY]"
             old_rt = "anthropic_refresh_old_12345"
             expiring_time = time.time() + 120  # Expires in 2 minutes (within default 900s buffer)
             token_data = {

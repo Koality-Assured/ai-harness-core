@@ -37,8 +37,8 @@ High when testing retrieval recall improvements or modifying search index archit
 
 - `python scripts/benchmarks/benchmark_retrieval.py`
 - `python scripts/qmd/validate_qmd_retrieval.py`
-- [`supporting/qmd/README.md`](../../../../supporting/qmd/README.md)
-- [`supporting/benchmarks/README.md`](../../../../supporting/benchmarks/README.md)
+- `supporting/qmd/README.md` (`../../../../supporting/qmd/README.md`; ai-router-only, optional provenance)
+- `supporting/benchmarks/README.md` (`../../../../supporting/benchmarks/README.md`; ai-router-only, optional provenance)
 
 ## Isolation
 

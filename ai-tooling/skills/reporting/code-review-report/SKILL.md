@@ -35,14 +35,16 @@ High: cite grounded IDs; do not invent CWE/ATT&CK/OWASP identifiers.
 
 - `references/` topic files via `qmd search` / `qmd get` (CWE, ATT&CK, OWASP — not README)
 - Standards under `docs/` via qmd
-- Endpoint inventory: [`noir-scan`](../noir-scan/SKILL.md) / [`supporting/noir/agent-scan.md`](../../../../supporting/noir/agent-scan.md) → `python scripts/results/run_noir_scan.py`
+- Endpoint inventory: [`noir-scan`](../noir-scan/SKILL.md) / `supporting/noir/agent-scan.md` (`../../../../supporting/noir/agent-scan.md`; ai-router-only, optional provenance) → `python scripts/results/run_noir_scan.py`
 - `python scripts/results/new_run_dir.py --family reports --topic <slug> --type code-review`
 - `python scripts/results/build_document.py --type code-review --sections <dir> --out results/reports/code-review/<topic>/<YYYY-MM-DD>/`
 - Optional presentation: [`foundation-site`](../foundation-site/SKILL.md), [`tabler-dashboard`](../tabler-dashboard/SKILL.md)
 
 ## Isolation
 
-`mutate`. Parent spawns `artifact-agent` with area `results`.
+Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
+
+`mutate`. In ai-router, the parent spawns `artifact-agent` with area `results`.
 
 ## How to use
 

@@ -2,7 +2,7 @@
 
 Human overview: router skills live organized into domain families under `<family>/<name>/SKILL.md`.
 
-**Agents do not use this README as a catalog.** They load [`../../routing/skill-dispatch.md`](../../routing/skill-dispatch.md) (regenerate with `python scripts/routing/generate_skill_dispatch.py`) and spawn `owner_agent`. Template: [`../../ai-tooling/skills/skill-conventions.md`](skill-conventions.md). Validate: `python scripts/ai-tooling/validate_skill.py --all`.
+**Agents do not use this README as a catalog.** In the full ai-router checkout, dispatch uses `routing/skill-dispatch.md`, `python scripts/routing/generate_skill_dispatch.py`, and the registered `owner_agent`; these are optional ai-router-only references and are absent from a standalone export. Standalone repositories use their own catalog, dispatch rules, and validators. See [skill-conventions.md](./skill-conventions.md) for the shared authoring guidance.
 
 Human index (not agent SoT):
 
@@ -96,3 +96,7 @@ Human index (not agent SoT):
 | [`iac-security-audit/`](./iac/iac-security-audit/) | as-code-agent | read-only |
 | [`web-crawling/`](./discovery/web-crawling/) | research-operator | read-only |
 | [`ad-windows-security-audit/`](./security/ad-windows-security-audit/) | security-tooling-operator | read-only |
+| [`us-law-reference-maintain/`](./legal/us-law-reference-maintain/) | document-operator | mutate |
+| [`us-law-reference-compare/`](./legal/us-law-reference-compare/) | document-operator | read-only |
+| [`us-law-interpretation-research/`](./legal/us-law-interpretation-research/) | research-operator | read-only |
+| [`us-law-court-document-draft/`](./legal/us-law-court-document-draft/) | document-operator | read-only |

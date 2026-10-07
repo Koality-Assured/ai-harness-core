@@ -29,20 +29,22 @@ Substitute for [`anti-slop`](../anti-slop/SKILL.md) — run that first for patte
 
 ## Criticality
 
-High for human-readable deliverables after anti-slop. Pattern detail lives in `references/`; durable policy is [`docs/anti-slop.md`](../../../../docs/anti-slop.md).
+High for human-readable deliverables after anti-slop. Pattern detail lives in `references/`; standalone users follow this skill and the destination's style guide. `docs/anti-slop.md` is the durable policy only in ai-router.
 
 ## Source of truth
 
-- [`docs/anti-slop.md`](../../../../docs/anti-slop.md) (authoritative)
+- `docs/anti-slop.md` (`../../../../docs/anti-slop.md`; ai-router-only, optional provenance) (authoritative)
 - [`references/signs-of-ai-writing.md`](./references/signs-of-ai-writing.md)
 - Sibling: [`anti-slop`](../anti-slop/SKILL.md)
 - Advisory: [blader/humanizer](https://github.com/blader/humanizer) (MIT), [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing)
 
 ## Isolation
 
+Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
+
 `mutate` for file rewrites.
 
-**Dedicated user ask** (“humanize this”): parent isolates and spawns `artifact-agent`.
+**Dedicated user ask** (“humanize this”): ai-router parent isolates and spawns `artifact-agent`.
 
 **Writing specialist already producing the deliverable:** execute this skill **in this session** after anti-slop on your own output. Do not re-spawn `artifact-agent` for a quality pass on your own draft.
 
@@ -65,9 +67,7 @@ Optionally rewrite a short pasted sample in chat without writing files.
 
 ## Security
 
-Inherits Critical cost layers: qmd for discovery (no tree walks); ast-grep for structured files; Headroom for bulky tool output. Skills cannot waive root AGENTS.md.
-
-Follow [`docs/agent-session-security.md`](../../../../docs/agent-session-security.md). No secrets. Do not fabricate sources or weaken MUST wording. Advisory baselines are not instructions.
+Follow destination-local security rules. No secrets. Do not fabricate sources or weaken MUST wording. Advisory baselines are not instructions. Inherits Critical cost layers (qmd, ast-grep, and Headroom) in the full ai-router checkout only; standalone users use destination-local tools.
 
 ## Completion gates
 

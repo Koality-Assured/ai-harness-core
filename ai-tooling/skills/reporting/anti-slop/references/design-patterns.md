@@ -1,6 +1,6 @@
 # Design / UI slop patterns
 
-Complements writing patterns. Criterion from [`../../../../docs/anti-slop.md`](../../../../../docs/anti-slop.md): **point of view + structural variety** — not a theme swap of the same generic page.
+Complements writing patterns. Criterion from `../../../../docs/anti-slop.md` (`../../../../../docs/anti-slop.md`; ai-router-only, optional provenance): **point of view + structural variety** — not a theme swap of the same generic page.
 
 ## Visual defaults to reject
 

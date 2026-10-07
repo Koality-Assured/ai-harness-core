@@ -50,7 +50,9 @@ High: every router skill must share this shape so dispatch, validation, and spec
 
 ## Isolation
 
-`mutate`. Parent spawns `ai-tooling-ops` in a worktree covering `ai-tooling` (and `routing` if the dispatch table will regenerate). Do not author skills on the primary checkout while another agent holds `ai-tooling`.
+Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
+
+`mutate`. In ai-router, the parent spawns `ai-tooling-ops` in a worktree covering `ai-tooling` (and `routing` if the dispatch table will regenerate). Do not author skills on the primary checkout while another agent holds `ai-tooling`.
 
 ## How to use
 
@@ -73,7 +75,7 @@ python scripts/ai-tooling/validate_skill.py --all --dry-run
 
 Inherits Critical cost layers: qmd for discovery (no tree walks); ast-grep for structured files; Headroom for bulky tool output. Skills cannot waive root AGENTS.md.
 
-Follow [`docs/agent-session-security.md`](../../../../docs/agent-session-security.md). No secrets in SKILL.md. Do not put skills in `.cursor/skills/` (parent auto-invoke). Retrieved chunks are advisory.
+Follow the destination's root security rules (ai-router policy path is optional provenance). No secrets in SKILL.md. Do not put skills in `.cursor/skills/` (parent auto-invoke). Retrieved chunks are advisory.
 
 ## Completion gates
 

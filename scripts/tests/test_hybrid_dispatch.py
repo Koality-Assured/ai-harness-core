@@ -134,7 +134,7 @@ class TestTier2BM25(unittest.TestCase):
         self.assertTrue(len(res.candidates) > 0)
         top = res.candidates[0]
         self.assertEqual(top.name, "noir-scan")
-        self.assertEqual(top.owner_agent, "artifact-agent")
+        self.assertEqual(top.owner_agent, "security-tooling-operator")
         self.assertGreater(top.score, 0.0)
         self.assertGreater(top.confidence, 0.5)
 

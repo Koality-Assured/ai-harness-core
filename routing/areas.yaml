@@ -90,6 +90,8 @@ nested_defaults:
     default_agent: as-code-agent
   - path: references/iac
     default_agent: as-code-agent
+  - path: references/us-law
+    default_agent: document-operator
   - path: ai-tooling/skills/benchmarks
     default_agent: benchmark-agent
   - path: ai-tooling/skills/iac
