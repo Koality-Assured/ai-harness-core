@@ -164,7 +164,8 @@ def build_default_rules(custom_usernames: list[str] | None = None) -> list[Redac
         RedactionRule(
             name="anthropic_api_key",
             description="Anthropic API secret keys",
-            pattern=re.compile(r"\bsk-ant-[a-zA-Z0-9_-]{20,}\b"),
+            # Skip sk-ant-EXAMPLE- fixtures so exported auth tests keep valid vectors.
+            pattern=re.compile(r"\bsk-ant-(?!EXAMPLE-)[a-zA-Z0-9_-]{20,}\b"),
             replacement="[REDACTED_ANTHROPIC_KEY]",
         ),
         RedactionRule(
