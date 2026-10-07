@@ -21,6 +21,7 @@ OUT = SCRIPTS_ROOT / "script-index.md"
 
 TAG_RE = re.compile(r"tags:\s*\[([^\]]*)\]", re.IGNORECASE)
 HINT_RE = re.compile(r"routing_hints:\s*\[([^\]]*)\]", re.IGNORECASE)
+SCRIPT_INDEX_EXCLUDE_RE = re.compile(r"^script_index:\s*false\s*$", re.IGNORECASE | re.MULTILINE)
 
 
 def parse_list(blob: str) -> list[str]:
@@ -30,7 +31,13 @@ def parse_list(blob: str) -> list[str]:
 def skip_script(path: Path, scripts_root: Path | None = None) -> bool:
     root = scripts_root if scripts_root is not None else SCRIPTS_ROOT
     rel_parts = path.relative_to(root).parts
-    return rel_parts[0] == "_lib" or path.name.startswith("_")
+    if rel_parts[0] == "_lib" or path.name.startswith("_"):
+        return True
+    try:
+        doc = ast.get_docstring(ast.parse(path.read_text(encoding="utf-8"))) or ""
+    except (OSError, SyntaxError):
+        return False
+    return bool(SCRIPT_INDEX_EXCLUDE_RE.search(doc))
 
 
 def extract_meta(path: Path, scripts_root: Path | None = None) -> dict:

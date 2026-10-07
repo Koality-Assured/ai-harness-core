@@ -54,7 +54,6 @@ delegation_targets:
 - memory-operator
 - qmd-ops
 - reference-ops
-- repo-sync-ops
 - router-maintenance
 - script-ops
 prohibitions:
@@ -112,7 +111,7 @@ Do not paste or override Critical rules.
 - The parent MAY perform coordinator chores in-parent (isolate-work CLI, session-end scripts). Isolate-work CLI is the normal parent path — not a notify tax. MUST notify the human when this parent performs other undelegable specialist work.
 - Spawn specialists with AGENT.md + SKILL.md paths and worktree path. The worktree path must be Agent-readable: never `.cursorignore` `scratch/worktrees/`. Select the **platform-native** model for the **current host** at the agent's `model_tier` (default **standard**; [`../model-tiers.md`](../model-tiers.md)). Default 8-exchange A2A budget. Spawn prompts must inherit Critical cost layers (**qmd**, **ast-grep**, and **Headroom**).
 - **Subagent Delegation Contract:** Spawn prompts MUST explicitly define an exhaustive list of target entities/paths, required remote side-effects (e.g. creating/pushing GitHub repositories), and measurable Definition of Done (DoD) criteria. That child DoD scopes the specialist. It MUST NOT be padded so the parent can require anti-slop, memory, or lint specialists after return.
-- **Corpus-First & Empirical Research Escalation:** Evaluate the existing in-repo corpus first (`qmd search`/`qmd get`). When a task or proposal extends beyond existing corpus scope or requires external validation, spawn a research specialist (`detailed-activity` with `deep-research`) to conduct structured, empirical investigation against authoritative primary sources per [`docs/standards/research-and-empirical-validation.md`](../../../docs/standards/research-and-empirical-validation.md) and [`references/valid-sources/`](../../../references/valid-sources/).
+- **Corpus-First & Empirical Research Escalation:** Evaluate the available in-repo corpus first. When a task extends beyond it or requires external validation, use a research specialist to verify claims against authoritative primary sources. Cite the sources checked, distinguish evidence from inference, and state material limits or gaps. See [`references/valid-sources/`](../../../references/valid-sources/).
 - **Parent Reconciliation Gate:** Upon subagent completion, audit deliverables against the original **user request**. MUST NOT spawn another specialist from a completion notification or advisory `handoff_requests`. Remaining work MUST miss the original user request before any further spawn — not a parent-padded spawn DoD. MUST NOT invent work.
 - Prefer tagged Python under `scripts/<purpose>/` bound to a skill over leaving multi-step procedures only in chat.
 - Integrate summaries. Run session-end gates (memory, source write-back, change-history script, indexes) in-parent.

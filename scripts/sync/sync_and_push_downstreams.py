@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Automated synchronization, sanitation, commit, and push engine for public downstream repositories.
+"""AI Router-only internal publisher; not a standalone core command.
+
+script_index: false
 
 tags: [sync, git, export, downstream]
 routing_hints: [sync-and-push, update-downstreams, multi-repo-publish, downstream-repo-update]

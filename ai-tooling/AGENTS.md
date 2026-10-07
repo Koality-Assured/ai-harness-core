@@ -19,4 +19,4 @@ Ingest simply; do not duplicate skills or paste root Critical — link [`../AGEN
 - Memory ≠ durable architecture: stable patterns go to `docs/`, `supporting/`, or `routing/`.
 - Keep secrets out of canonical agent contracts.
 - Spawn `harness-operator` (or the skill’s `owner_agent`) when that catalogued work is material. Session-end memory and isolate CLI stay with the parent.
-- Prioritize pairing new capabilities with broad-sweeping Operators before minting new micro-agents per [`docs/guidance/agent-skill-pairing-discipline.md`](../docs/guidance/agent-skill-pairing-discipline.md).
+- Pair new capabilities with an existing operator or local specialist where they fit; add a new agent only for a genuinely distinct domain.

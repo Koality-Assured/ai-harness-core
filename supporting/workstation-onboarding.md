@@ -27,12 +27,12 @@ Use the `Need` column to distinguish repository-wide prerequisites (`required`) 
 | uv | required | 0.4+ | Install and manage isolated Python tools, including Headroom | Install from Astral; see the setup below |
 | Headroom | required | 0.35+ | Compress bulky tool outputs | Install `headroom-ai[proxy,mcp]`; [`headroom/proxy-mcp.md`](./headroom/proxy-mcp.md) |
 | GitHub CLI (`gh`) | if you use GitHub | current | Auth, PRs | [`github/gh-workflow-notes.md`](./github/gh-workflow-notes.md) |
-| AWS CLI (`aws`) | optional (cloud-admin) | 2.15+ | AWS Organizations & SSO | [`../docs/guidance/cloud-aws-setup.md`](../docs/guidance/cloud-aws-setup.md) |
-| Google Cloud SDK (`gcloud`) | optional (cloud-admin) | current | GCP Resource Manager & ADC | [`../docs/guidance/cloud-gcp-setup.md`](../docs/guidance/cloud-gcp-setup.md) |
-| Azure CLI (`az`) | optional (cloud-admin) | 2.50+ | Azure Management Groups & Entra | [`../docs/guidance/cloud-azure-setup.md`](../docs/guidance/cloud-azure-setup.md) |
-| Google Workspace APIs | optional (google-suite) | current | Drive, Gmail, Docs & Workspace Admin | [`google/google-suite-patterns.md`](./google/google-suite-patterns.md) |
+| AWS CLI (`aws`) | optional | current | AWS Organizations & SSO | [Install](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html); [configure IAM Identity Center](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html) |
+| Google Cloud CLI (`gcloud`) | optional | current | GCP Resource Manager & ADC | [Install](https://docs.cloud.google.com/sdk/docs/install-sdk/); [initialize and authorize](https://docs.cloud.google.com/sdk/docs/initialize) |
+| Azure CLI (`az`) | optional | current | Azure Management Groups & Entra | [Install](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli); [authenticate](https://learn.microsoft.com/en-us/cli/azure/authenticate-azure-cli?view=azure-cli-latest) |
+| Google Workspace APIs | optional | current | Drive, Gmail, Docs & Workspace Admin | [Get started](https://developers.google.com/workspace/guides/get-started); [configure credentials](https://developers.google.com/workspace/guides/create-credentials) |
 | Mermaid CLI (`mmdc`) | optional | 10+ | Offline diagram render | [`mermaid/agent-diagram-notes.md`](./mermaid/agent-diagram-notes.md) |
-| Docker / Noir | optional | — | Attack-surface inventory | Wrapper only. [`noir/agent-scan.md`](./noir/agent-scan.md) |
+| Docker / Noir | optional | — | Attack-surface inventory | Wrapper only. [OWASP Noir installation](https://owasp-noir.github.io/noir/get_started/installation/) |
 | Web distillation (`trafilatura`, `readability-lxml`, `markdownify`, `httpx`) | required | current | Local HTML distillation & prompt injection defense | `pip install trafilatura readability-lxml markdownify httpx`. Used by `scripts/research/local_webfetch.py`. |
 
 Use each vendor’s installer for required tools. The commands below cover uv and Headroom.
@@ -97,8 +97,8 @@ These fail silently if omitted. The linked page has the recipe when one is neede
 | qmd execution policy / cache access | Windows PowerShell defaults to `Restricted` script execution, blocking npm-installed `qmd.ps1` with `PSSecurityException`. Fix for current user (no admin rights needed): `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force`. Alternatively call `qmd.cmd` (or `node`). Before any setup, run the qmd preflight; a present-but-inaccessible index is a sandbox or permissions issue, not a reason to rebuild. [`qmd/query-pattern.md`](./qmd/query-pattern.md). |
 | Headroom bind and extras | Bind `127.0.0.1`; do not pass `--host 0.0.0.0`. Install `headroom-ai[proxy,mcp]`. Do not install `[all]` (local PyTorch/ML). [`headroom/proxy-mcp.md`](./headroom/proxy-mcp.md). |
 | Cloud & LLM credentials | Never store static keys in config files. Use AWS CLI SSO (`aws configure sso`), GCP Application Default Credentials (`gcloud auth application-default login`), Azure Entra login (`az login`), and ephemeral environment variables for LLM APIs. |
-| Google Workspace OAuth | Use ADC or Workload Identity Federation. Dedicated test folder IDs ([REDACTED_GOOGLE_DRIVE_TEST_FOLDER]) are scrubbed upon sync export. [`google/google-suite-patterns.md`](./google/google-suite-patterns.md). |
-| Noir | Agents MUST call `python scripts/results/run_noir_scan.py`. Never invoke raw `noir` or pass `--ai-provider` / `--ai-context` / `--ai-model`. [`noir/agent-scan.md`](./noir/agent-scan.md). |
+| Google Workspace OAuth | Choose OAuth 2.0 or service-account credentials for the API and data-access needs. Use least-privileged scopes and keep credentials and resource identifiers out of source control. See [Google Workspace authentication guidance](https://developers.google.com/workspace/guides/auth-overview). |
+| Noir | This template does not package a Noir scan wrapper. If a task requires an OWASP Noir scan, use a locally approved tool and its current [official installation guidance](https://owasp-noir.github.io/noir/get_started/installation/); report a capability gap when no local wrapper is available. |
 | User memory | Create `ai-tooling/memory/user/<git-identity>/` (lowercase GitHub login or other stable id). [`../ai-tooling/memory/user/AGENTS.md`](../ai-tooling/memory/user/AGENTS.md). |
 | Windows Smart App Control | Unsigned or untrusted binaries may fail to start. Run the read-only preflight; do not disable SAC. [`powershell/windows-execution-control.md`](./powershell/windows-execution-control.md). |
 | Cursor `.cursorignore` vs worktrees | `.cursorignore` blocks Agent Read/Write/Tab/@. Never list `scratch/worktrees/` there. Use `.gitignore` and `.cursorindexingignore` so extra checkouts stay out of embeddings. [Ignore file](https://cursor.com/docs/reference/ignore-file). |
@@ -125,9 +125,9 @@ Repo validators exist; run them when you need a check:
 | [`ast-grep/precision-retrieval.md`](./ast-grep/precision-retrieval.md) | ast-grep CLI |
 | [`headroom/proxy-mcp.md`](./headroom/proxy-mcp.md) | Headroom proxy / MCP |
 | [`github/gh-workflow-notes.md`](./github/gh-workflow-notes.md) | `gh` and PRs |
-| [`google/google-suite-patterns.md`](./google/google-suite-patterns.md) | Google Workspace operations & auth |
+| [Google Workspace developer guide](https://developers.google.com/workspace/guides/get-started) | Google Workspace operations & auth |
 | [`mermaid/agent-diagram-notes.md`](./mermaid/agent-diagram-notes.md) | `mmdc` |
-| [`noir/agent-scan.md`](./noir/agent-scan.md) | Noir wrapper |
+| [OWASP Noir installation guide](https://owasp-noir.github.io/noir/get_started/installation/) | Noir tooling |
 | [`powershell/powershell-python-patterns.md`](./powershell/powershell-python-patterns.md) | PowerShell encoding and quoting |
 | [`powershell/windows-execution-control.md`](./powershell/windows-execution-control.md) | Read-only SAC / Code Integrity preflight |
 | [`../ai-tooling/memory/AGENTS.md`](../ai-tooling/memory/AGENTS.md) | User vs agent memory |

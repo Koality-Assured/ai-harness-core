@@ -1,4 +1,6 @@
-"""Multi-repo synchronization and sanitization/redaction engine for public exports.
+"""AI Router-only internal exporter; not a standalone core command.
+
+script_index: false
 
 tags: [sync, security, export]
 routing_hints: [sync, redaction, multi-repo, export, sanitize, wiki-template]
