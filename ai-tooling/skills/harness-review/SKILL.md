@@ -51,7 +51,7 @@ High: distinguish an observed host symptom from a portable harness defect before
 - Root `AGENTS.md` (`../../../AGENTS.md`; ai-router-only, optional provenance) and `routing/skill-dispatch.md` (`../../../routing/skill-dispatch.md`; ai-router-only, optional provenance)
 - [`ai-tooling/skills/skill-conventions.md`](../skill-conventions.md) and `ai-tooling/a2a/interaction-protocol.md` (`../../a2a/interaction-protocol.md`; ai-router-only, optional provenance)
 - `python scripts/ai-tooling/validate_skill.py --all`, `validate_agent.py --all`, and `python scripts/docs/validate_router_structure.py`
-- `python scripts/cost-layers/validate_cost_layers.py`, `python scripts/tests/test_harness_core.py`, and `python scripts/sync/sync_public_repos.py --dry-run`
+- `python scripts/cost-layers/validate_cost_layers.py` and `python scripts/tests/test_harness_core.py`. Downstream export readiness is outside standalone core review; follow each destination's own release process.
 
 ## Isolation
 
@@ -65,7 +65,7 @@ Standalone dispatch: Follow the destination's isolation and dispatch rules. Use 
 2. Establish a baseline: run the relevant schema, routing, structure, harness-core, and cost-layer checks. Record commands, exit status, timings where available, and changed paths.
 3. Trace each failed control from its policy source to its executable validator and its enforcement point. Classify it as **repository defect**, **host-specific symptom**, or **unverified**; reproduce host-specific symptoms with the configured collection/runtime before generalizing them.
 4. Test reinforcement end-to-end: confirm source-area write-back, memory boundaries, change-history invocation, generated-index refresh triggers, and no recursive specialist minting. Put stable host-specific tool paths, collection/index state, availability, and recovery procedures in `ai-tooling/memory/user/<git-identity>/`; put portable behavior in its owning source area. Do not turn a session log into memory.
-5. Test downstream readiness with the sync validator and destination dry run. Review redaction/audit output; keep publication, commit, and push outside this review unless the human explicitly authorized them.
+5. For standalone core work, review only the local diff and destination-native checks. This repository does not provide a shared export validator or sanitizer.
 6. Correct only proven defects in the owning isolated area, then rerun the original failing check plus the nearest integration check. Use `antagonistic-review` for a material independent challenge.
 7. Return concise evidence, unresolved host-only items, and a hand-off prompt containing the exact command, runtime prerequisites, expected result, and decision requested.
 
@@ -75,7 +75,6 @@ Standalone dispatch: Follow the destination's isolation and dispatch rules. Use 
 python scripts/ai-tooling/validate_skill.py --skill harness-review --dry-run
 python scripts/docs/validate_router_structure.py --dry-run
 python scripts/cost-layers/validate_cost_layers.py --help
-python scripts/sync/sync_public_repos.py --dry-run
 ```
 
 Run non-mutating checks from the configured collection/runtime root. A worktree-local `qmd` failure alone is a host/configuration observation, not proof that the harness contract is defective.

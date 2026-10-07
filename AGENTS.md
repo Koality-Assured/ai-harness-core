@@ -114,7 +114,7 @@ Before create/edit for **new** work: `spawn_worktree.py check` → `add` → han
 When introducing, registering, or decomposing new skills or agent tasks, agents MUST prioritize mapping to existing broad-sweeping Operators (`harness-operator`, `document-operator`, `research-operator`, `cloud-operator`, `security-tooling-operator`) or established true specialists before minting new micro-agents.
 - **Operator-first pairing**: New capabilities MUST be incorporated into the most logically relevant operator or expanded via existing skill parameters.
 - **Pairing maintenance priority**: Maintaining cohesive skill-to-agent pairings and keeping routing catalogs synchronized over time is a mandatory architectural priority.
-- **True specialist threshold**: Dedicated specialists MUST only be introduced for truly disjoint domains that cannot fit cleanly into an existing operator archetype (e.g. specialized game simulation, distinct art synthesis, or independent adversarial auditors). Full SoT: [`docs/guidance/agent-skill-pairing-discipline.md`](./docs/guidance/agent-skill-pairing-discipline.md).
+- **True specialist threshold**: Add a dedicated specialist only for a disjoint domain that does not fit an existing operator archetype. Prefer capabilities already defined in this repository's agent catalog.
 
 The parent is coordinator/validator: it coordinates, validates consistency, and verifies adherence to the user's goals. Isolate CLI and session-end gates are the parent’s normal path.
 

@@ -43,35 +43,9 @@ Prefer OIDC to cloud providers over static keys in Actions.
 
 - Keep workflow changes reviewable; treat `pull_request_target` + checkout of untrusted code as high risk.
 
-## Koality-Assured Ecosystem Repositories
+## Cross-repository changes
 
-The `Koality-Assured` organization maintains a synchronized suite of repositories:
-
-| Repository | Role & Purpose | Upstream Source Directory |
-| :--- | :--- | :--- |
-| `Koality-Assured/ai-router` | Central cognitive orchestration harness, layered AGENTS, and scripts-first automation | Root source |
-| `Koality-Assured/agent-skills-and-tools` | Public catalog of reusable agent skills, schemas, and tooling integrations | `ai-tooling/skills/` |
-| `Koality-Assured/agent-standards` | Normative standards for 5-tier context management, A2A protocols, and agent security | `docs/standards/` |
-| `Koality-Assured/security-standards` | General engineering and organizational security standards across 20+ operational domains | `docs/standards/` |
-| `Koality-Assured/industry-references` | Normalized catalogs and guides for industry frameworks (OWASP, MITRE, NIST, CWE) | `references/` |
-| `Koality-Assured/ai-research-and-benchmarks` | Empirical benchmarks, comparative framework evaluations, and telemetry | `research/` |
-| `Koality-Assured/ai-harness-core` | Generic (non-domain-fed) wiki/harness template: same structure and optimizations as ai-router, without this instance’s security/tech corpus | ai-router wiki machinery (AGENTS, routing, generic `ai-tooling`/`scripts`/`supporting`/`docs` portable pages; `.harness/` included as engine), exported via `scripts/sync` with redaction — not a Python-only `.harness/` → `harness/` copy |
-
-## Multi-Repo Synchronization & Redaction Workflow
-
-Exporting changes from `ai-router` to downstream repositories is automated via `scripts/sync/sync_public_repos.py` with credential/token redaction:
-
-```bash
-# Source-cleanliness linter (exits 1 when source still contains matching patterns,
-# including documented internal paths that --dry-run will redact; not a leak gate)
-python scripts/sync/sync_public_repos.py --validate
-
-# Dry-run simulation of planned downstream exports (export leak gate)
-python scripts/sync/sync_public_repos.py --dest <export_dir> --dry-run --json
-
-# Execute live sanitized export to downstream repositories
-python scripts/sync/sync_public_repos.py --dest <export_dir>
-```
+This repository does not provide a shared publisher or sanitizer for other repositories. Make cross-repository changes in the destination checkout, follow its local contribution and security instructions, and use its feature-branch and pull-request workflow. Do not treat this page as an export or redaction procedure.
 
 ## Per-repo facts
 
