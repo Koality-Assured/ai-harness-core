@@ -17,7 +17,7 @@ Closest nested `AGENTS.md` wins for folder-local constraints. Nested files are *
 3. Shortcuts: [`routing/by-task.md`](./routing/by-task.md) (task matrix) or [`routing/skill-dispatch.md`](./routing/skill-dispatch.md) (skill catalog)
 4. Nearest nested `AGENTS.md` (loaded strictly JIT) — **not** that area’s `README.md`
 5. Dispatch via [`routing/skill-dispatch.md`](./routing/skill-dispatch.md) or [`routing/agent-dispatch.md`](./routing/agent-dispatch.md) per [Specialist dispatch](#specialist-dispatch) below (isolate if mutating; never execute specialist skill bodies in parent).
-6. Discover Markdown with `qmd search` / `qmd get`; structured files with ast-grep ([`supporting/qmd/`](./supporting/qmd/), [`supporting/ast-grep/`](./supporting/ast-grep/))
+6. QMD discovery: [`query pattern`](./supporting/qmd/query-pattern.md); structured files: ast-grep ([`supporting/ast-grep/`](./supporting/ast-grep/)).
 
 Project-as-a-whole names: [`naming-conventions.md`](./naming-conventions.md).
 Human overview only: [`README.md`](./README.md)
@@ -61,7 +61,7 @@ Before declaring done:
 1. **Source-area write-back (mandatory)** — Durable knowledge goes into the owning source area ([`routing/area-map.md`](./routing/area-map.md)). Tool recipes belong in [`supporting/`](./supporting/) (`supporting/<tool>/`). Memory and change-history are not substitutes.
 2. **Project memory checkpoint** — On unexpected errors, failure modes, or environment quirks, record the problem and recovery strategy in [`ai-tooling/memory/`](./ai-tooling/memory/) (`user/<git-identity>/` or `agent/<owner_agent_id>/`). Not a session log or research archive.
 3. **Change-history** — After material work, append via `python scripts/change-history/append_change_history.py` only (≤ ~150 tokens; no secrets).
-4. **Index consistency** — If structure, routing, script tags, or indexed Markdown moved, run `python scripts/qmd/refresh_qmd_index.py`.
+4. **Index consistency** — After indexed changes land on main, run `python scripts/qmd/refresh_qmd_index.py` from `scratch/qmd-main`.
 
 ### Security MUST
 
@@ -88,7 +88,7 @@ Spawn on the **current host’s** native model for the agent’s `model_tier` (d
 ### Cost layers (qmd, Headroom, ast-grep)
 
 Non-negotiable for this agent and every sub-agent. Skills cannot waive these.
-1. **Markdown via qmd** — `qmd search` then `qmd get`; no tree walks “to be sure”. Hybrid `qmd query` only when BM25 is empty. [`supporting/qmd/`](./supporting/qmd/)
+1. **Markdown via qmd** — Use detached `scratch/qmd-main`: fetch/fast-forward `origin/main`, then `qmd update` before search/get. Never use task worktrees. Freshness is authorized; collection changes are separate. See [`supporting/qmd/query-pattern.md`](supporting/qmd/query-pattern.md).
 2. **Structured files via ast-grep (Outline-first)** — inspect symbols with `ast-grep outline` and line-bounded reads (`StartLine`/`EndLine`) before edits; avoid dumping full files. [`supporting/ast-grep/`](./supporting/ast-grep/).
 3. **Compress bulky dumps** — Headroom when available; else summarize or truncate via `scripts/_lib/tool_output.py`. Keep structural facts after compress. [`supporting/headroom/`](./supporting/headroom/)
 4. **Measure** — `python scripts/cost-layers/validate_cost_layers.py` when asked for dry-run / savings / accuracy.
@@ -97,7 +97,7 @@ Non-negotiable for this agent and every sub-agent. Skills cannot waive these.
 
 ### Isolation (mutating work)
 
-Before create/edit for **new** work: `spawn_worktree.py check` → `add` → hand worktree to specialist. Disjoint areas may parallel; overlapping must not. Full SoT: [`ai-tooling/skills/isolate-work/SKILL.md`](ai-tooling/skills/meta/isolate-work/SKILL.md) and `python scripts/routing/spawn_worktree.py`.
+Before mutating, create a unique task worktree with `python scripts/routing/spawn_worktree.py create --slug <task>`. After authorized merge, preview `python scripts/cli/harness.py clean --pr <number>`; apply after checks pass. Apply archives it and unregisters it; files and branch remain. Never force-remove. See [`isolate-work`](ai-tooling/skills/meta/isolate-work/SKILL.md).
 
 ### Specialist dispatch
 
@@ -114,7 +114,7 @@ Before create/edit for **new** work: `spawn_worktree.py check` → `add` → han
 When introducing, registering, or decomposing new skills or agent tasks, agents MUST prioritize mapping to existing broad-sweeping Operators (`harness-operator`, `document-operator`, `research-operator`, `cloud-operator`, `security-tooling-operator`) or established true specialists before minting new micro-agents.
 - **Operator-first pairing**: New capabilities MUST be incorporated into the most logically relevant operator or expanded via existing skill parameters.
 - **Pairing maintenance priority**: Maintaining cohesive skill-to-agent pairings and keeping routing catalogs synchronized over time is a mandatory architectural priority.
-- **True specialist threshold**: Add a dedicated specialist only for a disjoint domain that does not fit an existing operator archetype. Prefer capabilities already defined in this repository's agent catalog.
+- **True specialist threshold**: Dedicated specialists MUST only be introduced for truly disjoint domains that cannot fit cleanly into an existing operator archetype (e.g. specialized game simulation, distinct art synthesis, or independent adversarial auditors). Full SoT: [`docs/guidance/agent-skill-pairing-discipline.md`](./docs/guidance/agent-skill-pairing-discipline.md).
 
 The parent is coordinator/validator: it coordinates, validates consistency, and verifies adherence to the user's goals. Isolate CLI and session-end gates are the parent’s normal path.
 
@@ -131,7 +131,7 @@ The parent is coordinator/validator: it coordinates, validates consistency, and 
 - External checkouts: follow *that* repo’s `AGENTS.md` / `CLAUDE.md`.
 - Branch discipline: feature branch → push branch → `gh pr create` → PR merge. Never push directly to default/protected branches (`main`/`master`). Mutating agent work uses `spawn_worktree.py`. No force-push unless human asks. All commit messages and PR titles MUST follow Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, etc. — [`references/conventional-commits/`](./references/conventional-commits/)).
 - Script discovery: [`scripts/script-index.md`](./scripts/script-index.md). Skill add/remove/rename: `python scripts/routing/generate_routing_index.py` (wrapper: `generate_skill_dispatch.py`); validate skills + `validate_router_structure.py`.
-- qmd refresh after indexed Markdown add/remove/rename: `python scripts/qmd/refresh_qmd_index.py`.
+- QMD refresh after indexed changes land on `main`: run from `scratch/qmd-main`.
 - Human-readable deliverables (docs, reports, proposals, research writeups, UI copy, diagrams): producing specialists apply anti-slop then humanizer on their own draft in-session ([`docs/anti-slop.md`](./docs/anti-slop.md)). Parent **MUST NOT** mint `document-operator` after return for that pass. Spawn `document-operator` only when anti-slop/humanizer *is* the user’s material request.
 
 ---
@@ -139,7 +139,7 @@ The parent is coordinator/validator: it coordinates, validates consistency, and 
 ## Medium
 
 - New folder: short human `README.md` + agent `AGENTS.md`; topic content = kebab-case tagged Markdown.
-- Prefer updating existing guidance over near-duplicates.
+- Prefer updating guidance over near-duplicates.
 - Nested `AGENTS.md` only when folder complexity requires it.
 - Prefer tagged scripts bound from skills.
 - Offer adversarial / second-pass review at decision points when a skill exists — offer, don’t silently run.

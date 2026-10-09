@@ -26,7 +26,7 @@ for _p in (str(_LIB_DIR), str(_SCRIPTS_DIR)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from areas import AreasYamlError, load_area_ids, load_area_records  # noqa: E402
+from areas import load_area_records  # noqa: E402
 from md import agent_paths, load_agent_record  # noqa: E402
 from paths import REPO_ROOT  # noqa: E402
 
@@ -36,6 +36,8 @@ from cli.provider_client import (  # noqa: E402
     ProviderError,
     normalize_provider,
 )
+
+SUPPORTED_PROVIDERS: tuple[str, ...] = ("anthropic", "openai", "gemini", "cursor")
 
 SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 CONVENTIONAL_COMMIT_PATTERN = re.compile(
@@ -98,26 +100,6 @@ def get_checkout_root(cwd: Path | None = None) -> Path:
     return target_cwd.resolve()
 
 
-def get_worktrees_dir(primary_root: Path | None = None) -> Path:
-    root = primary_root or get_primary_repo_root()
-    return root / "scratch" / "worktrees"
-
-
-def load_claims(primary_root: Path | None = None) -> list[dict[str, Any]]:
-    wt_dir = get_worktrees_dir(primary_root)
-    if not wt_dir.exists():
-        return []
-    claims = []
-    for path in sorted(wt_dir.glob("*.claim.json")):
-        try:
-            claim_data = json.loads(path.read_text(encoding="utf-8"))
-            if isinstance(claim_data, dict):
-                claims.append(claim_data)
-        except Exception:
-            claims.append({"slug": path.stem, "error": "invalid json", "path": str(path)})
-    return claims
-
-
 def run_git(args: list[str], cwd: Path | None = None, check: bool = True) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         ["git", *args],
@@ -129,85 +111,9 @@ def run_git(args: list[str], cwd: Path | None = None, check: bool = True) -> sub
     )
 
 
-def format_branch_name(slug: str, branch_type: str = "agent") -> str:
-    """Generate Conventional branch name."""
-    if branch_type == "feat":
-        return f"feat/{slug}"
-    today = dt.date.today().isoformat()
-    return f"agent/{today}-{slug}"
-
-
 def is_conventional_commit(msg: str) -> bool:
     """Validate whether a commit subject conforms to Conventional Commits."""
     return bool(CONVENTIONAL_COMMIT_PATTERN.match(msg.strip()))
-
-
-def worktree_delete_blocked(status_porcelain: str, commits_not_in_base: int) -> str | None:
-    """Return a refuse reason, or None when deletion is safe.
-
-    Untracked-only (`??`) and ignored (`!!`) lines do not block. Any other
-    porcelain status with a tracked change code blocks, as does
-    `commits_not_in_base > 0`.
-
-    Lines that are not valid `git status --porcelain` status pairs are ignored
-    so unrelated git stdout (e.g. branch listings) cannot false-positive.
-    """
-    porcelain_codes = set(" MADRCUT?!")
-    for line in (status_porcelain or "").splitlines():
-        if not line.strip():
-            continue
-        if len(line) < 2:
-            continue
-        xy = line[:2]
-        if not all(c in porcelain_codes for c in xy):
-            continue
-        if xy in ("??", "!!"):
-            continue
-        if xy == "  ":
-            continue
-        return "worktree has uncommitted tracked changes"
-    if commits_not_in_base > 0:
-        return (
-            f"worktree has {commits_not_in_base} commit(s) not contained in the base branch"
-        )
-    return None
-
-
-def _worktree_commits_not_in_base(wt_path: Path, base: str = "main") -> int:
-    try:
-        proc = run_git(["rev-list", "--count", f"{base}..HEAD"], cwd=wt_path)
-    except (OSError, subprocess.CalledProcessError) as exc:
-        detail = (getattr(exc, "stderr", None) or getattr(exc, "stdout", None) or str(exc)).strip()
-        raise RuntimeError(
-            f"could not compare worktree commits with base branch {base!r}: {detail}"
-        ) from exc
-
-    raw_count = (proc.stdout or "").strip()
-    try:
-        count = int(raw_count)
-    except ValueError as exc:
-        raise RuntimeError(
-            f"git rev-list returned an invalid commit count for base branch {base!r}: {raw_count!r}"
-        ) from exc
-    if count < 0:
-        raise RuntimeError(
-            f"git rev-list returned a negative commit count for base branch {base!r}: {count}"
-        )
-    return count
-
-
-def _inspect_worktree_delete_gate(wt_path: Path, base: str = "main") -> tuple[str | None, bool]:
-    if not wt_path.exists():
-        return None, False
-    try:
-        status = run_git(["status", "--porcelain"], cwd=wt_path)
-    except (OSError, subprocess.CalledProcessError) as exc:
-        detail = (getattr(exc, "stderr", None) or getattr(exc, "stdout", None) or str(exc)).strip()
-        raise RuntimeError(f"could not read worktree status: {detail}") from exc
-    commits = _worktree_commits_not_in_base(wt_path, base=base)
-    status_porcelain = status.stdout or ""
-    has_untracked = any(line[:2] == "??" for line in status_porcelain.splitlines())
-    return worktree_delete_blocked(status_porcelain, commits), has_untracked
 
 
 # --- Command Handlers ---
@@ -247,17 +153,18 @@ def cmd_status(args: argparse.Namespace) -> int:
         dirty_lines = []
         is_clean = False
 
-    # Active claims
-    claims = load_claims(primary_root)
-    enriched_claims = []
-    for c in claims:
-        claim_slug = c.get("slug", "")
-        claim_path_str = c.get("path", "")
-        claim_path = Path(claim_path_str) if claim_path_str else (get_worktrees_dir(primary_root) / claim_slug)
-        exists_on_disk = claim_path.exists()
-        item = dict(c)
-        item["exists_on_disk"] = exists_on_disk
-        enriched_claims.append(item)
+    # Worktrees are reported from Git's registration database, without area metadata.
+    try:
+        from routing.spawn_worktree import parse_worktrees  # noqa: E402
+
+        worktree_proc = run_git(["worktree", "list", "--porcelain"], cwd=primary_root, check=False)
+        if worktree_proc.returncode != 0:
+            raise RuntimeError(worktree_proc.stderr or "git worktree list failed")
+        worktrees = parse_worktrees(worktree_proc.stdout or "")
+        worktree_error = None
+    except Exception as exc:
+        worktrees = []
+        worktree_error = str(exc)
 
     active_harness = None
     try:
@@ -273,8 +180,10 @@ def cmd_status(args: argparse.Namespace) -> int:
             "branch": current_branch,
             "is_clean": is_clean,
             "uncommitted_files": dirty_lines,
-            "active_claims": enriched_claims,
+            "worktrees": worktrees,
         }
+        if worktree_error:
+            payload["worktrees_error"] = worktree_error
         if active_harness:
             payload["active_harness"] = active_harness
         print(json.dumps(payload, indent=2))
@@ -294,29 +203,22 @@ def cmd_status(args: argparse.Namespace) -> int:
         if len(dirty_lines) > 10:
             print(f"  ... and {len(dirty_lines) - 10} more")
 
-    print("\nActive Worktree Claims:")
-    if not enriched_claims:
-        print("  (no active claims)")
+    print("\nRegistered Git Worktrees:")
+    if not worktrees:
+        print("  (none found)")
     else:
-        for c in enriched_claims:
-            slug = c.get("slug", "unknown")
-            branch = c.get("branch", "unknown")
-            areas = ",".join(c.get("areas") or [])
-            agent = c.get("agent", "unknown")
-            status_tag = "OK" if c.get("exists_on_disk") else "STALE (missing folder)"
-            print(f"  [{status_tag}] {slug}")
-            print(f"         branch: {branch}")
-            print(f"         areas:  {areas}")
-            print(f"         agent:  {agent}")
-            print(f"         path:   {c.get('path')}")
+        for worktree in worktrees:
+            print(f"  {worktree.get('branch', '(detached)')}: {worktree.get('path')}")
+    if worktree_error:
+        print(f"  Error reading Git worktrees: {worktree_error}", file=sys.stderr)
 
     return 0
 
 
 def cmd_branch(args: argparse.Namespace) -> int:
     slug = args.slug.strip()
-    if not SLUG_PATTERN.match(slug):
-        print(f"error: slug must be kebab-case [a-z0-9-], got '{slug}'", file=sys.stderr)
+    if not SLUG_PATTERN.fullmatch(slug):
+        print(f"error: slug must be kebab-case [a-z0-9-], got {slug!r}", file=sys.stderr)
         return 2
 
     target_harness = getattr(args, "harness", None)
@@ -331,73 +233,14 @@ def cmd_branch(args: argparse.Namespace) -> int:
     else:
         primary_root = get_primary_repo_root()
 
-    # 1. Verify primary root tree is clean before branching
-    status_proc = run_git(["status", "--porcelain"], cwd=primary_root, check=False)
-    allow_dirty = getattr(args, "allow_dirty", False) or args.force
-    if status_proc.returncode == 0 and status_proc.stdout.strip():
-        if allow_dirty:
-            print("warning: primary repository has uncommitted changes (proceeding via --allow-dirty).", file=sys.stderr)
-        else:
-            print(
-                "error: primary repository has uncommitted changes. Stash or commit before branching (or pass --allow-dirty / --force).",
-                file=sys.stderr,
-            )
-            return 1
+    from routing.spawn_worktree import cmd_create  # noqa: E402
 
-    # 2. Determine target areas
-    areas_list: list[str] = []
-    if args.areas:
-        areas_list = [a.strip() for a in args.areas.split(",") if a.strip()]
-    elif args.agent:
-        # Infer default areas for agent
-        try:
-            records = load_area_records(primary_root)
-            areas_list = [r["id"] for r in records if r.get("default_agent") == args.agent]
-        except Exception:
-            areas_list = []
-
-    if not areas_list:
-        print("error: provide --areas (comma-separated top-level folders)", file=sys.stderr)
-        return 2
-
-    # Validate areas
-    try:
-        valid_areas = load_area_ids(primary_root)
-        unknown = [a for a in areas_list if a not in valid_areas]
-        if unknown:
-            print(f"error: unknown areas: {unknown} (from routing/areas.yaml)", file=sys.stderr)
-            return 2
-    except AreasYamlError as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return 2
-
-    # 3. Check for claim collisions
-    from routing.spawn_worktree import cmd_add, overlapping  # noqa: E402
-
-    active_claims = load_claims(primary_root)
-    hits = overlapping(areas_list, active_claims, ignore_slug=slug)
-    if hits and not args.force:
-        print("error: overlapping areas with active claims (pass --force to override):", file=sys.stderr)
-        for claim in hits:
-            print(f"  {claim.get('slug')} areas={claim.get('areas')} agent={claim.get('agent')}", file=sys.stderr)
-        return 3
-
-    # 4. Generate branch name
-    branch_type = getattr(args, "type", "agent") or "agent"
-    branch_name = args.branch if getattr(args, "branch", None) else format_branch_name(slug, branch_type)
-
-    # 5. Invoke spawn_worktree add
-    ret = cmd_add(
-        slug=slug,
-        areas=areas_list,
-        agent=args.agent or "harness-operator",
-        force=args.force,
-        dry_run=args.dry_run,
-        as_json=args.json,
-        branch=branch_name,
+    return cmd_create(
+        slug,
+        dry_run=getattr(args, "dry_run", False),
+        as_json=getattr(args, "json", False),
+        root=primary_root,
     )
-    return ret
-
 
 def cmd_agent(args: argparse.Namespace) -> int:
     target_harness = getattr(args, "harness", None)
@@ -505,13 +348,20 @@ def cmd_pr(args: argparse.Namespace) -> int:
 
     primary_root = get_primary_repo_root()
     checkout_root = get_checkout_root()
-    base_branch = args.base or "main"
 
     # 1. Identify current branch
     branch_proc = run_git(["branch", "--show-current"], cwd=checkout_root, check=False)
     current_branch = branch_proc.stdout.strip()
     if not current_branch or current_branch.startswith("detached-at-"):
         print("error: cannot create PR from detached HEAD. Please checkout a named branch first.", file=sys.stderr)
+        return 1
+
+    from routing.spawn_worktree import default_branch_name  # noqa: E402
+
+    try:
+        base_branch = args.base or default_branch_name(primary_root)
+    except (OSError, RuntimeError) as exc:
+        print(f"error: could not determine the repository default branch: {exc}", file=sys.stderr)
         return 1
     if current_branch == base_branch:
         print(f"error: cannot create PR from base branch '{base_branch}'. Checkout a feature or agent branch.", file=sys.stderr)
@@ -603,125 +453,22 @@ def cmd_pr(args: argparse.Namespace) -> int:
 
 
 def cmd_clean(args: argparse.Namespace) -> int:
+    apply_cleanup = getattr(args, "apply", False)
+    dry_run = getattr(args, "dry_run", False)
+    if apply_cleanup and dry_run:
+        print("error: --apply and --dry-run cannot be used together", file=sys.stderr)
+        return 2
+
     primary_root = get_primary_repo_root()
-    claims = load_claims(primary_root)
+    from routing.spawn_worktree import cmd_cleanup  # noqa: E402
 
-    # Determine merged branches
-    try:
-        merged_proc = run_git(["branch", "--merged", "main"], cwd=primary_root, check=False)
-        merged_branches = {
-            re.sub(r"^[*+\s]+", "", b).strip()
-            for b in merged_proc.stdout.splitlines()
-            if b.strip()
-        }
-    except Exception:
-        merged_branches = set()
-
-    stale_threshold = args.stale_hours
-    if (args.stale or args.auto) and stale_threshold <= 0:
-        stale_threshold = 24.0
-
-    # Classify claims
-    targets: list[str] = []
-    now_utc = dt.datetime.now(dt.timezone.utc)
-    for c in claims:
-        slug = c.get("slug", "")
-        branch = c.get("branch", "")
-        c_path = Path(c.get("path", "")) if c.get("path") else (get_worktrees_dir(primary_root) / slug)
-        is_stale = not c_path.exists()
-        if not is_stale and stale_threshold > 0:
-            created_str = c.get("created_at") or c.get("created")
-            if created_str:
-                try:
-                    c_dt = dt.datetime.fromisoformat(created_str.replace("Z", "+00:00"))
-                    if (now_utc - c_dt).total_seconds() / 3600.0 >= stale_threshold:
-                        is_stale = True
-                except Exception:
-                    pass
-            exp_str = c.get("expires_at")
-            if exp_str:
-                try:
-                    exp_dt = dt.datetime.fromisoformat(exp_str.replace("Z", "+00:00"))
-                    if now_utc > exp_dt:
-                        is_stale = True
-                except Exception:
-                    pass
-
-        is_merged = branch in merged_branches
-
-        if args.slug and slug == args.slug:
-            targets.append(slug)
-        elif args.all:
-            targets.append(slug)
-        elif args.auto and (is_merged or is_stale):
-            targets.append(slug)
-        elif args.merged and is_merged:
-            targets.append(slug)
-        elif (args.stale or args.stale_hours > 0) and is_stale:
-            targets.append(slug)
-
-    if not args.slug and not args.all and not args.merged and not args.stale and not args.auto and args.stale_hours <= 0:
-        # Display candidates
-        print("=== Worktree Cleanup Candidates ===")
-        if not claims:
-            print("  (no active worktrees or claims)")
-            return 0
-        for c in claims:
-            slug = c.get("slug", "")
-            branch = c.get("branch", "")
-            c_path = Path(c.get("path", "")) if c.get("path") else (get_worktrees_dir(primary_root) / slug)
-            is_stale = not c_path.exists()
-            is_merged = branch in merged_branches
-            status_tags = []
-            if is_stale:
-                status_tags.append("STALE")
-            if is_merged:
-                status_tags.append("MERGED")
-            if not status_tags:
-                status_tags.append("ACTIVE")
-            print(f"  [{'/'.join(status_tags)}] {slug} ({branch})")
-        print("\nSpecify --merged, --stale, --stale-hours <N>, --auto, --slug <slug>, or --all to clean.")
-        return 0
-
-    if not targets:
-        print("No matching worktrees found to clean.")
-        return 0
-
-    from routing.spawn_worktree import cmd_remove, worktree_path  # noqa: E402
-
-    print(f"Cleaning {len(targets)} worktree(s): {', '.join(targets)}")
-    blocked_any = False
-    for slug in targets:
-        wt_path = worktree_path(slug)
-        try:
-            reason, has_untracked = _inspect_worktree_delete_gate(wt_path, base="main")
-        except (OSError, RuntimeError, subprocess.CalledProcessError) as exc:
-            reason = f"could not verify deletion safety: {exc}"
-            has_untracked = False
-        if reason and not args.force:
-            print(
-                f"error: refusing to remove '{slug}': {reason} (pass --force to override)",
-                file=sys.stderr,
-            )
-            blocked_any = True
-            continue
-        if reason and args.force:
-            print(f"warning: forcing remove of '{slug}' despite: {reason}", file=sys.stderr)
-        # Git refuses even untracked-only worktrees unless --force is passed.
-        # The app gate has already cleared tracked changes and unmerged commits.
-        remove_status = cmd_remove(slug=slug, dry_run=args.dry_run, force=args.force or has_untracked)
-        if remove_status != 0:
-            print(
-                f"error: failed to remove worktree '{slug}' (exit status {remove_status})",
-                file=sys.stderr,
-            )
-            blocked_any = True
-
-    return 1 if blocked_any else 0
-
-
-SUPPORTED_PROVIDERS: list[str] = ["anthropic", "cursor", "gemini", "openai"]
-
+    return cmd_cleanup(
+        args.branch,
+        args.pr,
+        dry_run=not apply_cleanup,
+        as_json=getattr(args, "json", False),
+        root=primary_root,
+    )
 
 def cmd_auth(args: argparse.Namespace) -> int:
     if args.auth_cmd == "login":
@@ -1562,7 +1309,6 @@ def build_parser() -> argparse.ArgumentParser:
     shared = argparse.ArgumentParser(add_help=False)
     shared.add_argument("--json", action="store_true", help="Format output as machine-readable JSON")
     shared.add_argument("--dry-run", action="store_true", help="Simulate operation without mutating state")
-    shared.add_argument("--force", action="store_true", help="Override safety checks")
     shared.add_argument("--harness", help="Target specific registered domain harness by ID or path")
 
     parser = argparse.ArgumentParser(
@@ -1573,16 +1319,11 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="cmd")
 
     # status
-    sub.add_parser("status", help="Inspect git branch, cleanliness, and active worktree claims", parents=[shared])
+    sub.add_parser("status", help="Inspect git branch, cleanliness, and registered worktrees", parents=[shared])
 
     # branch
-    p_branch = sub.add_parser("branch", help="Create isolated git worktree and area claim", parents=[shared])
-    p_branch.add_argument("slug", help="Kebab-case slug for the worktree and branch")
-    p_branch.add_argument("--areas", help="Comma-separated top-level directory claims")
-    p_branch.add_argument("--agent", default="harness-operator", help="Owner agent ID")
-    p_branch.add_argument("--type", choices=["agent", "feat"], default="agent", help="Branch prefix type")
-    p_branch.add_argument("--branch", help="Explicit branch name override")
-    p_branch.add_argument("--allow-dirty", action="store_true", help="Allow branching even if primary repository has uncommitted changes")
+    p_branch = sub.add_parser("branch", help="Create a unique task worktree and branch", parents=[shared])
+    p_branch.add_argument("slug", help="Kebab-case task name")
 
     # agent
     p_agent = sub.add_parser("agent", help="Inspect available agents or view detailed agent spec", parents=[shared])
@@ -1590,19 +1331,24 @@ def build_parser() -> argparse.ArgumentParser:
 
     # pr
     p_pr = sub.add_parser("pr", help="Run preflight validations, verify commits, and open PR", parents=[shared])
-    p_pr.add_argument("--base", default="main", help="Target base branch (default: main)")
+    p_pr.add_argument("--base", default=None, help="Target base branch (defaults to the repository's GitHub default)")
     p_pr.add_argument("--title", help="PR title (defaults to last commit message)")
     p_pr.add_argument("--body", help="PR description markdown")
     p_pr.add_argument("--draft", action="store_true", help="Create as a draft PR")
 
     # clean
-    p_clean = sub.add_parser("clean", help="Prune merged worktrees and delete stale claims", parents=[shared])
-    p_clean.add_argument("--slug", help="Specific worktree slug to clean")
-    p_clean.add_argument("--merged", action="store_true", help="Clean all merged worktrees")
-    p_clean.add_argument("--stale", action="store_true", help="Clean all stale claims")
-    p_clean.add_argument("--stale-hours", type=float, default=0.0, help="Prune claims older than specified hours")
-    p_clean.add_argument("--auto", action="store_true", help="Automatically prune merged and stale worktrees non-interactively")
-    p_clean.add_argument("--all", action="store_true", help="Clean all worktrees and claims")
+    p_clean = sub.add_parser(
+        "clean",
+        help="Preview verified worktree archiving by default; --apply retains an archive and unregisters the worktree",
+        parents=[shared],
+    )
+    p_clean.add_argument("--branch", help="Task branch; omit to derive it from the merged PR")
+    p_clean.add_argument("--pr", type=int, required=True, help="Merged PR number in this repository")
+    p_clean.add_argument(
+        "--apply",
+        action="store_true",
+        help="Archive checkout and Git metadata, then unregister; the archive remains on disk",
+    )
 
     # auth
     p_auth = sub.add_parser("auth", help="Manage authentication and secure credential vaults", parents=[shared])
@@ -1629,6 +1375,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_reg.add_argument("--name", help="Friendly name for the harness")
     p_reg.add_argument("--domain", help="Explicit domain description")
     p_reg.add_argument("--active", action="store_true", help="Set as active harness immediately")
+    p_reg.add_argument("--force", action="store_true", help="Replace an existing harness registration")
 
     # deregister
     p_dereg = sub.add_parser("deregister", aliases=["rm", "remove"], help="Deregister a harness from the local catalog", parents=[shared])

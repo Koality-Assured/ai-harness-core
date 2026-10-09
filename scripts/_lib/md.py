@@ -216,7 +216,11 @@ def skill_paths(root: Path) -> list[Path]:
     if not skills.exists():
         return out
     for path in sorted(skills.rglob("SKILL.md")):
-        if any(part.startswith(".") for part in path.parts):
+        try:
+            relative_path = path.relative_to(root)
+        except ValueError:
+            continue
+        if any(part.startswith(".") for part in relative_path.parts):
             continue
         out.append(path)
     return out

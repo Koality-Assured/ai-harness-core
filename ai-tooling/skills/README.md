@@ -32,6 +32,7 @@ Human index (not agent SoT):
 | [`deep-research/`](./meta/deep-research/) | research-operator | mutate |
 | [`doc-builder/`](./meta/doc-builder/) | document-operator | mutate |
 | [`downstream-repo-update/`](./meta/downstream-repo-update/) | harness-operator | mutate |
+| [`excalidraw-diagram/`](./reporting/excalidraw-diagram/) | artifact-agent | mutate |
 | [`executive-report/`](./reporting/executive-report/) | document-operator | mutate |
 | [`foundation-site/`](./reporting/foundation-site/) | document-operator | mutate |
 | [`framework-mapper/`](./reporting/framework-mapper/) | document-operator | mutate |
@@ -76,6 +77,7 @@ Human index (not agent SoT):
 | [`sync-downstream-repos/`](./meta/sync-downstream-repos/) | harness-operator | mutate |
 | [`tabler-dashboard/`](./reporting/tabler-dashboard/) | document-operator | mutate |
 | [`threat-model/`](./reporting/threat-model/) | security-tooling-operator | mutate |
+| [`tool-capture/`](./reporting/tool-capture/) | artifact-agent | mutate |
 | [`router-structure/`](./meta/router-structure/) | document-operator | read-only |
 | [`slack-message/`](./slack/slack-message/) | document-operator | mutate |
 | [`slack-webhook/`](./slack/slack-webhook/) | document-operator | mutate |

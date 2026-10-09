@@ -9,7 +9,7 @@ generator: manual
 
 Fast-path task-to-entrypoint mapping for common operational patterns. Match this table for 1-hop intent resolution, then load the target area's `AGENTS.md` strictly JIT.
 
-When work requires mutating the repository, run worktree isolation (`python scripts/routing/spawn_worktree.py check --areas <csv> --json` -> `add`) before dispatching the specialist.
+When work requires mutating the repository, create one unique Git worktree and branch for the task with `python scripts/routing/spawn_worktree.py create --slug <task>` before dispatching the specialist. Concurrent tasks may edit overlapping areas; use ordinary Git and PR review to resolve collisions.
 
 ## Task dispatch matrix
 
@@ -18,19 +18,19 @@ When work requires mutating the repository, run worktree isolation (`python scri
 | **Adversarial audit & code review** | `scratch/` | [`detailed-activity`](../ai-tooling/agents/detailed-activity/AGENT.md) | [`antagonistic-review`](../ai-tooling/skills/meta/antagonistic-review/SKILL.md) | `python scripts/docs/validate_structure_fast.py --all` |
 | **CWE / ATT&CK code-review report** | `results/reports/code-review/` | [`artifact-agent`](../ai-tooling/agents/artifact-agent/AGENT.md) | [`code-review-report`](../ai-tooling/skills/reporting/code-review-report/SKILL.md) | `python scripts/results/build_document.py` |
 | **Author / revise standards or docs** | `docs/standards/` | [`documentation-ops`](../ai-tooling/agents/documentation-ops/AGENT.md) | [`doc-builder`](../ai-tooling/skills/meta/doc-builder/SKILL.md) | `python scripts/docs/validate_router_structure.py` |
-| **US primary-law research or court documents** | Not included in this generic template | `none` | Use the destination's local legal references and review process | This repository does not include a legal corpus or legal specialist; report that capability gap when relevant |
+| **US primary-law locate, compare, interpret, or advisory court draft** | `references/us-law/` | [`document-operator`](../ai-tooling/agents/document-operator/AGENT.md) or [`research-operator`](../ai-tooling/agents/research-operator/AGENT.md) | Skill from the table in [`us-law-reference-use`](../docs/standards/us-law-reference-use.md) | `qmd get` the jurisdiction page; a 200 shell, challenge, or maintenance page is a failed check |
 | **Markdown lint & format cleanup** | `docs/`, `references/` | [`documentation-ops`](../ai-tooling/agents/documentation-ops/AGENT.md) | [`markdownlint`](../ai-tooling/skills/meta/markdownlint/SKILL.md) | `python scripts/docs/run_markdownlint.py` |
 | **Deep research & empirical inquiry** | `research/`, `results/research/` | [`detailed-activity`](../ai-tooling/agents/detailed-activity/AGENT.md) | [`deep-research`](../ai-tooling/skills/meta/deep-research/SKILL.md) | Primary source verification against `references/valid-sources/` |
 | **Fast git inspection & local branch sync** | Local checkout | [`git-fast-operator`](../ai-tooling/agents/git-fast-operator/AGENT.md) | [`git-basics`](../ai-tooling/skills/git/git-basics/SKILL.md) | `git status`, `git diff` |
 | **GitHub PRs, issues, and remotes** | Remote repository | [`github-ops`](../ai-tooling/agents/github-ops/AGENT.md) | [`github-workflow`](../ai-tooling/skills/git/github-workflow/SKILL.md) | `gh auth status`, `gh pr status` |
-| **Worktree isolation (mutate)** | `scratch/worktrees/` | [`router`](../ai-tooling/agents/router/AGENT.md) *(in-parent)* | [`isolate-work`](../ai-tooling/skills/meta/isolate-work/SKILL.md) | `python scripts/routing/spawn_worktree.py check --areas <csv> --json` |
+| **Worktree isolation (mutate)** | `scratch/worktrees/` | [`router`](../ai-tooling/agents/router/AGENT.md) *(in-parent)* | [`isolate-work`](../ai-tooling/skills/meta/isolate-work/SKILL.md) | `python scripts/routing/spawn_worktree.py create --slug <task>`; after authorized merge, preview `python scripts/cli/harness.py clean --pr <number>` and apply if all checks pass; archive remains in `<common Git dir>/ai-router-worktree-archives/` |
 | **Cost layers & context dry runs** | `supporting/`, `results/cost-layers/` | [`router-maintenance`](../ai-tooling/agents/router-maintenance/AGENT.md) | [`cost-layer-dry-run`](../ai-tooling/skills/cost-layers/cost-layer-dry-run/SKILL.md) | `python scripts/cost-layers/validate_cost_layers.py --dry-run` |
 | **qmd search & collection health** | `supporting/qmd/` | [`qmd-ops`](../ai-tooling/agents/qmd-ops/AGENT.md) | [`qmd-usage`](../ai-tooling/skills/meta/qmd-usage/SKILL.md) | `python scripts/qmd/validate_qmd_retrieval.py` |
 | **ast-grep structural fact extraction** | Codebase symbols | [`router-maintenance`](../ai-tooling/agents/router-maintenance/AGENT.md) | [`ast-grep`](../ai-tooling/skills/cost-layers/ast-grep/SKILL.md) | `python scripts/cost-layers/validate_ast_grep.py` |
 | **Author / dry-run new skills** | `ai-tooling/skills/` | [`ai-tooling-ops`](../ai-tooling/agents/ai-tooling-ops/AGENT.md) | [`skill-builder`](../ai-tooling/skills/meta/skill-builder/SKILL.md) | `python scripts/ai-tooling/validate_skill.py` |
 | **Author / revise agent definitions** | `ai-tooling/agents/` | [`ai-tooling-ops`](../ai-tooling/agents/ai-tooling-ops/AGENT.md) | [`agent-builder`](../ai-tooling/skills/meta/agent-builder/SKILL.md) | `python scripts/ai-tooling/validate_agent.py` |
-| **Cross-repository changes** | Target destination repository | `none` | Follow that repository's contribution and release process | This repository does not include a shared multi-repository publisher; use the destination's normal feature-branch and pull-request workflow. |
-| **Scratch & worktree hygiene** | `scratch/` | [`router-maintenance`](../ai-tooling/agents/router-maintenance/AGENT.md) | [`scratch-cleanup`](../ai-tooling/skills/meta/scratch-cleanup/SKILL.md) | `python scripts/routing/spawn_worktree.py list --json` |
+| **Public downstream repo sync** | Public slice repos | [`repo-sync-ops`](../ai-tooling/agents/repo-sync-ops/AGENT.md) | [`sync-downstream-repos`](../ai-tooling/skills/meta/sync-downstream-repos/SKILL.md) | `python scripts/sync/sync_public_repos.py --dry-run` |
+| **Scratch & worktree hygiene** | `scratch/` | [`router-maintenance`](../ai-tooling/agents/router-maintenance/AGENT.md) | [`scratch-cleanup`](../ai-tooling/skills/meta/scratch-cleanup/SKILL.md) | `python scripts/routing/spawn_worktree.py list --json`; preview merged worktrees with `python scripts/cli/harness.py clean --pr <number>`, then add `--apply` only if all checks pass; preserve retained archives |
 
 ---
 

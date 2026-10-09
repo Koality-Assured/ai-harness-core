@@ -4,7 +4,7 @@ Catalog of vetted, authoritative primary sources, official vendor documentation 
 
 ## Purpose
 
-Provides machine-discoverable and human-readable registries of authoritative primary sources. Verify claims against the cited source, identify when it was checked, distinguish evidence from inference, and state material limitations.
+Provides machine-discoverable and human-readable registries of Tier 1 and Tier 2 primary sources for agent research, validation, and reference maintenance per [`../../docs/standards/research-and-empirical-validation.md`](../../docs/standards/research-and-empirical-validation.md).
 
 ## Topic Pages
 

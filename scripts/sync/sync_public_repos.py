@@ -1,6 +1,4 @@
-"""AI Router-only internal exporter; not a standalone core command.
-
-script_index: false
+"""Multi-repo synchronization and sanitization/redaction engine for public exports.
 
 tags: [sync, security, export]
 routing_hints: [sync, redaction, multi-repo, export, sanitize, wiki-template]
@@ -723,6 +721,7 @@ INTERNAL_ONLY_DOMAINS: set[str] = {
     "scripts/cloud",
     "scripts/confluence",
     "scripts/slack",
+    "scripts/auth0",
     "scripts/qmd",
     "scripts/references",
     "scripts/research",
@@ -744,7 +743,9 @@ INTERNAL_ONLY_DOMAINS: set[str] = {
     "supporting/cloudflare",
     "supporting/noir",
     "supporting/mermaid",
+    "supporting/diagramming",
     "supporting/slack",
+    "supporting/auth0",
     "supporting/google",
     "supporting/confluence",
     "supporting/qmd",

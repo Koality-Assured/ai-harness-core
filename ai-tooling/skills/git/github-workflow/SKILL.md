@@ -28,7 +28,7 @@ Local worktree spawn (`isolate-work`). Authoring Markdown standards (`doc-builde
 
 ## Criticality
 
-High for shared remotes: feature branch → push branch → PR → merge. **Never push directly to default/protected branches (`main`/`master`)** and never merge locally into default branches before pushing. All commit messages and PR titles MUST strictly follow Conventional Commits format (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, etc. — `references/conventional-commits/` (`../../../../references/conventional-commits/`; ai-router-only, optional provenance)). Never force-push protected default branches unless the human explicitly requests it.
+High for shared remotes: unique task branch → push branch → PR → merge → verified worktree cleanup. **Never push directly to default/protected branches (`main`/`master`)** and never merge locally into default branches before pushing. All commit messages and PR titles MUST strictly follow Conventional Commits format (`feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, etc. — `references/conventional-commits/` (`../../../../references/conventional-commits/`; ai-router-only, optional provenance)). Never force-push protected default branches unless the human explicitly requests it.
 
 ## Source of truth
 
@@ -44,15 +44,20 @@ High for shared remotes: feature branch → push branch → PR → merge. **Neve
 
 1. `gh auth status` before API calls.
 2. Prefer `gh` over raw curl against api.github.com.
-3. PRs: push with `-u` if needed, then `gh pr create` with a real summary and test plan.
-4. Conventional Commits subjects — `references/conventional-commits/` (`../../../../references/conventional-commits/`; ai-router-only, optional provenance).
-5. Record clone/remote facts in the relevant `projects/` spec, not in this skill.
+3. PRs: push with `-u` if needed, then `gh pr create` with a real summary and test plan. `harness pr` creates the PR; it does not merge it.
+4. Only after an authorized `gh pr merge` exits successfully, preview that PR with `python scripts/cli/harness.py clean --pr <number>`. When the preview verifies the exact PR-to-worktree association, merged default-branch reachability, and no tracked, untracked, or ignored data, immediately apply with `python scripts/cli/harness.py clean --pr <number> --apply`.
+5. Apply first journals `refs/ai-router/worktree-archives/pr-<number>/<head-sha>` to keep the exact PR head commit reachable even if the reusable local branch is later deleted and reflogs expire. It then moves the checkout and its exact Git admin metadata under `<common Git dir>/ai-router-worktree-archives/`, detaches the archived checkout at the PR's exact head SHA, unregisters only that worktree, and retains the archive and local branch. Keep the persistent ref and archive together until they are explicitly cleaned up. The recovery manifest binds the PR, merge SHA, head SHA, branch, ref, and original/archive paths; process interruptions resume only from verified journal state. Power-loss durability is not guaranteed because directory-entry fsync is not portable across supported platforms. It never uses `git worktree remove`, force removal, or recursive deletion. Apply is blocked for UNC/network drives, unapproved Linux filesystem types (including network and FUSE filesystems), cross-mount paths, and platforms where local atomic-rename semantics cannot be verified. If preview or apply is blocked or ambiguous, preserve the checkout/archive and report why; do not sweep unrelated worktrees. A PR merged outside this authorized flow gets preview only until merge authorization is established.
+6. Conventional Commits subjects — `references/conventional-commits/` (`../../../../references/conventional-commits/`; ai-router-only, optional provenance).
+7. Record clone/remote facts in the relevant `projects/` spec, not in this skill.
 
 ## Dry run
 
 ```bash
 gh auth status
 gh repo view
+python scripts/cli/harness.py clean --pr <number>
+# Apply only when the preview passes all checks.
+python scripts/cli/harness.py clean --pr <number> --apply
 ```
 
 Do not `git push` or `gh pr create` in a dry run.
@@ -65,4 +70,4 @@ No tokens in Markdown or prompts. OIDC over static cloud keys in Actions. Treat 
 
 ## Completion gates
 
-Return the PR URL. Change-history if the human asked for repo-side provenance. Do not update GitHub from a specialist if the parent lacked human permission to push.
+Return the PR URL, archive path, recovery-manifest path, and cleanup result. After an authorized merge succeeds, apply automatically when preview passes. If blocked or ambiguous, preserve the checkout and report why. Change-history if the human asked for repo-side provenance. Do not update GitHub from a specialist if the parent lacked human permission to push.

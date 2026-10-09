@@ -28,6 +28,7 @@ Every run uses `results/<family>/<topic-or-slug>/<YYYY-MM-DD>/`. Typed families 
 | as-code | `results/as-code/<type>/<topic>/<date>/` |
 | cost-layers | `results/cost-layers/<slug>/<date>/` |
 | benchmarks | `results/benchmarks/<suite>/<date>/` |
+| captures | `results/captures/<topic>/<date>/` — or beside the document or README they attach to |
 
 Report `<type>` values: `executive`, `proposal`, `corpus-draft`, `guidance-draft`, `code-review`, `framework-map`.
 

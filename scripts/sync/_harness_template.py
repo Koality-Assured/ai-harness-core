@@ -223,6 +223,7 @@ HARNESS_TEMPLATE_KEEP_TEST_FILES: frozenset[str] = frozenset(
         "test_pacing.py",
         "test_pretty_docs_security.py",
         "test_qmd_preflight.py",
+        "test_run_agent_isolated.py",
         "test_skill_graph.py",
         "test_subagent_context_config.py",
         "test_validate_agent.py",
@@ -320,6 +321,7 @@ HARNESS_TEMPLATE_KEEP_SUPPORTING_DIRS: frozenset[str] = frozenset(
         "github",
         "powershell",
         "mermaid",
+        "diagramming",
         "benchmarks",
     }
 )
@@ -480,7 +482,7 @@ Embed the core engine directly into an existing software project to give AI codi
    python scripts/harness_init.py --target /path/to/target-repo
    ```
 2. Configure provider thresholds and adapter paths in `config/harness.config.json`.
-3. Leverage `.harness/` Python adapters for worktree sandboxing, prompt cache breakpoint planning, and Headroom compression.
+3. Use Git worktrees for task isolation as documented by the destination repository; leverage `.harness/` adapters for prompt-cache planning, Headroom compression, and tool integrations.
 
 ### Core ↔ spoke protocol
 Domain routers are **spokes**. `ai-harness-core` is the generic **core**.
@@ -511,7 +513,6 @@ ai-harness-core/
 │   └── memory/               # Checkpoint partitions (user/, agent/, model/)
 ├── .harness/                 # Embeddable core engine (kept as .harness/, not harness/)
 │   ├── config.py             # Config manifest loader and schema validator
-│   ├── isolation/worktree.py # Concurrency-safe Git worktree sandbox manager
 │   ├── a2a/protocol.py       # Sandboxed A2A protocol (8-exchange budget & envelope validation)
 │   ├── cache/manager.py      # Multi-vendor prompt caching (Anthropic, OpenAI, Gemini)
 │   ├── adapters/             # Tool adapters (qmd, ast_grep, headroom)
@@ -575,7 +576,8 @@ The harness architecture integrates four core operational layers:
 
 ### 4. Sandboxed Worktree Isolation & Clean-Slate Delegation
 * **Git Worktree Isolation** (`scripts/routing/spawn_worktree.py`):
-  * Mutating tasks run in isolated worktrees (`scratch/worktrees/<slug>`) on dedicated feature branches, preventing dirty-state contamination.
+  * Every mutating task gets a unique worktree (`scratch/worktrees/<task-id>`) and `codex/<task-id>` branch, so concurrent tasks can edit overlapping areas independently.
+  * Post-merge cleanup verifies the PR merged into the default branch and its merge commit is reachable there; tracked, untracked, or ignored local data blocks removal.
 * **Parent Discovery Bound**:
   * The orchestrator stops context reading once the skill owner agent is identified; specialists spawn with a clean context slate.
 * **Structured Result Envelope**:
@@ -1048,6 +1050,14 @@ def harness_template_prune_dest_leftovers(dest_root: Path) -> list[str]:
             if ref_dir.is_dir() and (ref_dir.name in HARNESS_TEMPLATE_DROP_REFERENCE_FAMILIES or ref_dir.name not in HARNESS_TEMPLATE_KEEP_REFERENCE_FAMILIES):
                 shutil.rmtree(ref_dir)
                 pruned.append(f"references/{ref_dir.name}")
+
+    # Prune dropped test files
+    tests_root = dest_root / "scripts" / "tests"
+    if tests_root.is_dir():
+        for test_file in sorted(tests_root.iterdir()):
+            if test_file.is_file() and not script_test_is_kept(test_file.name):
+                test_file.unlink()
+                pruned.append(f"scripts/tests/{test_file.name}")
 
     return pruned
 

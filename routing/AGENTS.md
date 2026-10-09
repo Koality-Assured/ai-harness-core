@@ -24,7 +24,7 @@ The orchestrating session is responsible for scoping the task, selecting the rou
 - **Direct execution is permitted ONLY for:**
   1. Trivial read-only checks.
   2. Tasks without a suitable defined specialist agent.
-  3. Coordinator chores: running `python scripts/routing/spawn_worktree.py` check/add/remove (`isolate-work` parent path), session-end memory checkpoints, change-history script appends, and index regeneration.
+  3. Coordinator chores: running `python scripts/routing/spawn_worktree.py` create/list/cleanup (`isolate-work` parent path), session-end memory checkpoints, change-history script appends, and index regeneration.
 - **Prohibition:** The orchestrator must not duplicate work already delegated or load specialist skill bodies into parent context to "just do it".
 
 ## Standard execution algorithm
@@ -72,11 +72,11 @@ Rebuild after new folder types or skills: edit [`areas.yaml`](./areas.yaml) if n
 
 ## Isolate then spawn
 
-`python scripts/routing/spawn_worktree.py check --areas <csv> --json` then `add`. Procedure: [`../ai-tooling/skills/isolate-work/SKILL.md`](../ai-tooling/skills/meta/isolate-work/SKILL.md).
+`python scripts/routing/spawn_worktree.py create --slug <task>` creates one unique branch and worktree per meaningful task; use `list` to inspect Git registrations. After an authorized merge, preview with `python scripts/cli/harness.py clean --pr <number>` and apply automatically only if every check passes; apply retains checkout and Git admin metadata in `<common Git dir>/ai-router-worktree-archives/` while unregistering the exact worktree. See [`isolate-work`](../ai-tooling/skills/meta/isolate-work/SKILL.md).
 
 ## One-liners
 
-- qmd: `qmd search --format json --min-score 0.5 -n 5 "<need>"` then `qmd get`
+- qmd: use the persistent detached QMD source at `scratch/qmd-main` (or its registered unique-suffix replacement); fetch/fast-forward it to `origin/main`, run `qmd update`, then search/get. Never use a task worktree index. See [`query-pattern`](../supporting/qmd/query-pattern.md)
 - Scripts: [`../scripts/script-index.md`](../scripts/script-index.md)
 - Structured files: ast-grep. Bulky dumps: Headroom.
 

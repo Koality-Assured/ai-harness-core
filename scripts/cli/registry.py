@@ -145,7 +145,7 @@ def infer_harness_domain(repo_root: Path) -> str:
 
 
 def inspect_harness(repo_path: Path) -> dict[str, Any]:
-    """Inspect a local repository and extract live metadata (branch, claims, areas)."""
+    """Inspect a local repository and extract live metadata (branch, worktrees, areas)."""
     resolved = repo_path.resolve()
     exists = resolved.is_dir()
 
@@ -156,7 +156,6 @@ def inspect_harness(repo_path: Path) -> dict[str, Any]:
         "branch": "(unknown)",
         "status": "MISSING" if not exists else "UNKNOWN",
         "worktrees_count": 0,
-        "claims_count": 0,
         "areas_count": 0,
         "domain": infer_harness_domain(resolved) if exists else "Unknown",
     }
@@ -217,13 +216,11 @@ def inspect_harness(repo_path: Path) -> dict[str, Any]:
         except Exception:
             info["status"] = "UNKNOWN"
 
-    # Count claims & worktrees
-    claims_dir = resolved / "scratch" / "worktrees"
-    if claims_dir.is_dir():
+    # Count task checkout directories under the configured scratch worktree root.
+    worktrees_dir = resolved / "scratch" / "worktrees"
+    if worktrees_dir.is_dir():
         try:
-            claims = list(claims_dir.glob("*.claim.json"))
-            info["claims_count"] = len(claims)
-            wts = [d for d in claims_dir.iterdir() if d.is_dir() and not d.name.startswith(".")]
+            wts = [d for d in worktrees_dir.iterdir() if d.is_dir() and not d.name.startswith(".")]
             info["worktrees_count"] = len(wts)
         except Exception:
             pass

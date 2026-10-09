@@ -25,7 +25,7 @@ for _p in (str(_SCRIPTS), str(_LIB)):
         sys.path.insert(0, _p)
 
 import cli.harness as harness_module  # noqa: E402
-from routing.spawn_worktree import cmd_remove as remove_worktree  # noqa: E402
+from routing.spawn_worktree import WORKTREE_BRANCH_RE, _new_worktree_identity  # noqa: E402
 
 from cli.harness import (  # noqa: E402
     SLUG_PATTERN,
@@ -34,9 +34,7 @@ from cli.harness import (  # noqa: E402
     cmd_branch,
     cmd_clean,
     cmd_status,
-    format_branch_name,
     is_conventional_commit,
-    load_claims,
     main,
 )
 
@@ -56,26 +54,14 @@ class TestHarnessArgParsing(unittest.TestCase):
         args = self.parser.parse_args(["branch", "my-slug"])
         self.assertEqual(args.cmd, "branch")
         self.assertEqual(args.slug, "my-slug")
-        self.assertEqual(args.agent, "harness-operator")
-        self.assertEqual(args.type, "agent")
-        self.assertFalse(args.force)
         self.assertFalse(args.dry_run)
+        self.assertFalse(args.json)
 
     def test_branch_parser_custom(self) -> None:
-        args = self.parser.parse_args([
-            "branch", "feature-x",
-            "--areas", "scripts,docs",
-            "--agent", "router",
-            "--type", "feat",
-            "--force",
-            "--dry-run",
-        ])
-        self.assertEqual(args.slug, "feature-feature-x" if False else "feature-x")
-        self.assertEqual(args.areas, "scripts,docs")
-        self.assertEqual(args.agent, "router")
-        self.assertEqual(args.type, "feat")
-        self.assertTrue(args.force)
+        args = self.parser.parse_args(["branch", "feature-x", "--dry-run", "--json"])
+        self.assertEqual(args.slug, "feature-x")
         self.assertTrue(args.dry_run)
+        self.assertTrue(args.json)
 
     def test_agent_parser(self) -> None:
         args1 = self.parser.parse_args(["agent"])
@@ -88,6 +74,8 @@ class TestHarnessArgParsing(unittest.TestCase):
         self.assertTrue(args2.json)
 
     def test_pr_parser(self) -> None:
+        default_args = self.parser.parse_args(["pr"])
+        self.assertIsNone(default_args.base)
         args = self.parser.parse_args([
             "pr",
             "--base", "main",
@@ -104,12 +92,15 @@ class TestHarnessArgParsing(unittest.TestCase):
         self.assertTrue(args.dry_run)
 
     def test_clean_parser(self) -> None:
-        args = self.parser.parse_args(["clean", "--merged", "--stale", "--force", "--dry-run"])
+        args = self.parser.parse_args(["clean", "--pr", "42"])
         self.assertEqual(args.cmd, "clean")
-        self.assertTrue(args.merged)
-        self.assertTrue(args.stale)
-        self.assertTrue(args.force)
-        self.assertTrue(args.dry_run)
+        self.assertIsNone(args.branch)
+        self.assertEqual(args.pr, 42)
+        self.assertFalse(args.apply)
+
+        apply_args = self.parser.parse_args(["clean", "--branch", "codex/feature-x", "--pr", "42", "--apply"])
+        self.assertEqual(apply_args.branch, "codex/feature-x")
+        self.assertTrue(apply_args.apply)
 
     def test_chat_no_stream_parser(self) -> None:
         args = self.parser.parse_args(["chat", "-q", "ping", "--no-stream"])
@@ -160,19 +151,14 @@ class TestBranchNamingAndValidation(unittest.TestCase):
         self.assertFalse(bool(SLUG_PATTERN.match("invalid-")))
         self.assertFalse(bool(SLUG_PATTERN.match("slug/with/slash")))
 
-    def test_format_branch_name_agent(self) -> None:
-        branch = format_branch_name("test-feature", "agent")
-        self.assertTrue(branch.startswith("agent/"))
-        self.assertTrue(branch.endswith("-test-feature"))
-        parts = branch.split("/")
-        self.assertEqual(len(parts), 2)
-        # Should contain ISO date: YYYY-MM-DD
-        date_and_slug = parts[1]
-        self.assertRegex(date_and_slug, r"^\d{4}-\d{2}-\d{2}-test-feature$")
-
-    def test_format_branch_name_feat(self) -> None:
-        branch = format_branch_name("test-feature", "feat")
-        self.assertEqual(branch, "feat/test-feature")
+    def test_task_branch_identity_uses_unique_codex_branch(self) -> None:
+        first_id, first_branch = _new_worktree_identity("test-feature")
+        second_id, second_branch = _new_worktree_identity("test-feature")
+        self.assertRegex(first_id, r"^test-feature-\d{8}t\d{6}z-[0-9a-f]{8}$")
+        self.assertRegex(first_branch, WORKTREE_BRANCH_RE)
+        self.assertTrue(first_branch.endswith(first_id))
+        self.assertNotEqual(first_id, second_id)
+        self.assertNotEqual(first_branch, second_branch)
 
 
 class TestConventionalCommits(unittest.TestCase):
@@ -181,7 +167,7 @@ class TestConventionalCommits(unittest.TestCase):
     def test_valid_conventional_commits(self) -> None:
         valid_samples = [
             "feat: add harness cli control plane",
-            "fix: handle missing claim gracefully",
+            "fix: handle missing task metadata gracefully",
             "docs: update agent dispatch table",
             "style: format python files with black",
             "refactor(cli): simplify branch command dispatch",
@@ -223,8 +209,9 @@ class TestHarnessCommands(unittest.TestCase):
         data = json.loads(capture.getvalue())
         self.assertIn("branch", data)
         self.assertIn("primary_root", data)
-        self.assertIn("active_claims", data)
-        self.assertIsInstance(data["active_claims"], list)
+        self.assertIn("worktrees", data)
+        self.assertNotIn("active_claims", data)
+        self.assertIsInstance(data["worktrees"], list)
 
     def test_agent_listing_json(self) -> None:
         capture = io.StringIO()
@@ -260,266 +247,48 @@ class TestHarnessCommands(unittest.TestCase):
     def test_branch_invalid_slug(self) -> None:
         err_capture = io.StringIO()
         with patch("sys.stderr", err_capture):
-            ret = main(["branch", "Invalid_Slug", "--areas", "scripts"])
+            ret = main(["branch", "Invalid_Slug"])
         self.assertEqual(ret, 2)
         self.assertIn("slug must be kebab-case", err_capture.getvalue())
 
-    def test_branch_invalid_areas(self) -> None:
+
+    def test_clean_requires_only_pr(self) -> None:
         err_capture = io.StringIO()
         with patch("sys.stderr", err_capture):
-            ret = main(["branch", "valid-slug", "--areas", "nonexistent-area-xyz", "--force"])
+            with self.assertRaises(SystemExit):
+                build_parser().parse_args(["clean"])
+        self.assertIn("--pr", err_capture.getvalue())
+
+    def test_clean_delegates_to_verified_cleanup(self) -> None:
+        with patch("routing.spawn_worktree.cmd_cleanup", return_value=0) as cleanup:
+            ret = main(["clean", "--pr", "7", "--json"])
+        self.assertEqual(ret, 0)
+        args, kwargs = cleanup.call_args
+        self.assertEqual(args, (None, 7))
+        self.assertTrue(kwargs["dry_run"])
+        self.assertTrue(kwargs["as_json"])
+        self.assertIsInstance(kwargs["root"], Path)
+
+    def test_clean_apply_is_explicit_and_dry_run_wins_as_error(self) -> None:
+        with patch("routing.spawn_worktree.cmd_cleanup", return_value=0) as cleanup:
+            ret = main(["clean", "--branch", "codex/task-one", "--pr", "7", "--apply"])
+        self.assertEqual(ret, 0)
+        self.assertFalse(cleanup.call_args.kwargs["dry_run"])
+
+        err_capture = io.StringIO()
+        with patch("sys.stderr", err_capture):
+            ret = main(["clean", "--pr", "7", "--apply", "--dry-run"])
         self.assertEqual(ret, 2)
-        self.assertIn("unknown areas", err_capture.getvalue())
+        self.assertIn("cannot be used together", err_capture.getvalue())
 
-    def test_clean_status_no_args(self) -> None:
-        capture = io.StringIO()
-        with patch("sys.stdout", capture):
-            ret = main(["clean"])
-        self.assertEqual(ret, 0)
-        self.assertIn("Worktree Cleanup Candidates", capture.getvalue())
 
-    def test_clean_merged_detection(self) -> None:
-        mock_proc = MagicMock()
-        mock_proc.stdout = "  main\n+ agent/2026-09-15-test-worktree\n"
-        with patch("cli.harness.run_git", return_value=mock_proc):
-            with patch(
-                "cli.harness.load_claims",
-                return_value=[{"slug": "test-worktree", "branch": "agent/2026-09-15-test-worktree"}],
-            ):
-                with patch("routing.spawn_worktree.cmd_remove", return_value=0) as mock_remove:
-                    ret = main(["clean", "--merged", "--dry-run"])
-                    self.assertEqual(ret, 0)
-                    mock_remove.assert_called_once_with(slug="test-worktree", dry_run=True, force=False)
 
-    def test_clean_auto_pruning(self) -> None:
-        mock_proc = MagicMock()
-        mock_proc.stdout = "  main\n+ agent/2026-09-15-merged-feature\n"
-        claims = [
-            {"slug": "merged-feature", "branch": "agent/2026-09-15-merged-feature", "path": "/fake/merged"},
-            {"slug": "stale-feature", "branch": "agent/2026-09-15-stale-feature", "path": "/fake/nonexistent-path"},
-            {"slug": "active-feature", "branch": "agent/2026-09-15-active-feature", "path": "/fake/active"},
-        ]
-        def fake_exists(self_path):
-            return "active" in str(self_path) or "merged" in str(self_path)
 
-        with patch("cli.harness.run_git", return_value=mock_proc):
-            with patch("cli.harness.load_claims", return_value=claims):
-                with patch("pathlib.Path.exists", fake_exists):
-                    with patch("cli.harness._inspect_worktree_delete_gate", return_value=(None, False)):
-                        with patch("routing.spawn_worktree.cmd_remove", return_value=0) as mock_remove:
-                            ret = main(["clean", "--auto", "--stale-hours", "12", "--dry-run"])
-                            self.assertEqual(ret, 0)
-                            # Both merged-feature and stale-feature should be pruned, active-feature must NOT
-                            calls = [c.kwargs.get("slug") for c in mock_remove.call_args_list]
-                            self.assertIn("merged-feature", calls)
-                            self.assertIn("stale-feature", calls)
-                            self.assertNotIn("active-feature", calls)
 
-    def test_clean_refuses_worktree_blocked_by_delete_gate(self) -> None:
-        err_capture = io.StringIO()
-        claims = [{"slug": "dirty", "branch": "agent/dirty", "path": "C:/fake/dirty"}]
-        merged = MagicMock(returncode=0, stdout="main\n")
-        with patch("cli.harness.get_primary_repo_root", return_value=Path("C:/fake/repo")):
-            with patch("cli.harness.load_claims", return_value=claims):
-                with patch("cli.harness.run_git", return_value=merged):
-                    with patch(
-                        "cli.harness._inspect_worktree_delete_gate",
-                        return_value=("worktree has uncommitted tracked changes", False),
-                    ):
-                        with patch("routing.spawn_worktree.worktree_path", return_value=Path("C:/fake/dirty")):
-                            with patch("routing.spawn_worktree.cmd_remove", return_value=0) as mock_remove:
-                                with patch("sys.stderr", err_capture):
-                                    ret = main(["clean", "--slug", "dirty"])
 
-        self.assertEqual(ret, 1)
-        self.assertIn("refusing to remove 'dirty'", err_capture.getvalue())
-        mock_remove.assert_not_called()
 
-    def test_clean_untracked_only_uses_git_force_after_gate_passes(self) -> None:
-        claims = [{"slug": "untracked", "branch": "agent/untracked", "path": "C:/fake/untracked"}]
-        merged = MagicMock(returncode=0, stdout="main\n")
-        with patch("cli.harness.get_primary_repo_root", return_value=Path("C:/fake/repo")):
-            with patch("cli.harness.load_claims", return_value=claims):
-                with patch("cli.harness.run_git", return_value=merged):
-                    with patch(
-                        "cli.harness._inspect_worktree_delete_gate",
-                        return_value=(None, True),
-                    ):
-                        with patch("routing.spawn_worktree.worktree_path", return_value=Path("C:/fake/untracked")):
-                            with patch("routing.spawn_worktree.cmd_remove", return_value=0) as mock_remove:
-                                ret = main(["clean", "--slug", "untracked"])
 
-        self.assertEqual(ret, 0)
-        mock_remove.assert_called_once_with(slug="untracked", dry_run=False, force=True)
 
-    def test_clean_dry_run_untracked_only_prints_force(self) -> None:
-        claims = [{"slug": "untracked", "branch": "agent/untracked", "path": "C:/fake/untracked"}]
-        merged = MagicMock(returncode=0, stdout="main\n")
-        out_capture = io.StringIO()
-        with patch("cli.harness.get_primary_repo_root", return_value=Path("C:/fake/repo")):
-            with patch("cli.harness.load_claims", return_value=claims):
-                with patch("cli.harness.run_git", return_value=merged):
-                    with patch("cli.harness._inspect_worktree_delete_gate", return_value=(None, True)):
-                        with patch("routing.spawn_worktree.worktree_path", return_value=Path("C:/fake/untracked")):
-                            with patch("sys.stdout", out_capture):
-                                result = main(["clean", "--slug", "untracked", "--dry-run"])
-
-        self.assertEqual(result, 0)
-        self.assertIn(
-            f"dry-run: git worktree remove {Path('C:/fake/untracked')} --force",
-            out_capture.getvalue(),
-        )
-
-    def test_spawn_worktree_remove_dry_run_prints_force_when_requested(self) -> None:
-        out_capture = io.StringIO()
-        with patch("routing.spawn_worktree.worktree_path", return_value=Path("C:/fake/untracked")):
-            with patch("routing.spawn_worktree.claim_path", return_value=Path("C:/fake/untracked.claim.json")):
-                with patch("sys.stdout", out_capture):
-                    result = remove_worktree("untracked", dry_run=True, force=True)
-
-        self.assertEqual(result, 0)
-        self.assertIn(
-            f"dry-run: git worktree remove {Path('C:/fake/untracked')} --force",
-            out_capture.getvalue(),
-        )
-
-    def test_clean_blocks_ahead_worktree_when_base_branch_is_missing(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            wt_path = root / "scratch" / "worktrees" / "ahead"
-            wt_path.parent.mkdir(parents=True)
-
-            def git(cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
-                return subprocess.run(
-                    ["git", *args], cwd=cwd, text=True, capture_output=True, check=True
-                )
-
-            git(root, "init", "--initial-branch=main")
-            git(root, "config", "user.name", "Harness Test")
-            git(root, "config", "user.email", "harness-test@example.invalid")
-            (root / ".gitignore").write_text("/scratch/\n", encoding="utf-8")
-            (root / "tracked.txt").write_text("base\n", encoding="utf-8")
-            git(root, "add", ".gitignore", "tracked.txt")
-            git(root, "commit", "-m", "chore: initialize test repository")
-            git(root, "worktree", "add", "-b", "agent/ahead", str(wt_path), "main")
-            (wt_path / "tracked.txt").write_text("ahead\n", encoding="utf-8")
-            git(wt_path, "add", "tracked.txt")
-            git(wt_path, "commit", "-m", "feat: add ahead commit")
-            self.assertEqual(git(wt_path, "rev-list", "--count", "main..HEAD").stdout.strip(), "1")
-            git(root, "switch", "-c", "test-primary")
-            git(root, "branch", "-D", "main")
-
-            err_capture = io.StringIO()
-            claims = [{"slug": "ahead", "branch": "agent/ahead", "path": str(wt_path)}]
-            original_run_git = harness_module.run_git
-
-            def routed_run_git(args, cwd=None, check=True):
-                if args == ["branch", "--merged", "main"] and Path(cwd) == root:
-                    return subprocess.CompletedProcess(["git", *args], 0, "test-primary\n", "")
-                return original_run_git(args, cwd=cwd, check=check)
-
-            with patch("cli.harness.get_primary_repo_root", return_value=root):
-                with patch("cli.harness.load_claims", return_value=claims):
-                    with patch("cli.harness.run_git", side_effect=routed_run_git):
-                        with patch("routing.spawn_worktree.worktree_path", return_value=wt_path):
-                            with patch("routing.spawn_worktree.cmd_remove", return_value=0) as mock_remove:
-                                with patch("sys.stderr", err_capture):
-                                    result = main(["clean", "--slug", "ahead"])
-
-            self.assertEqual(result, 1)
-            self.assertIn("base branch 'main'", err_capture.getvalue())
-            mock_remove.assert_not_called()
-            self.assertTrue(wt_path.exists(), "ahead worktree must be preserved when its base cannot be resolved")
-
-    def test_clean_refuses_and_preserves_valid_base_ahead_worktree(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            wt_path = root / "scratch" / "worktrees" / "ahead"
-            wt_path.parent.mkdir(parents=True)
-
-            def git(cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
-                return subprocess.run(
-                    ["git", *args], cwd=cwd, text=True, capture_output=True, check=True
-                )
-
-            git(root, "init", "--initial-branch=main")
-            git(root, "config", "user.name", "Harness Test")
-            git(root, "config", "user.email", "harness-test@example.invalid")
-            (root / ".gitignore").write_text("/scratch/\n", encoding="utf-8")
-            (root / "tracked.txt").write_text("base\n", encoding="utf-8")
-            git(root, "add", ".gitignore", "tracked.txt")
-            git(root, "commit", "-m", "chore: initialize test repository")
-            git(root, "worktree", "add", "-b", "agent/ahead", str(wt_path), "main")
-            (wt_path / "ahead.txt").write_text("ahead\n", encoding="utf-8")
-            git(wt_path, "add", "ahead.txt")
-            git(wt_path, "commit", "-m", "feat: add ahead commit")
-            self.assertEqual(git(wt_path, "rev-list", "--count", "main..HEAD").stdout.strip(), "1")
-
-            claim_path = root / "scratch" / "worktrees" / "ahead.claim.json"
-            claim_path.write_text(
-                json.dumps({"slug": "ahead", "branch": "agent/ahead", "path": str(wt_path)}),
-                encoding="utf-8",
-            )
-            err_capture = io.StringIO()
-            claims = [{"slug": "ahead", "branch": "agent/ahead", "path": str(wt_path)}]
-            original_run_git = harness_module.run_git
-
-            def routed_run_git(args, cwd=None, check=True):
-                if args == ["branch", "--merged", "main"] and Path(cwd) == root:
-                    return subprocess.CompletedProcess(["git", *args], 0, "main\n", "")
-                return original_run_git(args, cwd=cwd, check=check)
-
-            with patch("cli.harness.get_primary_repo_root", return_value=root):
-                with patch("cli.harness.load_claims", return_value=claims):
-                    with patch("cli.harness.run_git", side_effect=routed_run_git):
-                        with patch("routing.spawn_worktree.worktree_path", return_value=wt_path):
-                            with patch("routing.spawn_worktree.cmd_remove", return_value=0) as mock_remove:
-                                with patch("sys.stderr", err_capture):
-                                    result = main(["clean", "--slug", "ahead"])
-
-            self.assertEqual(result, 1)
-            self.assertIn("not contained in the base branch", err_capture.getvalue())
-            mock_remove.assert_not_called()
-            self.assertTrue(wt_path.exists(), "ahead worktree must be preserved")
-            self.assertTrue(claim_path.exists(), "claim must be preserved")
-            self.assertEqual(git(wt_path, "rev-list", "--count", "main..HEAD").stdout.strip(), "1")
-
-    def test_clean_reports_removal_failure_as_nonzero(self) -> None:
-        err_capture = io.StringIO()
-        claims = [{"slug": "failed", "branch": "agent/failed", "path": "C:/fake/failed"}]
-        merged = MagicMock(returncode=0, stdout="main\n")
-        with patch("cli.harness.get_primary_repo_root", return_value=Path("C:/fake/repo")):
-            with patch("cli.harness.load_claims", return_value=claims):
-                with patch("cli.harness.run_git", return_value=merged):
-                    with patch("cli.harness._inspect_worktree_delete_gate", return_value=(None, False)):
-                        with patch("routing.spawn_worktree.worktree_path", return_value=Path("C:/fake/failed")):
-                            with patch("routing.spawn_worktree.cmd_remove", return_value=2) as mock_remove:
-                                with patch("sys.stderr", err_capture):
-                                    result = main(["clean", "--slug", "failed"])
-
-        self.assertEqual(result, 1)
-        self.assertIn("failed to remove worktree 'failed' (exit status 2)", err_capture.getvalue())
-        mock_remove.assert_called_once_with(slug="failed", dry_run=False, force=False)
-
-    def test_clean_force_overrides_worktree_delete_gate(self) -> None:
-        err_capture = io.StringIO()
-        claims = [{"slug": "dirty", "branch": "agent/dirty", "path": "C:/fake/dirty"}]
-        merged = MagicMock(returncode=0, stdout="main\n")
-        with patch("cli.harness.get_primary_repo_root", return_value=Path("C:/fake/repo")):
-            with patch("cli.harness.load_claims", return_value=claims):
-                with patch("cli.harness.run_git", return_value=merged):
-                    with patch(
-                        "cli.harness._inspect_worktree_delete_gate",
-                        return_value=("worktree has uncommitted tracked changes", False),
-                    ):
-                        with patch("routing.spawn_worktree.worktree_path", return_value=Path("C:/fake/dirty")):
-                            with patch("routing.spawn_worktree.cmd_remove", return_value=0) as mock_remove:
-                                with patch("sys.stderr", err_capture):
-                                    ret = main(["clean", "--slug", "dirty", "--force"])
-
-        self.assertEqual(ret, 0)
-        self.assertIn("forcing remove of 'dirty'", err_capture.getvalue())
-        mock_remove.assert_called_once_with(slug="dirty", dry_run=False, force=True)
 
 
     def test_pr_missing_gh(self) -> None:
@@ -546,9 +315,10 @@ class TestHarnessCommands(unittest.TestCase):
         mock_proc = MagicMock()
         mock_proc.stdout = "main\n"
         with patch("shutil.which", return_value="/usr/bin/gh"):
-            with patch("cli.harness.run_git", return_value=mock_proc):
-                with patch("sys.stderr", err_capture):
-                    ret = main(["pr"])
+            with patch("routing.spawn_worktree.default_branch_name", return_value="main"):
+                with patch("cli.harness.run_git", return_value=mock_proc):
+                    with patch("sys.stderr", err_capture):
+                        ret = main(["pr"])
         self.assertEqual(ret, 1)
         self.assertIn("cannot create PR from base branch 'main'", err_capture.getvalue())
 
@@ -570,39 +340,51 @@ class TestHarnessCommands(unittest.TestCase):
         mock_sub.stdout = "OK"
 
         with patch("shutil.which", return_value="/usr/bin/gh"):
-            with patch("cli.harness.run_git", side_effect=fake_git):
-                with patch("subprocess.run", return_value=mock_sub):
-                    with patch("sys.stdout", capture):
-                        ret = main(["pr", "--dry-run"])
+            with patch("routing.spawn_worktree.default_branch_name", return_value="main"):
+                with patch("cli.harness.run_git", side_effect=fake_git):
+                    with patch("subprocess.run", return_value=mock_sub):
+                        with patch("sys.stdout", capture):
+                            ret = main(["pr", "--dry-run"])
         self.assertEqual(ret, 0)
         self.assertIn("[dry-run] Would execute:", capture.getvalue())
         self.assertIn("PR Title: feat: add awesome feature", capture.getvalue())
 
-    def test_branch_claim_collision(self) -> None:
-        err_capture = io.StringIO()
-        fake_claims = [{
-            "slug": "existing-task",
-            "branch": "agent/2026-09-16-existing-task",
-            "areas": ["scripts"],
-            "agent": "harness-operator",
-        }]
-        clean_status = MagicMock(returncode=0, stdout="")
-        with patch("cli.harness.run_git", return_value=clean_status):
-            with patch("cli.harness.load_claims", return_value=fake_claims):
-                with patch("sys.stderr", err_capture):
-                    ret = main(["branch", "new-task", "--areas", "scripts"])
-        self.assertEqual(ret, 3)
-        self.assertIn("overlapping areas with active claims", err_capture.getvalue())
+    def test_pr_uses_repository_default_branch_when_base_is_omitted(self) -> None:
+        capture = io.StringIO()
+        git_calls: list[list[str]] = []
 
-    def test_claim_lock_concurrency(self) -> None:
-        from routing.spawn_worktree import claim_lock
+        def fake_git(args, **kwargs):
+            git_calls.append(args)
+            proc = MagicMock()
+            if args == ["branch", "--show-current"]:
+                proc.stdout = "codex/example-task\n"
+            elif args == ["log", "trunk..HEAD", "--format=%s"]:
+                proc.stdout = "feat: add example\n"
+            else:
+                proc.stdout = ""
+            return proc
 
-        # First acquisition should succeed
-        with claim_lock(timeout_sec=0.5):
-            # Second concurrent acquisition should timeout
-            with self.assertRaises(TimeoutError):
-                with claim_lock(timeout_sec=0.1, poll_interval=0.02):
-                    pass
+        mock_sub = MagicMock(returncode=0, stdout="OK")
+        with patch("shutil.which", return_value="/usr/bin/gh"):
+            with patch("routing.spawn_worktree.default_branch_name", return_value="trunk") as resolve:
+                with patch("cli.harness.run_git", side_effect=fake_git):
+                    with patch("subprocess.run", return_value=mock_sub):
+                        with patch("sys.stdout", capture):
+                            ret = main(["pr", "--dry-run"])
+
+        self.assertEqual(ret, 0)
+        resolve.assert_called_once()
+        self.assertIn("targeting 'trunk'", capture.getvalue())
+        self.assertIn("--base trunk", capture.getvalue())
+        self.assertIn(["log", "trunk..HEAD", "--format=%s"], git_calls)
+
+    def test_same_task_slug_can_be_created_in_parallel_sessions(self) -> None:
+        with patch("routing.spawn_worktree.cmd_create", return_value=0) as create:
+            self.assertEqual(main(["branch", "overlapping-task"]), 0)
+            self.assertEqual(main(["branch", "overlapping-task"]), 0)
+        self.assertEqual(create.call_count, 2)
+        self.assertEqual([call.args[0] for call in create.call_args_list], ["overlapping-task", "overlapping-task"])
+
 
 
     def test_harness_missing_command_exits_2(self) -> None:
@@ -614,14 +396,12 @@ class TestHarnessCommands(unittest.TestCase):
                     main([])
         self.assertEqual(ctx.exception.code, 2)
 
-    def test_branch_dirty_repo_rejected(self) -> None:
-        dirty_proc = MagicMock(returncode=0, stdout=" M scripts/cli/harness.py\n")
-        err_capture = io.StringIO()
-        with patch("cli.harness.run_git", return_value=dirty_proc):
-            with patch("sys.stderr", err_capture):
-                ret = main(["branch", "my-feature", "--areas", "scripts"])
-        self.assertEqual(ret, 1)
-        self.assertIn("primary repository has uncommitted changes", err_capture.getvalue())
+    def test_branch_does_not_require_clean_primary_checkout(self) -> None:
+        with patch("cli.harness.run_git") as git:
+            with patch("routing.spawn_worktree.cmd_create", return_value=0) as create:
+                self.assertEqual(main(["branch", "dirty-primary-task"]), 0)
+        git.assert_not_called()
+        create.assert_called_once()
 
     def test_pr_non_conforming_commit_rejected(self) -> None:
         def fake_git(args, **kwargs):
@@ -637,10 +417,11 @@ class TestHarnessCommands(unittest.TestCase):
         mock_sub = MagicMock(returncode=0, stdout="OK")
         err_capture = io.StringIO()
         with patch("shutil.which", return_value="/usr/bin/gh"):
-            with patch("cli.harness.run_git", side_effect=fake_git):
-                with patch("subprocess.run", return_value=mock_sub):
-                    with patch("sys.stderr", err_capture):
-                        ret = main(["pr"])
+            with patch("routing.spawn_worktree.default_branch_name", return_value="main"):
+                with patch("cli.harness.run_git", side_effect=fake_git):
+                    with patch("subprocess.run", return_value=mock_sub):
+                        with patch("sys.stderr", err_capture):
+                            ret = main(["pr"])
         self.assertEqual(ret, 1)
         self.assertIn("commits do not conform to Conventional Commits", err_capture.getvalue())
 

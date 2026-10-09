@@ -1,6 +1,6 @@
 # Results AGENTS
 
-Home for finished deliverable artifacts a human might hand to someone else: reports, HTML, images, diagrams, threat-model packages, as-code packages, dated cost-layer measurement reports, and finished research dossiers. Layout: [`results-conventions.md`](./results-conventions.md).
+Home for finished deliverable artifacts a human might hand to someone else: reports, HTML, images, diagrams, tool captures and demo media, threat-model packages, as-code packages, dated cost-layer measurement reports, and finished research dossiers. Layout: [`results-conventions.md`](./results-conventions.md).
 
 Ingest simply; do not duplicate skills or paste root Critical — link [`../AGENTS.md`](../AGENTS.md). Spawn `artifact-agent` (or a more specific skill owner) when producing artifacts is material catalogued work. In-session anti-slop/humanizer on a specialist’s own draft MUST NOT mint `artifact-agent` after return.
 

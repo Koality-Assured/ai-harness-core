@@ -116,7 +116,7 @@ Skills must specify an explicit failure lifecycle policy governing downstream ex
 
 | Policy | Behavior | Use case |
 | --- | --- | --- |
-| `abort_and_rollback` (default) | Immediately halts execution, aborts all downstream dependent stages, and rolls back mutated state (worktree claims, uncommitted files). | Mutating tasks, safety gates, isolation failures, critical validations. |
+| `abort_and_rollback` (default) | Immediately halts execution, aborts all downstream dependent stages, and rolls back changes produced by the failed skill without deleting pre-existing or untracked user data. | Mutating tasks, safety gates, isolation failures, critical validations. |
 | `fallback_degrade` | Marks current skill execution as `degraded` and executes an alternate degraded path or allows downstream consumers to proceed with reduced fidelity. | Non-critical enhancements, formatting checks, diagram renders. |
 | `continue_with_partial` | Records partial outputs and warnings, continuing execution of remaining independent skills and downstream stages that do not strictly require 100% output completion. | Multi-module scans, telemetry collection, exploratory research. |
 
@@ -178,7 +178,7 @@ Keep `SKILL.md` under 200 lines when possible (hard cap 500). Link source of tru
 2. **When not to use** — off-ramps and sibling skills
 3. **Criticality** — how `rank` applies; non-negotiable bits
 4. **Source of truth** — links to repository-local source documents, supporting material, and scripts
-5. **Isolation** — mutate vs read-only; parent runs isolate-work CLI then spawns this skill's `owner_agent` when remaining work is material (root MUST NOT still applies). Parent MUST NOT load this `SKILL.md`; needing the body is the spawn trigger (isolate-work CLI excepted).
+5. **Isolation** — mutate vs read-only; parent creates a unique task worktree with isolate-work before spawning this skill's `owner_agent` when remaining work is material (root MUST NOT still applies). Parent MUST NOT load this `SKILL.md`; needing the body is the spawn trigger (isolate-work CLI excepted).
 6. **How to use** — numbered steps; call repo Python scripts
 7. **Dry run** — how to validate without mutating the primary checkout
 8. **Security** — pointer to the repository's security guidance (ai-router uses `docs/agent-session-security.md`) plus skill-specific MUST NOTs
@@ -205,26 +205,26 @@ When an orchestrating agent spawns a specialist subagent (operating with clean-s
 3. **Definition of Done (DoD)**: Specify the exact verification tests, schema validations, and result envelope metrics (`task_id`, `status`, `artifacts`, `metrics`) required before the subagent declares completion. This child DoD scopes the specialist. It MUST NOT be padded with follow-on anti-slop, memory, or lint specialists that the parent then treats as unmet work after return.
 4. **Parent Reconciliation Gate**: Upon subagent completion, the orchestrating agent MUST audit the subagent's deliverables against the original **user request** before closing the session. A parent-padded spawn DoD is not a spawn trigger.
 5. **Spawn if material**: In ai-router, the orchestrating parent MUST spawn a specialist subagent when a catalogued skill or area default matches **and** remaining work is material to the original user request (needs that skill body / multi-step specialist work). The parent MUST NOT execute specialist skill bodies in-session, except isolate-work (`python scripts/routing/spawn_worktree.py`) because that session is the owner (`router`). The parent coordinates, validates consistency, and verifies adherence to the user's goals. The parent MAY perform coordinator chores in-parent; MUST notify the human when it performs other undelegable specialist work.
-   **Parent discovery bound:** In ai-router, a match in `routing/skill-dispatch.md` (or an area-map default) plus a known `owner_agent` **ends** parent investigation. Next actions are isolate-check (if `mutate`) and spawn. Pass `AGENT.md` and `SKILL.md` **paths** (and worktree path), not file contents. If the parent needs the skill body, that **is** the spawn trigger — not a reason to keep reading.
+    **Parent discovery bound:** In ai-router, a match in `routing/skill-dispatch.md` (or an area-map default) plus a known `owner_agent` **ends** parent investigation. Next actions are create a unique task worktree (if `mutate`) and spawn. Pass `AGENT.md` and `SKILL.md` **paths** (and worktree path), not file contents. If the parent needs the skill body, that **is** the spawn trigger — not a reason to keep reading.
    **MUST NOT (parent discovery):**
    - load a specialist `SKILL.md` in the parent (exception: isolate-work CLI)
    - execute a specialist skill body in the parent (same exception)
    - keep working after `owner_agent` is known because "I need more context to dispatch"
    - read another host's session, branch diffs, `AGENT.md`/`SKILL.md` bodies, or specialist reports to "understand enough" to write a spawn prompt
    **MUST NOT spawn** (closed list; root Specialist dispatch wins when a high-rank trigger also fires):
-   - In ai-router, the isolate-work CLI (`python scripts/routing/spawn_worktree.py`) — parent runs check/add/remove; do not spawn `router-maintenance` for that CLI. Standalone repositories use their own isolation procedure.
+    - In ai-router, the isolate-work CLI (`python scripts/routing/spawn_worktree.py`) — parent runs create/list/cleanup; do not spawn `router-maintenance` for that CLI. Standalone repositories use their own isolation procedure.
    - completion-notification busywork; follow-up bullets; advisory `handoff_requests`
    - inventing work after the user request is met
    - ff-only `git pull` on primary
    - lint of files the same specialist just wrote
    - a duplicate in-flight specialist on the same workspace
-   - one-shot coordinator chores (claim files, memory via script, change-history via script, qmd refresh)
+    - one-shot coordinator chores (worktree lifecycle CLI, memory via script, change-history via script, QMD refresh)
    - anti-slop, humanizer, markdownlint, or memory specialists required only because the parent padded the spawn-payload DoD
 6. **Reconciliation gate (no recursive minting)**: After a subagent returns, the parent MUST reconcile against the original **user request**. The parent MUST NOT spawn another specialist from a completion notification or advisory `handoff_requests`. Remaining work MUST miss the original user request before any further spawn — not a parent-padded spawn DoD. The parent MUST NOT invent work. Spawn-payload DoD MUST NOT be used to require anti-slop, memory, or lint specialists after return.
 
 ## Cost-layer boundaries (all skills)
 
-In ai-router, every skill inherits all three root Critical cost layers: **qmd** (Markdown discovery via `qmd search` / `qmd get`), **ast-grep** (structured files / YAML frontmatter), and **Headroom** (bulky dumps — or summarize when unavailable). `## How to use` must not tell the agent to walk directory trees, skip ast-grep for structured files, or skip Headroom for bulky dumps. `## Security` must include the sentence that starts with `Inherits Critical cost layers`. Standalone repositories follow their own agent instructions and tooling requirements.
+In ai-router, every skill inherits all three root Critical cost layers: **qmd** (Markdown discovery via `qmd search` / `qmd get` from the persistent detached `origin/main` source at `scratch/qmd-main` only), **ast-grep** (structured files / YAML frontmatter), and **Headroom** (bulky dumps — or summarize when unavailable). Sync that QMD checkout and run `qmd update` before retrieval; do not use a task worktree index. `## How to use` must not tell the agent to walk directory trees, retrieve Markdown from a task worktree, skip ast-grep for structured files, or skip Headroom for bulky dumps. `## Security` must include the sentence that starts with `Inherits Critical cost layers`. Standalone repositories follow their own agent instructions and tooling requirements.
 
 ## Criticality mapping
 

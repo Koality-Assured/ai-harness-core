@@ -6,6 +6,7 @@ Loads config/harness.config.json or provides structured fallback defaults.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -35,6 +36,8 @@ class QMDAdapterConfig:
     """Tool adapter settings for QMD semantic search."""
 
     command: str = "qmd"
+    source_branch: str = "main"
+    source_worktree: str = "scratch/qmd-main"
     default_min_score: float = 0.5
     default_limit: int = 5
     collections: list[str] = field(
@@ -88,7 +91,7 @@ class GitAdapterConfig:
 
     command: str = "git"
     timeout_sec: int = 30
-    branch_prefix: str = "agent"
+    branch_prefix: str = "codex"
 
 
 @dataclass
@@ -226,6 +229,13 @@ class HarnessConfig:
         # Adapters validation
         if self.adapters.qmd.timeout_sec <= 0:
             errors.append("QMD timeout_sec must be positive")
+        if not self.adapters.qmd.source_branch.strip() or self.adapters.qmd.source_branch.startswith("-"):
+            errors.append("QMD source_branch must be a valid branch name")
+        if not re.fullmatch(
+            r"scratch/qmd-main(?:-[A-Za-z0-9][A-Za-z0-9_-]{0,63})?",
+            self.adapters.qmd.source_worktree,
+        ):
+            errors.append("QMD source_worktree must select scratch/qmd-main or a safe unique suffix")
         if self.adapters.ast_grep.timeout_sec <= 0:
             errors.append("ast-grep timeout_sec must be positive")
         if self.adapters.headroom.timeout_sec <= 0:
@@ -259,6 +269,8 @@ def _build_adapters(data: dict[str, Any] | None) -> AdaptersConfig:
 
     qmd = QMDAdapterConfig(
         command=str(qmd_data.get("command", "qmd")),
+        source_branch=str(qmd_data.get("source_branch", "main")),
+        source_worktree=str(qmd_data.get("source_worktree", "scratch/qmd-main")),
         default_min_score=float(qmd_data.get("default_min_score", 0.5)),
         default_limit=int(qmd_data.get("default_limit", 5)),
         collections=list(qmd_data.get("collections", QMDAdapterConfig().collections)),
@@ -281,7 +293,7 @@ def _build_adapters(data: dict[str, Any] | None) -> AdaptersConfig:
     git = GitAdapterConfig(
         command=str(git_data.get("command", "git")),
         timeout_sec=int(git_data.get("timeout_sec", 30)),
-        branch_prefix=str(git_data.get("branch_prefix", "agent")),
+        branch_prefix=str(git_data.get("branch_prefix", "codex")),
     )
 
     return AdaptersConfig(qmd=qmd, ast_grep=ast_grep, headroom=headroom, git=git)

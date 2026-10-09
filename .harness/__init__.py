@@ -1,6 +1,6 @@
 """Bare-metal .harness engine.
 
-Decoupled core harness providing configuration, worktree isolation, A2A protocols,
+Decoupled core harness providing configuration, A2A protocols,
 tool adapters (QMD, ast-grep, Headroom), and multi-vendor prompt caching.
 """
 
@@ -47,15 +47,6 @@ from .config import (
     QMDAdapterConfig,
     load_harness_config,
 )
-from .isolation import (
-    WorktreeClaim,
-    WorktreeConcurrencyError,
-    WorktreeError,
-    WorktreeExistsError,
-    WorktreeManager,
-    WorktreeNotFoundError,
-)
-
 __version__ = "0.1.0"
 
 __all__ = [
@@ -93,11 +84,5 @@ __all__ = [
     "QMDAdapterConfig",
     "QMDError",
     "QMDHit",
-    "WorktreeClaim",
-    "WorktreeConcurrencyError",
-    "WorktreeError",
-    "WorktreeExistsError",
-    "WorktreeManager",
-    "WorktreeNotFoundError",
     "load_harness_config",
 ]

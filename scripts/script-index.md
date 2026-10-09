@@ -2,13 +2,13 @@
 doc_kind: routing_map
 canonical_id: script-index
 topics: [scripts, routing]
-generated_at_utc: 2026-10-07T22:56:36Z
+generated_at_utc: export
 generator: scripts/routing/generate_script_index.py
 ---
 
 # Script index
 
-Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit — run `python scripts/routing/generate_script_index.py`.
+Generated from dest `scripts/` after harness-template export (kept trees only). Do not hand-edit — run `python scripts/routing/generate_script_index.py` from the dest checkout after feeding scripts.
 
 | Script | Tags | Hints | Summary |
 | --- | --- | --- | --- |
@@ -63,10 +63,12 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 | [`routing/generate_skill_dispatch.py`](./routing/generate_skill_dispatch.py) | `routing`, `ai-tooling` | skills, dispatch, catalog | Generate routing/skill-dispatch.md from skill frontmatter. |
 | [`routing/hybrid_dispatch.py`](./routing/hybrid_dispatch.py) | `routing`, `ai-tooling` | dispatch, hybrid-dispatch, bm25, fast-path, ambiguity-gate, router | 3-Tier Hybrid Dispatch Pipeline for skills, agents, and area routing. |
 | [`routing/resolve_skill_graph.py`](./routing/resolve_skill_graph.py) | `routing`, `skills`, `dag` | skills, dependencies, topological-sort, execution-plan, prerequisites | Resolve skill dependency DAGs, topological ordering, and execution stages. |
-| [`routing/spawn_worktree.py`](./routing/spawn_worktree.py) | `routing`, `isolation` | worktree, branch, concurrency, claims | Spawn, list, and remove isolated git worktrees for concurrent agent work. |
+| [`routing/spawn_worktree.py`](./routing/spawn_worktree.py) | `routing`, `isolation`, `worktree` | worktree, branch, concurrency, cleanup, post-merge | Create task-specific Git worktrees and verify safe post-merge cleanup. |
 | [`sync/propose_core_update.py`](./sync/propose_core_update.py) | `sync`, `harness`, `propose` | propose-core-update, harness-core, pull-request, issue | Propose generic core improvements back to Koality-Assured/ai-harness-core. |
 | [`sync/pull_harness_core.py`](./sync/pull_harness_core.py) | `sync`, `harness`, `pull` | pull-harness-core, core-update, spoke, allowlist | Pull allowlisted ai-harness-core updates into a domain spoke. |
 | [`sync/scaffold_harness.py`](./sync/scaffold_harness.py) | `sync`, `harness`, `scaffold` | scaffold-harness, domain-router, harness-core, spoke | Scaffold a domain harness spoke from generic ai-harness-core. |
+| [`sync/sync_and_push_downstreams.py`](./sync/sync_and_push_downstreams.py) | `sync`, `git`, `export`, `downstream` | sync-and-push, update-downstreams, multi-repo-publish, downstream-repo-update | Automated synchronization, sanitation, commit, and push engine for public downstream repositories. |
+| [`sync/sync_public_repos.py`](./sync/sync_public_repos.py) | `sync`, `security`, `export` | sync, redaction, multi-repo, export, sanitize, wiki-template | Multi-repo synchronization and sanitization/redaction engine for public exports. |
 | [`tests/test_benchmarks.py`](./tests/test_benchmarks.py) | `tests`, `benchmarks`, `cost-layers`, `agents`, `retrieval`, `fleet` | tests, test-benchmarks, cost-estimator, fleet-benchmark, mrr | Unit tests for empirical benchmarking and cost estimation tooling. |
 | [`tests/test_harness_auth.py`](./tests/test_harness_auth.py) | `tests`, `harness`, `cli`, `auth`, `keyring`, `oauth`, `security` | tests, auth, keyring, vault, oauth, pkce, sanitization | Unit tests for Harness CLI Universal Auth Subsystem and Keyring Manager. |
 | [`tests/test_harness_cli.py`](./tests/test_harness_cli.py) | `tests`, `harness`, `cli`, `isolation` | tests, harness-cli, status, branch, agent, pr, clean | Unit tests for the in-repo Harness CLI control plane. |
@@ -77,7 +79,7 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 | [`tests/test_pacing.py`](./tests/test_pacing.py) | `tests`, `pacing`, `quota`, `routing` | tests, pacing, quota-management | Unit tests for adaptive quota management and pacing helper. |
 | [`tests/test_pretty_docs_security.py`](./tests/test_pretty_docs_security.py) | `tests`, `security`, `github` | tests, href, github-paths | Stdlib unit tests for href allow-list and GitHub path helpers. |
 | [`tests/test_qmd_preflight.py`](./tests/test_qmd_preflight.py) | `tests`, `qmd` | qmd, preflight, onboarding | Unit tests for the non-mutating qmd lifecycle preflight. |
-| [`tests/test_run_agent_isolated.py`](./tests/test_run_agent_isolated.py) | `tests`, `cli`, `isolation`, `security`, `credentials`, `agent` | tests, run_agent_isolated, spawn_worktree, ttl, zero-disk | Unit tests for isolated zero-disk subagent execution wrapper and lease TTL tracking. |
+| [`tests/test_run_agent_isolated.py`](./tests/test_run_agent_isolated.py) | `tests`, `cli`, `isolation`, `security`, `credentials`, `agent` | tests, run_agent_isolated, zero-disk | Unit tests for isolated zero-disk subagent execution. |
 | [`tests/test_skill_graph.py`](./tests/test_skill_graph.py) | `tests`, `routing`, `skills`, `dag` | tests, dag, topological-sort, dependencies, prerequisites | Unit tests for skill dependency DAG resolution, topological ordering, and Schema V2 conventions. |
 | [`tests/test_subagent_context_config.py`](./tests/test_subagent_context_config.py) | `tests`, `subagents`, `context`, `config` | tests, subagents, context-isolation, host-config | Unit tests for cross-host subagent context isolation and project-level settings. |
 | [`tests/test_validate_agent.py`](./tests/test_validate_agent.py) | `tests`, `ai-tooling`, `agents`, `schema-v2` | tests, validate-agent, agents | Unit tests for Schema V2 agent validation. |
@@ -119,11 +121,14 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 - **dag:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`
 - **distillation:** `research/local_webfetch.py`
 - **docs:** `docs/run_markdownlint.py`, `docs/validate_context_budget.py`, `docs/validate_router_structure.py`, `docs/validate_structure_fast.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_structure_fast.py`
+- **downstream:** `sync/sync_and_push_downstreams.py`
 - **dry-run:** `benchmarks/benchmark_agent_fleet.py`
 - **eval:** `benchmarks/benchmark_task_eval.py`, `benchmarks/run_benchmark_suite.py`
+- **export:** `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`
 - **fleet:** `benchmarks/benchmark_agent_fleet.py`, `benchmarks/run_benchmark_suite.py`, `tests/test_benchmarks.py`
 - **gateway:** `cli/adapters.py`
 - **gemini:** `cli/auth/oauth_flows.py`, `cli/provider_client.py`
+- **git:** `sync/sync_and_push_downstreams.py`
 - **github:** `github/resolve_github_path.py`, `repos/scaffold_public_repos.py`, `tests/test_pretty_docs_security.py`
 - **harness:** `cli/adapters.py`, `cli/auth/keyring_vault.py`, `cli/auth/oauth_flows.py`, `cli/command_registry.py`, `cli/conversation.py`, `cli/harness.py`, `cli/mcp_stdio.py`, `cli/provider_client.py`, `cli/registry.py`, `cli/schema_adapter.py`, `cli/session_store.py`, `cli/tool_registry.py`, `cli/tui.py`, `sync/propose_core_update.py`, `sync/pull_harness_core.py`, `sync/scaffold_harness.py`, `tests/test_harness_auth.py`, `tests/test_harness_cli.py`, `tests/test_harness_core_sync.py`, `tests/test_harness_registry.py`
 - **headroom:** `benchmarks/benchmark_tool_efficiency.py`, `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`
@@ -162,7 +167,7 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 - **scaffold:** `repos/scaffold_public_repos.py`, `sync/scaffold_harness.py`
 - **schema:** `cli/schema_adapter.py`
 - **schema-v2:** `tests/test_validate_agent.py`, `tests/test_validate_skill.py`
-- **security:** `cli/auth/keyring_vault.py`, `cli/run_agent_isolated.py`, `tests/test_harness_auth.py`, `tests/test_pretty_docs_security.py`, `tests/test_run_agent_isolated.py`
+- **security:** `cli/auth/keyring_vault.py`, `cli/run_agent_isolated.py`, `sync/sync_public_repos.py`, `tests/test_harness_auth.py`, `tests/test_pretty_docs_security.py`, `tests/test_run_agent_isolated.py`
 - **session:** `cli/harness.py`, `cli/session_store.py`
 - **simulation:** `benchmarks/benchmark_agent_fleet.py`
 - **skills:** `routing/resolve_skill_graph.py`, `tests/test_skill_graph.py`, `tests/test_validate_skill.py`
@@ -172,7 +177,7 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 - **stdio:** `cli/mcp_stdio.py`
 - **subagents:** `tests/test_subagent_context_config.py`
 - **switcher:** `cli/registry.py`, `cli/tui.py`, `tests/test_harness_registry.py`
-- **sync:** `sync/propose_core_update.py`, `sync/pull_harness_core.py`, `sync/scaffold_harness.py`, `tests/test_harness_core_sync.py`
+- **sync:** `sync/propose_core_update.py`, `sync/pull_harness_core.py`, `sync/scaffold_harness.py`, `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`, `tests/test_harness_core_sync.py`
 - **tasks:** `benchmarks/benchmark_task_eval.py`
 - **tests:** `tests/test_benchmarks.py`, `tests/test_harness_auth.py`, `tests/test_harness_cli.py`, `tests/test_harness_core_sync.py`, `tests/test_harness_registry.py`, `tests/test_hybrid_dispatch.py`, `tests/test_local_webfetch.py`, `tests/test_pacing.py`, `tests/test_pretty_docs_security.py`, `tests/test_qmd_preflight.py`, `tests/test_run_agent_isolated.py`, `tests/test_skill_graph.py`, `tests/test_subagent_context_config.py`, `tests/test_validate_agent.py`, `tests/test_validate_context_budget.py`, `tests/test_validate_prompt_caching.py`, `tests/test_validate_router_structure.py`, `tests/test_validate_skill.py`, `tests/test_validate_structure_fast.py`
 - **tokens:** `benchmarks/benchmark_retrieval.py`, `benchmarks/benchmark_tool_efficiency.py`, `benchmarks/estimate_agent_costs.py`
@@ -184,4 +189,4 @@ Generated from Python docstring `tags:` / `routing_hints:`. Do not hand-edit —
 - **watcher:** `daemon/register_watcher.py`
 - **web:** `research/local_webfetch.py`
 - **webfetch:** `tests/test_local_webfetch.py`
-- **worktree:** `daemon/register_watcher.py`
+- **worktree:** `daemon/register_watcher.py`, `routing/spawn_worktree.py`

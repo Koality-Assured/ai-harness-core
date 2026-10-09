@@ -37,7 +37,7 @@ When using secondary/external models (e.g. Anthropic Claude or OpenAI GPT inside
 3. **Concurrency windows**: Under `metered_secondary`, limit concurrent active subagents to 1–2.
 4. **429 Recovery**: On `RESOURCE_EXHAUSTED` (429), parse the reset window and use the Antigravity `schedule` tool to wait and resume without losing context.
 
-Check current provider- and account-reported limits when a task depends on quotas. Do not infer quota values from a model tier name.
+Detailed guidance: [`../../docs/guidance/quota-and-pacing.md`](../../docs/guidance/quota-and-pacing.md).
 
 ## Related
 
@@ -45,7 +45,7 @@ Check current provider- and account-reported limits when a task depends on quota
 | --- | --- |
 | [`AGENTS.md`](./AGENTS.md) | Agent authoring rules |
 | [`../a2a/interaction-protocol.md`](../a2a/interaction-protocol.md) | A2A delegation and quota-aware tiering |
-| Current provider or account usage page | Check live quota and rate-limit information when needed |
+| [`../../docs/guidance/quota-and-pacing.md`](../../docs/guidance/quota-and-pacing.md) | Quota management & pacing guidance |
 | [`../a2a/agent-cards/README.md`](../a2a/agent-cards/README.md) | Host cards (`type: host`; migration note only) |
 | [`../skills/meta/isolate-work/SKILL.md`](../skills/meta/isolate-work/SKILL.md) | Isolate then spawn |
 

@@ -492,7 +492,7 @@ This directory contains standardized, reusable agent skills formatted for autono
 
     files["skills/git-worktree-manager/SKILL.md"] = """---
 name: git-worktree-manager
-description: Manage dedicated git worktrees for isolated agent task execution, branch creation, and conflict-free concurrent editing.
+description: Manage one unique git worktree and branch per meaningful task, including verified post-merge cleanup.
 version: 1.0.0
 tags: [git, worktree, isolation, multi-agent]
 author: Koality-Assured
@@ -501,28 +501,35 @@ author: Koality-Assured
 # Git Worktree Manager
 
 ## When to Use
-- When spawning subagents to work on independent feature branches without workspace collisions.
-- When performing speculative refactoring that must remain isolated from the working tree.
-- When running parallel test suites across different branches.
+- For every meaningful task that edits repository files.
+- For concurrent sessions, including tasks that touch overlapping areas; resolve collisions through normal Git and PR review.
 
 ## Workflow Instructions
 
 ### 1. Worktree Creation
 ```bash
-# Create dedicated branch and worktree
-git worktree add scratch/worktrees/<branch-slug> -b agent/<YYYY-MM-DD>-<branch-slug>
+# Give this task a unique ID: <kebab-slug>-<UTC-timestamp>-<8-hex-random>
+git fetch --no-tags origin <default-branch>
+git worktree add -b codex/<task-id> scratch/worktrees/<task-id> origin/<default-branch>
 ```
 
 ### 2. Execution & Isolation
-- All commands, edits, and test runs for the task MUST be confined to `scratch/worktrees/<branch-slug>`.
+- All commands, edits, and test runs for the task MUST be confined to its `scratch/worktrees/<task-id>` checkout.
 - Do not modify files in the root worktree or other sibling worktrees.
+- Never reuse a worktree for another task. If Git reports a branch or path collision, generate a new unique task ID; do not force or reuse the existing branch.
 
 ### 3. Cleanup & Teardown
+After `gh pr merge` succeeds, run this verification immediately. If the PR was merged outside this session, run the same checks before cleanup:
+
 ```bash
-# After branch is committed or merged
-git worktree remove scratch/worktrees/<branch-slug>
-git worktree prune
+gh repo view --json defaultBranchRef
+gh pr view <pr-number> --json state,mergedAt,baseRefName,headRefName,mergeCommit
+git fetch --no-tags origin <default-branch>
+git merge-base --is-ancestor <merge-commit-oid> FETCH_HEAD
+git -C scratch/worktrees/<task-id> status --porcelain=v1 --untracked-files=all --ignored=matching
 ```
+
+After an authorized merge, preview with `python scripts/cli/harness.py clean --pr <number>`. Apply only when the PR is merged into the repository default branch, its merge commit is reachable from the fetched default branch, the exact PR-to-worktree association is verified, and tracked, untracked, and ignored status is clean. Apply first journals `refs/ai-router/worktree-archives/pr-<number>/<head-sha>` so the archived commit stays reachable after branch deletion and reflog expiry. It moves the checkout and exact linked-worktree admin metadata to `<common Git dir>/ai-router-worktree-archives/`, updates and verifies Git pointers, and unregisters only that worktree; the archive and local branch remain on disk. Keep the custom ref and archive together until explicitly cleaned up. The command rejects redirected paths, initialized submodules, cross-volume and cross-mount moves, UNC/network drives, network/FUSE filesystems, and platforms where local atomic-rename semantics cannot be verified. It uses an idempotent recovery manifest and never runs `git worktree remove`, global prune, force removal, or recursive deletion. If any check is blocked or ambiguous, preserve the checkout and report why.
 """
 
     files["skills/ast-fact-extractor/SKILL.md"] = """---

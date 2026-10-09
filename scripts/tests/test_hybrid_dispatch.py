@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -28,7 +29,7 @@ from hybrid_dispatch import (  # noqa: E402
     dispatch_query,
     tokenize,
 )
-from md import load_skill_record, parse_frontmatter  # noqa: E402
+from md import load_skill_record, parse_frontmatter, skill_paths  # noqa: E402
 from paths import REPO_ROOT as ROOT  # noqa: E402
 
 
@@ -105,6 +106,29 @@ class TestTier1FastPath(unittest.TestCase):
         self.assertEqual(res2.reason, "multi_intent_conflict")
         self.assertIn("noir-scan", res2.conflicting_skills)
         self.assertIn("mermaid-diagram", res2.conflicting_skills)
+
+
+class TestSkillPathDiscovery(unittest.TestCase):
+    def test_skill_paths_accepts_repository_under_hidden_ancestor(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / ".codex" / "worktrees" / "repo"
+            visible = root / "ai-tooling" / "skills" / "example" / "SKILL.md"
+            hidden = root / "ai-tooling" / "skills" / ".private" / "SKILL.md"
+            visible.parent.mkdir(parents=True)
+            hidden.parent.mkdir(parents=True)
+            visible.write_text("---\nname: example\n---\n", encoding="utf-8")
+            hidden.write_text("---\nname: private\n---\n", encoding="utf-8")
+
+            self.assertEqual(skill_paths(root), [visible])
+
+    def test_skill_paths_accepts_ordinary_repository_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "repo"
+            skill = root / "ai-tooling" / "skills" / "example" / "SKILL.md"
+            skill.parent.mkdir(parents=True)
+            skill.write_text("---\nname: example\n---\n", encoding="utf-8")
+
+            self.assertEqual(skill_paths(root), [skill])
 
 
 class TestTier2BM25(unittest.TestCase):

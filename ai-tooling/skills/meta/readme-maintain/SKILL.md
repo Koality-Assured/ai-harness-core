@@ -79,7 +79,7 @@ When maintaining a `README.md` file, follow this context-aware lifecycle:
 
 Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
 
-`mutate`. In ai-router, the parent isolates the target areas via `python scripts/routing/spawn_worktree.py check` → `add` before dispatching `documentation-ops`.
+`mutate`. In ai-router, the parent creates a unique task worktree with `python scripts/routing/spawn_worktree.py create` before dispatching `documentation-ops`; overlapping areas are resolved through ordinary Git and PR review.
 
 ## How to use
 
@@ -91,7 +91,7 @@ Standalone dispatch: Follow the destination's isolation and dispatch rules. Use 
    ```bash
    python scripts/docs/validate_router_structure.py
    ```
-6. If indexed Markdown changed, refresh the search index:
+6. If indexed Markdown changed and has landed on `main`, refresh the search index from the persistent detached `scratch/qmd-main` checkout after syncing it to `origin/main`:
    ```bash
    python scripts/qmd/refresh_qmd_index.py
    ```
@@ -110,4 +110,4 @@ the destination's root security rules (ai-router policy path is optional provena
 
 ## Completion gates
 
-`README.md` updated and validated. Relative links verified. If indexed paths changed, `python scripts/qmd/refresh_qmd_index.py` executed. Change-history updated via script after material structural updates.
+`README.md` updated and validated. Relative links verified. If indexed paths changed, refresh only from the persistent detached QMD source at `scratch/qmd-main` after changes land on `main`; never run QMD from a task worktree. Change-history updated via script after material structural updates.

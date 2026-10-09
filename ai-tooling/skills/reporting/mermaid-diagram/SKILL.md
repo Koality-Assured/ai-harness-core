@@ -2,12 +2,13 @@
 schema_version: "2.0.0"
 name: mermaid-diagram
 description: >-
-  Author a Mermaid diagram in Markdown and render via render_diagram.py (mmdc
-  when available). Use when producing flowchart, sequence, class, state, ER,
-  C4, Gantt, or similar under results/diagrams/ or beside a host report. Do not
-  use for full threat models (threat-model) or multi-view architecture packs
-  (architecture-diagram).
-owner_agent: document-operator
+  Authors a text-defined Mermaid graph or model in Markdown and renders via
+  render_diagram.py (mmdc when available). Use when the diagram has explicit nodes, edges,
+  messages, states, or data relationships, especially inline in GitHub Markdown.
+  Do not use when direct canvas composition, freehand marks, or placed images
+  are central (excalidraw-diagram), for full threat models (threat-model), or
+  for multi-view architecture packs (architecture-diagram).
+owner_agent: artifact-agent
 rank: medium
 isolation: mutate
 contracts:
@@ -21,11 +22,11 @@ contracts:
 
 ## When to use
 
-Produce Mermaid source plus optional PNG/SVG for a named topic. Covers common kinds: flowchart, sequence, class, state, ER, C4, Gantt, timeline, mindmap, sankey.
+Produce Mermaid source plus optional PNG/SVG for a named topic when its main content is a text-defined structure: flowchart, sequence, class, state, ER, C4, Gantt, timeline, mindmap, sankey, and other supported types. GitHub renders Mermaid fences in Markdown. For directly composed canvas scenes, use [`excalidraw-diagram`](../excalidraw-diagram/SKILL.md). The documented capabilities and model-based recommendation are in the shared [format-selection guide](../../../../supporting/diagramming/format-selection.md).
 
 ## When not to use
 
-Full STRIDE package (`threat-model` — that skill spawns this one for diagrams). Broader multi-view architecture packs (`architecture-diagram`). Stats/card dashboards (`tabler-dashboard`). Foundation HTML chrome (`foundation-site`). Pure narrative reports with no diagram.
+Direct canvas composition, freehand annotation, or image placement (`excalidraw-diagram`). Full STRIDE package (`threat-model` — that skill spawns this one for diagrams). Broader multi-view architecture packs (`architecture-diagram`). Stats/card dashboards (`tabler-dashboard`). Foundation HTML chrome (`foundation-site`). Pure narrative reports with no diagram.
 
 ## Criticality
 
@@ -34,6 +35,7 @@ Medium: default diagram path; human may override storage when attaching to anoth
 ## Source of truth
 
 - `supporting/mermaid/agent-diagram-notes.md` (`../../../../supporting/mermaid/agent-diagram-notes.md`; ai-router-only, optional provenance)
+- Format choice: [`supporting/diagramming/format-selection.md`](../../../../supporting/diagramming/format-selection.md) (ai-router-only, optional provenance)
 - `python scripts/results/render_diagram.py`
 - `python scripts/results/new_run_dir.py --family diagrams --topic <slug>`
 - `results/AGENTS.md` (`../../../../results/AGENTS.md`; ai-router-only, optional provenance)
@@ -47,7 +49,7 @@ Standalone dispatch: Follow the destination's isolation and dispatch rules. Use 
 
 ## How to use
 
-1. Confirm topic and diagram kind. Prefer one focused diagram per file.
+1. Confirm topic and diagram kind. Use Mermaid when named relationships, states, or messages are the main content and text source / GitHub Markdown is useful. Use `excalidraw-diagram` when canvas composition, freehand annotation, or images are central. This recommendation is inferred from the documented editing models, not a benchmark.
 2. Discover related in-repo context with `qmd search` / `qmd get` — do not walk trees. Compress bulky notes with Headroom.
 3. Default store: `python scripts/results/new_run_dir.py --family diagrams --topic <slug>` → `results/diagrams/<topic>/<YYYY-MM-DD>/`. If the diagram attaches to another report, store beside that report instead.
 4. Write Mermaid in `.mmd` or a Markdown ` ```mermaid ` fence.

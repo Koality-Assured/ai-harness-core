@@ -46,7 +46,7 @@ Standalone dispatch: Follow the destination's isolation and dispatch rules. Use 
 
 1. `python scripts/ai-tooling/validate_skill.py --skill <name> --dry-run`
 2. Open `ai-tooling/skills/<name>/SKILL.md` and execute only its **Dry run** commands.
-3. Confirm those commands did not dirty the primary `git status` (allow `scratch/` claim files only if the dry run said so).
+3. Confirm those commands did not dirty the primary `git status`; preserve any reported untracked or ignored data and do not remove worktrees as part of a dry run.
 4. For `--all`: `python scripts/ai-tooling/validate_skill.py --all --dry-run`
 5. Report: template OK/FAIL, dry-run command output, any unexpected diffs.
 

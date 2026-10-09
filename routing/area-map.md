@@ -2,7 +2,7 @@
 doc_kind: routing_map
 canonical_id: area-map
 topics: [routing, write-back, structure]
-generated_at_utc: 2026-10-07T23:01:08Z
+generated_at_utc: export
 generator: scripts/routing/generate_routing_index.py
 ---
 
@@ -35,7 +35,7 @@ Match [`skill-dispatch.md`](./skill-dispatch.md) first. Use this table only when
 | --- | --- |
 | `docs/guidance/` | [`document-operator`](../ai-tooling/agents/document-operator/AGENT.md) |
 | `references/socials/` | [`research-operator`](../ai-tooling/agents/research-operator/AGENT.md) |
-| `supporting/aws/` | `none` |
+| `supporting/aws/` | [`cloud-operator`](../ai-tooling/agents/cloud-operator/AGENT.md) |
 | `supporting/github/` | [`github-ops`](../ai-tooling/agents/github-ops/AGENT.md) |
 | `supporting/qmd/` | [`harness-operator`](../ai-tooling/agents/harness-operator/AGENT.md) |
 | `supporting/headroom/` | [`harness-operator`](../ai-tooling/agents/harness-operator/AGENT.md) |

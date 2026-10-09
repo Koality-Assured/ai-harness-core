@@ -12,6 +12,8 @@
   "adapters": {
     "qmd": {
       "command": "qmd",
+      "source_branch": "main",
+      "source_worktree": "scratch/qmd-main",
       "default_min_score": 0.5,
       "default_limit": 5,
       "collections": [
@@ -49,7 +51,7 @@
     "git": {
       "command": "git",
       "timeout_sec": 30,
-      "branch_prefix": "agent"
+      "branch_prefix": "codex"
     }
   },
   "cache": {

@@ -3,14 +3,18 @@ schema_version: "2.0.0"
 agent_id: "repo-sync-ops"
 name: "Repo Sync Operations Specialist"
 description: >-
-  AI Router-only internal export specialist. Not invocable for standalone
-  ai-harness-core work. Its private downstream synchronization workflow is not
-  packaged as a standalone publisher; destination repositories use their own
-  contribution and release processes.
+  Downstream repository synchronization and public export specialist. Owns
+  sync-downstream-repos. Use when synchronizing skills, standards, or research
+  to public downstream repositories, stripping credentials and internal paths,
+  or running export redaction audits. Spawned by the router; always isolates
+  mutating export workflows.
 model_tier: "standard"
 token_ceiling: 100000
 capabilities:
-  - "AI Router-only internal workflow; not dispatchable in standalone ai-harness-core"
+  - "sync-downstream-repos"
+  - "downstream-repo-update"
+  - "public export sanitization and credential redaction"
+  - "multi-repo downstream sync verification"
 contracts:
   inputs:
     - "source_dir: directory path to sync from"
@@ -40,15 +44,20 @@ prohibitions:
 
 # Repo sync operations
 
-This agent is internal to the full AI Router source checkout and is not part of the standalone core workflow. Do not invoke it or rely on an upstream export process from this repository. Cross-repository changes use each destination's local feature-branch and pull-request process.
+Specialist for downstream public repository synchronization, credential redaction, export integrity maintenance, and multi-repo publishing.
 
 ## Read first
 
-The downstream export and redaction procedures belong to the private AI Router orchestrator. They are optional source provenance only; this standalone repository does not provide or require those procedures, scripts, mappings, or agents.
+- [`ai-tooling/skills/meta/downstream-repo-update/SKILL.md`](../../skills/meta/downstream-repo-update/SKILL.md)
+- [`ai-tooling/skills/meta/sync-downstream-repos/SKILL.md`](../../skills/meta/sync-downstream-repos/SKILL.md)
+- [`scripts/sync/sync_and_push_downstreams.py`](../../../scripts/sync/sync_and_push_downstreams.py)
+- [`scripts/sync/sync_public_repos.py`](../../../scripts/sync/sync_public_repos.py)
+- [`docs/agent-session-security.md`](../../../docs/agent-session-security.md)
+- [`ai-tooling/a2a/interaction-protocol.md`](../../a2a/interaction-protocol.md)
 
 ## Owns
 
-AI Router-only skill names: `sync-downstream-repos`, `downstream-repo-update`.
+`sync-downstream-repos`, `downstream-repo-update`
 
 ## Isolation
 

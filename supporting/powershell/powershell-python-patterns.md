@@ -80,16 +80,14 @@ Antigravity's `write_to_file` tool strictly differentiates brain artifacts from 
 - When writing workspace code, tests, or documentation under `[REPO_ROOT]/`, **omit `ArtifactMetadata` entirely**.
 - Supplying `ArtifactMetadata` to a workspace path triggers an `invalid_args: not a valid artifact path` error because `ArtifactMetadata` is reserved exclusively for the host brain artifact directory (`<appDataDir>\brain\<conversation-id>`).
 
-### Pattern G: CLI subcommand flags & area registration
+### Pattern G: CLI subcommand flags & task worktrees
 
-1. **Explicit flags over positional arguments**: Scripts such as `spawn_worktree.py remove` require `--slug <slug>` (e.g. `python scripts/routing/spawn_worktree.py remove --slug my-task`). Passing positional arguments causes argparse validation failures.
-2. **Area registration gating**: `spawn_worktree.py check` and `add` validate area names strictly against `routing/areas.yaml`. Passing unregistered top-level folders (e.g. `config/`) will fail validation; only use registered area identifiers (`ai-tooling`, `scripts`, `docs`, `results`, etc.).
+1. **Explicit flags over positional arguments**: `spawn_worktree.py create` requires `--slug <task>` and `cleanup` requires both `--branch <branch>` and `--pr <number>`. Passing positional values causes argparse validation failures.
+2. **Unique branch per task**: `create` accepts a kebab-case task slug and generates a unique `codex/<task-id>` branch and worktree. `cleanup` verifies the merged PR against the default branch before removing a clean worktree; local tracked, untracked, or ignored data blocks removal.
 
 ### Pattern H: Mutation gates and preflight inspection
 
-Mutation scripts that rebuild or touch shared indexes (such as `python scripts/qmd/refresh_qmd_index.py`) enforce safety gates:
-- Run the inspection preflight first (`python scripts/qmd/qmd_preflight.py`).
-- If refresh is genuinely required, pass `--approved-by-user` explicitly.
+Routine retrieval freshness uses `qmd update` from the persistent detached source at `scratch/qmd-main`; this authorized incremental update does not reconfigure collections. Separate setup, collection reconfiguration, or deeper embedding/cleanup through `python scripts/qmd/refresh_qmd_index.py` keeps its inspection preflight and explicit approval requirements, and must run from the persistent QMD source rather than a task worktree.
 
 ### Pattern I: Script execution policy and npm global shims (`qmd.ps1` vs `qmd.cmd`)
 

@@ -2,17 +2,20 @@
 schema_version: 2.0.0
 agent_id: artifact-agent
 name: Artifact agent
-description: Diagrams and modular documents specialist. Owns mermaid-diagram, architecture-diagram,
-  executive-report, proposal-report, corpus-draft, guidance-draft, code-review-report,
+description: Diagrams, media captures, and modular documents specialist. Owns mermaid-diagram, excalidraw-diagram, architecture-diagram,
+  tool-capture, executive-report, proposal-report, corpus-draft, guidance-draft, code-review-report,
   framework-mapper, tabler-dashboard, noir-scan, foundation-site, anti-slop, and humanizer.
-  Use for mermaid diagrams, structured reports under results/, Tabler/Foundation presentation,
+  Use for Mermaid or Excalidraw diagrams, tool screenshots/GIFs/videos, structured reports under results/, Tabler/Foundation presentation,
   Noir endpoint inventory for reviews, and dedicated anti-slop/humanizer rewrite or
   detect asks. Default specialist for results/ when no more specific skill applies.
 model_tier: standard
 token_ceiling: 150000
 capabilities:
 - mermaid-diagram
+- excalidraw-diagram
 - architecture-diagram
+- tool-capture
+- Mermaid and Excalidraw format selection
 - modular reports via build_document.py
 - tabler-dashboard
 - noir-scan
@@ -22,11 +25,12 @@ capabilities:
 - default results/ specialist
 contracts:
   inputs:
-  - Report or diagram specifications, raw metrics/data, topic metadata
+  - Diagram or report specifications, format/composition needs, raw metrics/data, topic metadata
   - Markdown files requesting anti-slop or humanizer polishing
   outputs:
-  - Rendered diagrams under results/diagrams/
+  - Editable Mermaid or Excalidraw sources and rendered PNG/SVG diagrams under results/diagrams/ or beside a host report
   - Modular reports, dashboards, and static sites under results/
+  - Tool screenshots, animated demonstration GIFs, and WebM videos under results/captures/ or beside host docs
   - Polished text with anti-slop/humanizer audit logs
 isolation_modes:
 - mutate
@@ -49,10 +53,11 @@ prohibitions:
 quirks:
 - 'Diagrams: results/diagrams/<topic>/<YYYY-MM-DD>/ unless attached to another report'
 - 'Reports: results/reports/<type>/<topic>/<YYYY-MM-DD>/'
+- 'Captures: results/captures/<topic>/<YYYY-MM-DD>/ or beside host docs'
 - Tabler/Foundation/Noir outputs attach beside host report families — no new top-level
   results family
 - Dedicated anti-slop/humanizer asks only; writing skills apply both in-session
-last_verified: '2026-08-24'
+last_verified: '2026-10-09'
 ---
 
 # Artifact agent
@@ -68,7 +73,7 @@ Specialist for diagrams and modular documents under `results/`, plus dedicated a
 
 ## Owns
 
-`mermaid-diagram`, `architecture-diagram`, `executive-report`, `proposal-report`, `corpus-draft`, `guidance-draft`, `code-review-report`, `framework-mapper`, `tabler-dashboard`, `noir-scan`, `foundation-site`, `anti-slop`, `humanizer`
+`mermaid-diagram`, `excalidraw-diagram`, `architecture-diagram`, `tool-capture`, `executive-report`, `proposal-report`, `corpus-draft`, `guidance-draft`, `code-review-report`, `framework-mapper`, `tabler-dashboard`, `noir-scan`, `foundation-site`, `anti-slop`, `humanizer`
 
 Default specialist for `results/` when no skill row is more specific.
 
@@ -84,7 +89,7 @@ Inherits Critical cost layers (qmd discovery; ast-grep for structured files; Hea
 
 Do not load general README.md for operations — hop area AGENTS.md, routing/skills, and qmd on kebab-case topic pages. README is human-only.
 
-No secrets in diagrams or reports. Prefer bound scripts (`render_diagram.py`, `build_document.py`, `new_run_dir.py`, `build_tabler_dashboard.py`, `run_noir_scan.py`, `build_foundation_site.py`) over ad-hoc layout.
+No secrets in diagrams or reports. Select Mermaid for text-defined semantic structures and Excalidraw for direct visual composition using [`supporting/diagramming/format-selection.md`](../../../supporting/diagramming/format-selection.md). Keep one canonical source when providing derived formats. Prefer bound scripts (`render_diagram.py`, `build_document.py`, `capture_tool.py`, `new_run_dir.py`, `build_tabler_dashboard.py`, `run_noir_scan.py`, `build_foundation_site.py`) over ad-hoc layout where they apply.
 
 ## Return to parent
 
