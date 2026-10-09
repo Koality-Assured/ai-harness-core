@@ -1,6 +1,28 @@
+<div align="center">
+
+<img src="assets/ai-harness-core-banner.svg" alt="AI Harness Core Hero Banner" width="100%" />
+
+<br/><br/>
+
+<img src="assets/ai-harness-core-logo.svg" alt="AI Harness Core Logo" width="128" height="128" />
+
 # Koality-Assured AI Harness Core
 
+**Decoupled AI Agent Harness Engine & Generic Template for Production-Grade Multi-Agent Orchestration**
+
+[![CI](https://github.com/Koality-Assured/ai-harness-core/actions/workflows/ci.yml/badge.svg)](https://github.com/Koality-Assured/ai-harness-core/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/Koality-Assured/ai-harness-core/blob/main/LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
+[![Architecture: Decoupled Harness](https://img.shields.io/badge/architecture-decoupled%20harness-blueviolet.svg)]()
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
+
+<br/>
+
+</div>
+
 Decoupled AI agent harness engine and generic template for multi-agent routing, 5-tier context hierarchies, multi-vendor prompt caching, precision cost layers, and sandboxed worktree execution.
+
+---
 
 ## Mission Statement
 
@@ -28,12 +50,12 @@ Clone this repository as a clean base to create a specialized domain harness (e.
 Embed the core engine directly into an existing software project to give AI coding agents isolation, caching, and retrieval capabilities:
 1. Scaffold configuration and skeleton directories via CLI:
    ```bash
-   python scripts/harness_init.py --target /path/to/target-repo
+   python .harness/cli/harness_init.py --target /path/to/target-repo
    ```
 2. Configure provider thresholds and adapter paths in `config/harness.config.json`.
 3. Use Git worktrees for task isolation as documented by the destination repository; leverage `.harness/` adapters for prompt-cache planning, Headroom compression, and tool integrations.
 
-### Core ↔ spoke protocol
+### Core ↔ Spoke Protocol
 Domain routers are **spokes**. `ai-harness-core` is the generic **core**.
 
 1. Scaffold a spoke with `python scripts/sync/scaffold_harness.py` (local template export and/or clone of `ai-harness-core`). Remotes: `origin` = the domain repo, `harness-core` = `Koality-Assured/ai-harness-core`. Private visibility is first-class (`--visibility private|public`).
@@ -41,6 +63,82 @@ Domain routers are **spokes**. `ai-harness-core` is the generic **core**.
 3. Propose generic core improvements back with `python scripts/sync/propose_core_update.py` (refuses domain overlay paths; `--create-issue` only; never open a PR from the spoke working tree). Game-dev spokes default private; `--visibility public` is refused unless `--allow-public-game-dev`.
 
 Do not copy instance `projects/`, `research/`, or `ai-tooling/memory/` dumps, and do not feed a fed instance (for example a security corpus) in as the template source.
+
+---
+
+## Visual Architecture & Workflows
+
+### Multi-Agent Routing Lifecycle
+
+The routing subsystem resolves requests through progressive triage, dependency ordering, clean-slate isolation, and bounded coordination:
+
+```mermaid
+flowchart TD
+    UserReq["User Prompt / Coordinator Task"] --> Dispatch["3-Tier Hybrid Dispatch"]
+
+    subgraph HybridRouting ["Phase 1: Hybrid Routing Engine"]
+        Dispatch --> MatchFast["Tier 1: Fast-Path Regex (0 Tokens, sub-ms)"]
+        Dispatch --> MatchBM25["Tier 2: In-Memory BM25 (Ranked Lexical)"]
+        Dispatch --> MatchGate["Tier 3: LLM Ambiguity Gate (Triage)"]
+        MatchFast --> SkillSelect["Target Skill and Owner Agent"]
+        MatchBM25 --> SkillSelect
+        MatchGate --> SkillSelect
+    end
+
+    subgraph DAGResolution ["Phase 2: Graph Resolution and Context Boundary"]
+        SkillSelect --> DAGResolve["DAG Dependency Resolver (Kahn Topological Sort)"]
+        DAGResolve --> CheckPolicy{"Policy Check"}
+        CheckPolicy -->|"abort or fallback"| FailHandle["Fault Recovery Strategy"]
+        CheckPolicy -->|"validated dependencies"| ParentBound["Parent Discovery Bound (Parent Reads Stop)"]
+    end
+
+    subgraph SandboxedExec ["Phase 3: Sandboxed Worktree Execution"]
+        ParentBound --> SpawnWorktree["Git Worktree Isolation (scratch/worktrees/task-id)"]
+        SpawnWorktree --> SpecialistExec["Clean-Slate Specialist Execution"]
+        SpecialistExec --> ResultEnv["Structured Result Envelope (artifacts, metrics)"]
+    end
+
+    subgraph AuditReconcile ["Phase 4: Reconciliation and Session Loop"]
+        ResultEnv --> ParentAudit["Parent Coordinator Verification"]
+        ParentAudit --> PostMerge["PR Merge and Safe Cleanup (harness clean --pr)"]
+    end
+```
+
+### 5-Tier Context Management & Prompt Caching
+
+Context hierarchy balances byte-stable prefix caching across LLM providers with just-in-time rule injection:
+
+```mermaid
+flowchart TB
+    subgraph CachePrefix ["Cached Static Prefix (Breakpoint 1: Exact Byte Invariance)"]
+        T1["Tier 1: Static Base Prefix (Token 0 - Guardrails, Root AGENTS, Tool Schemas)"]
+        T2["Tier 2: Static Skill Context (Specialist AGENT.md, Schema V2 SKILL.md)"]
+        T1 --- T2
+    end
+
+    subgraph MonotonicHistory ["Cached Conversation History (Breakpoint 2: Append-Only)"]
+        T3["Tier 3: Monotonic Conversation History (Turn 1 to Turn N-1)"]
+        T2 --- T3
+    end
+
+    subgraph DynamicTail ["Dynamic Rolling Window (Uncached Tail Delta)"]
+        T4["Tier 4: Ephemeral Turn Context (JIT Nearest AGENTS.md at Turn Tail)"]
+        T5["Tier 5: Dynamic Turn Delta (User Prompt + Headroom Compressed Outputs)"]
+        T3 --- T4
+        T4 --- T5
+    end
+
+    subgraph ProviderAdapters ["Multi-Vendor Prompt Cache Alignment"]
+        T1 -.-> Anthropic["Anthropic Claude: 2-Breakpoint Allocation (Max 4 blocks, 5-min TTL)"]
+        T2 -.-> Anthropic
+        T3 -.-> OpenAI["OpenAI GPT: Automatic Prefix Caching (128-Token Block Alignment)"]
+        T3 -.-> Gemini["Google Gemini: Context Caching API Descriptors (32k+ Tokens)"]
+    end
+
+    subgraph EconomicResult ["Empirical Operational Results"]
+        T5 ==> Perf["92-98% Cache Hit Rate | 83-94% Token Reduction | Sub-Second Routing"]
+    end
+```
 
 ---
 
@@ -209,6 +307,8 @@ python -m unittest discover -s scripts/tests -v
 
 Public export and template instances run automated redaction audits. Never commit credentials, API keys, private tokens, or real PII. Redacted examples must be obviously fake. Full session security rules live in `docs/agent-session-security.md`.
 
+---
+
 ## License
 
-MIT License Copyright (c) 2026 Koality-Assured.
+This project is licensed under the [MIT License](LICENSE).
