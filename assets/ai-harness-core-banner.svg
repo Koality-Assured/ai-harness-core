@@ -1,0 +1,300 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 420" width="100%" height="auto" role="img" aria-label="AI Harness Core Hero Banner">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bannerBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#080C17" />
+      <stop offset="40%" stop-color="#0C1222" />
+      <stop offset="80%" stop-color="#070A14" />
+      <stop offset="100%" stop-color="#04060A" />
+    </linearGradient>
+
+    <!-- Radial Glows -->
+    <radialGradient id="leftCoreGlow" cx="22%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#00E5FF" stop-opacity="0.30" />
+      <stop offset="35%" stop-color="#7C3AED" stop-opacity="0.22" />
+      <stop offset="70%" stop-color="#1E1B4B" stop-opacity="0.10" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="rightAccentGlow" cx="80%" cy="30%" r="45%">
+      <stop offset="0%" stop-color="#6366F1" stop-opacity="0.15" />
+      <stop offset="50%" stop-color="#38BDF8" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Linear Palettes -->
+    <linearGradient id="cyberGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F0FF" />
+      <stop offset="50%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#818CF8" />
+    </linearGradient>
+
+    <linearGradient id="violetCyber" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A855F7" />
+      <stop offset="50%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#00F0FF" />
+    </linearGradient>
+
+    <linearGradient id="titlePlatinum" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="60%" stop-color="#F1F5F9" />
+      <stop offset="100%" stop-color="#94A3B8" />
+    </linearGradient>
+
+    <linearGradient id="cardBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.8" />
+    </linearGradient>
+
+    <!-- Filters -->
+    <filter id="coreBloom" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur1" />
+      <feGaussianBlur stdDeviation="24" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="shadowFilter" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000000" flood-opacity="0.7" />
+    </filter>
+
+    <!-- Background Pattern -->
+    <pattern id="techGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1E293B" stroke-width="0.75" stroke-opacity="0.4" />
+      <circle cx="40" cy="0" r="1" fill="#38BDF8" fill-opacity="0.3" />
+    </pattern>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="1280" height="420" rx="20" fill="url(#bannerBg)" stroke="#1E293B" stroke-width="2" />
+  <rect width="1280" height="420" rx="20" fill="url(#techGrid)" />
+
+  <!-- Ambient Lighting Overlays -->
+  <rect width="1280" height="420" rx="20" fill="url(#leftCoreGlow)" />
+  <rect width="1280" height="420" rx="20" fill="url(#rightAccentGlow)" />
+
+  <!-- Outer Tech Border & Corner Accents -->
+  <g stroke="#38BDF8" stroke-width="1.5" opacity="0.6">
+    <!-- Top-Left Corner -->
+    <path d="M 28 48 L 28 28 L 48 28" fill="none" />
+    <!-- Top-Right Corner -->
+    <path d="M 1232 28 L 1252 28 L 1252 48" fill="none" />
+    <!-- Bottom-Left Corner -->
+    <path d="M 28 372 L 28 392 L 48 392" fill="none" />
+    <!-- Bottom-Right Corner -->
+    <path d="M 1232 392 L 1252 392 L 1252 372" fill="none" />
+  </g>
+
+  <!-- Data Bus Circuit Lines (Core to Right Header) -->
+  <g opacity="0.35" stroke="#38BDF8" stroke-width="1" fill="none">
+    <path d="M 390 210 L 520 210 L 550 160 L 640 160" />
+    <path d="M 370 140 L 480 140 L 510 90 L 600 90" stroke-dasharray="4 4" />
+    <path d="M 370 280 L 460 280 L 500 330 L 620 330" stroke-dasharray="6 6" />
+    <circle cx="640" cy="160" r="3" fill="#00F0FF" />
+    <circle cx="600" cy="90" r="2.5" fill="#818CF8" />
+    <circle cx="620" cy="330" r="3" fill="#C084FC" />
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- LEFT EMBLEM: THE AI HARNESS CORE (Center at x=235, y=210) -->
+  <!-- ======================================================== -->
+  <g id="harness-core-emblem" filter="url(#shadowFilter)">
+    <!-- Outer Gear Rim (r=150) -->
+    <circle cx="235" cy="210" r="150" fill="#0B101D" stroke="#1E293B" stroke-width="8" />
+    <circle cx="235" cy="210" r="150" fill="none" stroke="url(#violetCyber)" stroke-width="2.5" stroke-opacity="0.9" />
+
+    <!-- Outer Gear Teeth (16 teeth) -->
+    <g fill="#E2E8F0" stroke="#0F172A" stroke-width="0.8" opacity="0.9">
+      <rect x="231" y="52" width="8" height="12" rx="2" />
+      <rect x="231" y="356" width="8" height="12" rx="2" />
+      <rect x="77" y="206" width="12" height="8" rx="2" />
+      <rect x="381" y="206" width="12" height="8" rx="2" />
+
+      <rect x="231" y="52" width="8" height="12" rx="2" transform="rotate(45 235 210)" />
+      <rect x="231" y="356" width="8" height="12" rx="2" transform="rotate(45 235 210)" />
+      <rect x="77" y="206" width="12" height="8" rx="2" transform="rotate(45 235 210)" />
+      <rect x="381" y="206" width="12" height="8" rx="2" transform="rotate(45 235 210)" />
+
+      <rect x="231" y="52" width="8" height="12" rx="2" transform="rotate(22.5 235 210)" />
+      <rect x="231" y="356" width="8" height="12" rx="2" transform="rotate(22.5 235 210)" />
+      <rect x="77" y="206" width="12" height="8" rx="2" transform="rotate(22.5 235 210)" />
+      <rect x="381" y="206" width="12" height="8" rx="2" transform="rotate(22.5 235 210)" />
+
+      <rect x="231" y="52" width="8" height="12" rx="2" transform="rotate(67.5 235 210)" />
+      <rect x="231" y="356" width="8" height="12" rx="2" transform="rotate(67.5 235 210)" />
+      <rect x="77" y="206" width="12" height="8" rx="2" transform="rotate(67.5 235 210)" />
+      <rect x="381" y="206" width="12" height="8" rx="2" transform="rotate(67.5 235 210)" />
+    </g>
+
+    <!-- Calibration Track -->
+    <circle cx="235" cy="210" r="142" fill="none" stroke="#38BDF8" stroke-width="1.5" stroke-dasharray="2 12.3" opacity="0.8" />
+    <circle cx="235" cy="210" r="134" fill="none" stroke="#C084FC" stroke-width="0.75" stroke-dasharray="1 6.1" opacity="0.5" />
+
+    <!-- 5 Interlocking Context Tiers -->
+    <!-- Tier 5: Dynamic Turn Delta (r=122) -->
+    <circle cx="235" cy="210" r="122" fill="none" stroke="url(#cyberGradient)" stroke-width="3"
+            stroke-dasharray="45 15 25 12 55 16" stroke-linecap="round" opacity="0.9" />
+    
+    <!-- Tier 4: Ephemeral Turn Context (r=106) -->
+    <circle cx="235" cy="210" r="106" fill="none" stroke="#818CF8" stroke-width="2.5"
+            stroke-dasharray="30 12 50 15" stroke-linecap="round" opacity="0.85" />
+    <circle cx="341" cy="210" r="3" fill="#38BDF8" filter="url(#neonGlow)" />
+    <circle cx="129" cy="210" r="3" fill="#38BDF8" filter="url(#neonGlow)" />
+
+    <!-- Tier 3: Monotonic Conversation History (r=90) -->
+    <circle cx="235" cy="210" r="90" fill="none" stroke="#E2E8F0" stroke-width="2" opacity="0.7" />
+    <circle cx="235" cy="210" r="90" fill="none" stroke="#00F0FF" stroke-width="1.5" stroke-dasharray="6 10" />
+    <circle cx="235" cy="120" r="3.5" fill="#C084FC" filter="url(#neonGlow)" />
+    <circle cx="235" cy="300" r="3.5" fill="#C084FC" filter="url(#neonGlow)" />
+
+    <!-- Tier 2: Static Skill Context (r=74) -->
+    <circle cx="235" cy="210" r="74" fill="none" stroke="url(#violetCyber)" stroke-width="3.5"
+            stroke-dasharray="60 12 60 12" stroke-linecap="round" />
+
+    <!-- Tier 1: Static Base Prefix (r=58) -->
+    <circle cx="235" cy="210" r="58" fill="none" stroke="#FFFFFF" stroke-width="4" />
+    <circle cx="235" cy="210" r="58" fill="none" stroke="#00F0FF" stroke-width="1.5" filter="url(#neonGlow)" />
+
+    <!-- 4 Harness Calipers -->
+    <!-- Top -->
+    <path d="M 224 66 L 246 66 L 242 115 L 235 124 L 228 115 Z" fill="#0F172A" stroke="url(#cyberGradient)" stroke-width="1.5" />
+    <circle cx="235" cy="74" r="2.5" fill="#FFFFFF" />
+    <!-- Bottom -->
+    <path d="M 224 354 L 246 354 L 242 305 L 235 296 L 228 305 Z" fill="#0F172A" stroke="url(#cyberGradient)" stroke-width="1.5" />
+    <circle cx="235" cy="346" r="2.5" fill="#FFFFFF" />
+    <!-- Left -->
+    <path d="M 91 199 L 91 221 L 140 217 L 149 210 L 140 203 Z" fill="#0F172A" stroke="url(#cyberGradient)" stroke-width="1.5" />
+    <circle cx="99" cy="210" r="2.5" fill="#FFFFFF" />
+    <!-- Right -->
+    <path d="M 379 199 L 379 221 L 330 217 L 321 210 L 330 203 Z" fill="#0F172A" stroke="url(#cyberGradient)" stroke-width="1.5" />
+    <circle cx="371" cy="210" r="2.5" fill="#FFFFFF" />
+
+    <!-- Central Routing Core (Octagon + Crystal Facets) -->
+    <polygon points="235,162 269,176 283,210 269,244 235,258 201,244 187,210 201,176"
+             fill="#0F172A" stroke="url(#violetCyber)" stroke-width="2.5" filter="url(#neonGlow)" />
+
+    <!-- Prism Shards -->
+    <polygon points="235,170 235,210 263,182" fill="#38BDF8" opacity="0.4" />
+    <polygon points="263,182 235,210 275,210" fill="#818CF8" opacity="0.45" />
+    <polygon points="275,210 235,210 263,238" fill="#C084FC" opacity="0.35" />
+    <polygon points="263,238 235,210 235,250" fill="#7C3AED" opacity="0.5" />
+    <polygon points="235,250 235,210 207,238" fill="#2563EB" opacity="0.4" />
+    <polygon points="207,238 235,210 195,210" fill="#00D2FF" opacity="0.4" />
+    <polygon points="195,210 235,210 207,182" fill="#00F0FF" opacity="0.5" />
+    <polygon points="207,182 235,210 235,170" fill="#67E8F9" opacity="0.35" />
+
+    <!-- Inner Core Singularity -->
+    <polygon points="235,185 260,210 235,235 210,210" fill="#0284C7" stroke="#00F0FF" stroke-width="2" filter="url(#coreBloom)" />
+    <polygon points="235,193 252,210 235,227 218,210" fill="#FFFFFF" opacity="0.9" />
+    <circle cx="235" cy="210" r="5" fill="#FFFFFF" />
+  </g>
+
+  <!-- ======================================================== -->
+  <!-- RIGHT CONTENT AREA: TYPOGRAPHY, BADGES & FEATURE PILLS  -->
+  <!-- ======================================================== -->
+  <g id="typography-and-content">
+    <!-- Kicker Tag / Status Capsule -->
+    <g transform="translate(460, 68)">
+      <rect width="365" height="28" rx="14" fill="#1E293B" stroke="url(#cyberGradient)" stroke-width="1.2" opacity="0.9" />
+      <circle cx="16" cy="14" r="4.5" fill="#00F0FF" filter="url(#neonGlow)" />
+      <text x="32" y="18.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+            font-size="11" font-weight="700" fill="#38BDF8" letter-spacing="2.5">KOALITY-ASSURED ARCHITECTURE</text>
+      <text x="325" y="18.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+            font-size="10" font-weight="600" fill="#94A3B8">v1.0</text>
+    </g>
+
+    <!-- Main Title -->
+    <text x="460" y="142" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+          font-size="46" font-weight="800" fill="url(#titlePlatinum)" letter-spacing="1">
+      AI HARNESS CORE
+    </text>
+
+    <!-- Subtitle / Mission Statement -->
+    <text x="460" y="182" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+          font-size="16" font-weight="500" fill="#94A3B8">
+      Decoupled AI agent harness engine for multi-agent routing, 5-tier context hierarchies,
+    </text>
+    <text x="460" y="206" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+          font-size="16" font-weight="500" fill="#94A3B8">
+      multi-vendor prompt caching, precision cost layers, and sandboxed worktree execution.
+    </text>
+
+    <!-- Feature Architecture Pills (Row 1) -->
+    <g transform="translate(460, 240)">
+      <!-- Pill 1: 5-Tier Context -->
+      <g>
+        <rect width="225" height="38" rx="8" fill="url(#cardBg)" stroke="#38BDF8" stroke-width="1.2" stroke-opacity="0.8" />
+        <circle cx="18" cy="19" r="4" fill="#38BDF8" />
+        <text x="32" y="24" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+              font-size="12.5" font-weight="600" fill="#F8FAFC">5-Tier Context Hierarchy</text>
+      </g>
+
+      <!-- Pill 2: Multi-Vendor Caching -->
+      <g transform="translate(240, 0)">
+        <rect width="235" height="38" rx="8" fill="url(#cardBg)" stroke="#818CF8" stroke-width="1.2" stroke-opacity="0.8" />
+        <circle cx="18" cy="19" r="4" fill="#818CF8" />
+        <text x="32" y="24" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+              font-size="12.5" font-weight="600" fill="#F8FAFC">Multi-Vendor Prompt Cache</text>
+      </g>
+
+      <!-- Pill 3: 90%+ Hit Rate -->
+      <g transform="translate(490, 0)">
+        <rect width="250" height="38" rx="8" fill="url(#cardBg)" stroke="#C084FC" stroke-width="1.2" stroke-opacity="0.8" />
+        <circle cx="18" cy="19" r="4" fill="#C084FC" />
+        <text x="32" y="24" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+              font-size="12.5" font-weight="600" fill="#F8FAFC">~90% Input Cost Savings</text>
+      </g>
+    </g>
+
+    <!-- Feature Architecture Pills (Row 2) -->
+    <g transform="translate(460, 292)">
+      <!-- Pill 4: Dual Retrieval -->
+      <g>
+        <rect width="245" height="38" rx="8" fill="url(#cardBg)" stroke="#38BDF8" stroke-width="1.2" stroke-opacity="0.6" />
+        <circle cx="18" cy="19" r="4" fill="#00F0FF" />
+        <text x="32" y="24" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+              font-size="12.5" font-weight="600" fill="#E2E8F0">Dual Retrieval (BM25 + AST)</text>
+      </g>
+
+      <!-- Pill 5: Sandboxed Isolation -->
+      <g transform="translate(260, 0)">
+        <rect width="220" height="38" rx="8" fill="url(#cardBg)" stroke="#818CF8" stroke-width="1.2" stroke-opacity="0.6" />
+        <circle cx="18" cy="19" r="4" fill="#A855F7" />
+        <text x="32" y="24" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+              font-size="12.5" font-weight="600" fill="#E2E8F0">Git Worktree Isolation</text>
+      </g>
+
+      <!-- Pill 6: Schema V2 -->
+      <g transform="translate(495, 0)">
+        <rect width="245" height="38" rx="8" fill="url(#cardBg)" stroke="#64748B" stroke-width="1.2" stroke-opacity="0.6" />
+        <circle cx="18" cy="19" r="4" fill="#E2E8F0" />
+        <text x="32" y="24" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+              font-size="12.5" font-weight="600" fill="#E2E8F0">Schema V2 &amp; 8-Point Taxonomy</text>
+      </g>
+    </g>
+
+    <!-- Bottom Telemetry & Status Bar -->
+    <g transform="translate(460, 360)">
+      <line x1="0" y1="0" x2="740" y2="0" stroke="#1E293B" stroke-width="1" />
+      <text x="0" y="20" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, monospace"
+            font-size="11" font-weight="600" fill="#64748B" letter-spacing="1.5">
+        MODE A: CLONE &amp; FEED  //  MODE B: EMBEDDABLE ENGINE  //  CORE ↔ SPOKE PROTOCOL
+      </text>
+      <text x="740" y="20" text-anchor="end" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, monospace"
+            font-size="11" font-weight="600" fill="#38BDF8" letter-spacing="1">
+        STATUS: PRODUCTION READY
+      </text>
+    </g>
+  </g>
+</svg>
