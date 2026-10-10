@@ -17,10 +17,13 @@ sys.path.insert(0, str(_SCRIPTS))
 sys.path.insert(0, str(_SCRIPTS / "_lib"))
 
 from pacing import (  # noqa: E402
+    check_secondary_availability,
     chunk_tasks,
+    clear_secondary_exhaustion,
     format_schedule_wakeup,
     load_quota_profiles,
     parse_reset_duration,
+    record_secondary_exhaustion,
     resolve_quota_profile,
 )
 
@@ -65,7 +68,11 @@ class PacingUnitTests(unittest.TestCase):
             "metered_secondary",
         )
         self.assertEqual(
-            resolve_quota_profile(host="antigravity", model_name="claude-sonnet-4.6"),
+            resolve_quota_profile(host="antigravity", model_name="Claude 5.5 Sonnet"),
+            "metered_secondary",
+        )
+        self.assertEqual(
+            resolve_quota_profile(host="antigravity", model_name="GPT 6.0 Luna"),
             "metered_secondary",
         )
         self.assertEqual(
@@ -75,13 +82,43 @@ class PacingUnitTests(unittest.TestCase):
 
     def test_resolve_quota_profile_native_antigravity(self) -> None:
         self.assertEqual(
-            resolve_quota_profile(host="antigravity", model_name="Gemini 3.7 Flash"),
+            resolve_quota_profile(host="antigravity", model_name="Gemini 3.8 Flash"),
+            "standard",
+        )
+        self.assertEqual(
+            resolve_quota_profile(host="antigravity", model_name="Gemini 3.8 Flash (High)"),
+            "standard",
+        )
+        self.assertEqual(
+            resolve_quota_profile(host="antigravity", model_name="Gemini 3.8 Pro"),
             "standard",
         )
         self.assertEqual(
             resolve_quota_profile(host="antigravity", model_name=None),
             "standard",
         )
+
+    def test_quota_state_exhaustion_lifecycle(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmproot = Path(tmpdir)
+            # Initially available
+            avail, rem = check_secondary_availability(tmproot)
+            self.assertTrue(avail)
+            self.assertEqual(rem, 0)
+
+            # Record exhaustion for 100 seconds
+            record_secondary_exhaustion(100, provider="claude", repo_root=tmproot)
+            avail, rem = check_secondary_availability(tmproot)
+            self.assertFalse(avail)
+            self.assertGreater(rem, 0)
+            self.assertLessEqual(rem, 100)
+
+            # Clear exhaustion
+            clear_secondary_exhaustion(tmproot)
+            avail, rem = check_secondary_availability(tmproot)
+            self.assertTrue(avail)
+            self.assertEqual(rem, 0)
 
     def test_resolve_quota_profile_env_override(self) -> None:
         self.assertEqual(

@@ -52,6 +52,8 @@ Generated from dest `scripts/` after harness-template export (kept trees only). 
 | [`qmd/refresh_qmd_index.py`](./qmd/refresh_qmd_index.py) | `qmd` | index, embed, session-end, completion-gate | Refresh an existing local qmd index after explicit user approval. |
 | [`qmd/setup_qmd_collections.py`](./qmd/setup_qmd_collections.py) | `qmd` | index, collections, embed, modular, areas | Set up missing qmd collections only after an explicit, inspected approval. |
 | [`qmd/validate_qmd_retrieval.py`](./qmd/validate_qmd_retrieval.py) | `qmd`, `cost-layers`, `benchmarks`, `retrieval` | validation, dry-run, tokens, mrr, precision, multi-trial, randomized | Dry-run qmd retrieval: health, relevance, query permutation robustness, and token-cost efficiency. |
+| [`repos/audit_repo_beautification.py`](./repos/audit_repo_beautification.py) | `repos`, `audit`, `branding`, `beautification`, `linter`, `hardening` | audit-beautification, repo-audit, beautify-audit, check-branding | Automated repository beautification, branding, and hardening audit tool. |
+| [`repos/beautify_repo.py`](./repos/beautify_repo.py) | `repos`, `branding`, `beautification`, `svg`, `badges`, `hardening` | beautify, branding, vector-logo, vector-banner, badges, pyproject-hardening | Automated repository branding, beautification, and hardening tool. |
 | [`repos/scaffold_public_repos.py`](./repos/scaffold_public_repos.py) | `repos`, `scaffold`, `github` | scaffold, public-repos, agent-skills, agent-standards, ai-research, wiki-template | Automated scaffolding CLI to initialize the 3 public Koality-Assured ecosystem repositories. |
 | [`research/ai_vendor_briefing.py`](./research/ai_vendor_briefing.py) | `research`, `intelligence`, `briefing` | vendor-updates, flash-briefing, ai-vendors, primary-sources | Fetch, analyze, and synthesize AI vendor updates into flash briefings. |
 | [`research/benchlm_lookup.py`](./research/benchlm_lookup.py) | `research`, `benchmarks`, `pricing`, `models` | benchlm, llm-benchmarks, model-pricing, price-performance, speed | Query, filter, and compare LLM benchmarks, pricing, and speed from BenchLM. |
@@ -99,8 +101,12 @@ Generated from dest `scripts/` after harness-template export (kept trees only). 
 - **analysis:** `research/community_analyzer.py`
 - **anthropic:** `cli/auth/oauth_flows.py`, `cli/provider_client.py`
 - **ast-grep:** `benchmarks/benchmark_tool_efficiency.py`, `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`
+- **audit:** `repos/audit_repo_beautification.py`
 - **auth:** `cli/auth/keyring_vault.py`, `cli/auth/oauth_flows.py`, `cli/harness.py`, `tests/test_harness_auth.py`
+- **badges:** `repos/beautify_repo.py`
+- **beautification:** `repos/audit_repo_beautification.py`, `repos/beautify_repo.py`
 - **benchmarks:** `benchmarks/benchmark_agent_fleet.py`, `benchmarks/benchmark_retrieval.py`, `benchmarks/benchmark_task_eval.py`, `benchmarks/benchmark_tool_efficiency.py`, `benchmarks/estimate_agent_costs.py`, `benchmarks/run_benchmark_suite.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`, `qmd/validate_qmd_retrieval.py`, `research/benchlm_lookup.py`, `research/local_webfetch.py`, `tests/test_benchmarks.py`
+- **branding:** `repos/audit_repo_beautification.py`, `repos/beautify_repo.py`
 - **briefing:** `research/ai_vendor_briefing.py`
 - **change-history:** `change-history/append_change_history.py`, `change-history/ensure_change_history_quarter.py`
 - **chat:** `cli/conversation.py`, `cli/harness.py`
@@ -130,6 +136,7 @@ Generated from dest `scripts/` after harness-template export (kept trees only). 
 - **gemini:** `cli/auth/oauth_flows.py`, `cli/provider_client.py`
 - **git:** `sync/sync_and_push_downstreams.py`
 - **github:** `github/resolve_github_path.py`, `repos/scaffold_public_repos.py`, `tests/test_pretty_docs_security.py`
+- **hardening:** `repos/audit_repo_beautification.py`, `repos/beautify_repo.py`
 - **harness:** `cli/adapters.py`, `cli/auth/keyring_vault.py`, `cli/auth/oauth_flows.py`, `cli/command_registry.py`, `cli/conversation.py`, `cli/harness.py`, `cli/mcp_stdio.py`, `cli/provider_client.py`, `cli/registry.py`, `cli/schema_adapter.py`, `cli/session_store.py`, `cli/tool_registry.py`, `cli/tui.py`, `sync/propose_core_update.py`, `sync/pull_harness_core.py`, `sync/scaffold_harness.py`, `tests/test_harness_auth.py`, `tests/test_harness_cli.py`, `tests/test_harness_core_sync.py`, `tests/test_harness_registry.py`
 - **headroom:** `benchmarks/benchmark_tool_efficiency.py`, `cost-layers/extract_ast_facts.py`, `cost-layers/validate_ast_grep.py`, `cost-layers/validate_cost_layers.py`, `cost-layers/validate_headroom_compression.py`
 - **intelligence:** `research/ai_vendor_briefing.py`
@@ -137,6 +144,7 @@ Generated from dest `scripts/` after harness-template export (kept trees only). 
 - **isolation:** `cli/harness.py`, `cli/run_agent_isolated.py`, `routing/spawn_worktree.py`, `tests/test_harness_cli.py`, `tests/test_run_agent_isolated.py`
 - **keyring:** `cli/auth/keyring_vault.py`, `cli/harness.py`, `tests/test_harness_auth.py`
 - **lint:** `docs/validate_structure_fast.py`
+- **linter:** `repos/audit_repo_beautification.py`
 - **maintenance:** `research/manage_social_registry.py`
 - **markdown:** `docs/run_markdownlint.py`
 - **mcp:** `cli/mcp_stdio.py`
@@ -159,7 +167,7 @@ Generated from dest `scripts/` after harness-template export (kept trees only). 
 - **quota:** `tests/test_pacing.py`
 - **rag:** `benchmarks/benchmark_retrieval.py`
 - **registry:** `cli/command_registry.py`, `cli/registry.py`, `cli/tool_registry.py`, `research/manage_social_registry.py`, `tests/test_harness_registry.py`
-- **repos:** `repos/scaffold_public_repos.py`
+- **repos:** `repos/audit_repo_beautification.py`, `repos/beautify_repo.py`, `repos/scaffold_public_repos.py`
 - **research:** `cost-layers/validate_cost_layers.py`, `research/ai_vendor_briefing.py`, `research/benchlm_lookup.py`, `research/community_analyzer.py`, `research/local_webfetch.py`, `research/manage_social_registry.py`, `tests/test_local_webfetch.py`
 - **results:** `tests/test_validate_router_structure.py`
 - **retrieval:** `benchmarks/benchmark_retrieval.py`, `benchmarks/run_benchmark_suite.py`, `qmd/validate_qmd_retrieval.py`, `tests/test_benchmarks.py`
@@ -176,6 +184,7 @@ Generated from dest `scripts/` after harness-template export (kept trees only). 
 - **sqlite:** `cli/session_store.py`
 - **stdio:** `cli/mcp_stdio.py`
 - **subagents:** `tests/test_subagent_context_config.py`
+- **svg:** `repos/beautify_repo.py`
 - **switcher:** `cli/registry.py`, `cli/tui.py`, `tests/test_harness_registry.py`
 - **sync:** `sync/propose_core_update.py`, `sync/pull_harness_core.py`, `sync/scaffold_harness.py`, `sync/sync_and_push_downstreams.py`, `sync/sync_public_repos.py`, `tests/test_harness_core_sync.py`
 - **tasks:** `benchmarks/benchmark_task_eval.py`

@@ -12,7 +12,8 @@ from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 _ROUTING = Path(__file__).resolve().parents[1] / "routing"
-for _p in (_LIB, _ROUTING):
+_REPOS = Path(__file__).resolve().parents[1] / "repos"
+for _p in (_LIB, _ROUTING, _REPOS):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
@@ -20,6 +21,11 @@ from md import load_skill_record, skill_paths  # noqa: E402
 from areas import AreasYamlError  # noqa: E402
 from generate_routing_index import render_agent_dispatch, render_area_map  # noqa: E402
 from generate_script_index import render_script_index  # noqa: E402
+from beautify_repo import (  # noqa: E402
+    generate_vector_banner,
+    generate_vector_logo,
+    get_domain_spec,
+)
 
 HARNESS_TEMPLATE_MODE = "harness_template"
 WIKI_TEMPLATE_MODE = HARNESS_TEMPLATE_MODE  # Backward compatibility alias
@@ -65,6 +71,7 @@ HARNESS_TEMPLATE_DROP_SKILL_FAMILIES: frozenset[str] = frozenset(
         "gcp",
         "google",
         "iac",
+        "legal",
         "security",
         "slack",
     }
@@ -449,9 +456,27 @@ template is cloned for a topic.
 | `valid-sources/` | Authoritative primary sources allowlist |
 """
 
-GENERIC_TEMPLATE_README = r"""# Koality-Assured AI Harness Core
+GENERIC_TEMPLATE_README = r"""<div align="center">
 
-Decoupled AI agent harness engine and generic template for multi-agent routing, 5-tier context hierarchies, multi-vendor prompt caching, precision cost layers, and sandboxed worktree execution.
+![AI Harness Core Banner](assets/ai-harness-core-banner.svg)
+
+# Koality-Assured AI Harness Core
+
+<p align="center">
+  <img src="assets/ai-harness-core-logo.svg" alt="AI Harness Core Logo" width="128" height="128" />
+</p>
+
+**Decoupled Multi-Agent Harness Engine, 5-Tier Context Hierarchy & Sandboxed Worktrees**
+
+[![CI](https://github.com/Koality-Assured/ai-harness-core/actions/workflows/ci.yml/badge.svg)](https://github.com/Koality-Assured/ai-harness-core/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](pyproject.toml)
+[![Architecture: Decoupled Harness](https://img.shields.io/badge/architecture-decoupled%20harness-blueviolet.svg)]()
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
+
+</div>
+
+---
 
 ## Mission Statement
 
@@ -866,6 +891,9 @@ def harness_template_post_copy_files(dest_root: Path, source_root: Path | None =
     files["scripts/script-index.md"] = render_dest_script_index(dest_root)
     files["README.md"] = GENERIC_TEMPLATE_README
     files[".github/workflows/ci.yml"] = GENERIC_TEMPLATE_CI
+    core_spec = get_domain_spec(name="ai-harness-core", domain="harness-core", org="Koality-Assured")
+    files["assets/ai-harness-core-logo.svg"] = generate_vector_logo(core_spec)
+    files["assets/ai-harness-core-banner.svg"] = generate_vector_banner(core_spec)
     return files
 
 

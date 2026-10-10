@@ -732,10 +732,13 @@ INTERNAL_ONLY_DOMAINS: set[str] = {
     "scripts/daemon",
     "scripts/tests",
     "scripts/windows-security",
+    "scripts/wiki",
     "scripts/_lib",
     "ai-tooling/memory",
     "ai-tooling/agents",
     "ai-tooling/a2a",
+    "supporting/agent-factory",
+    "supporting/kyverno",
     "supporting/powershell",
     "supporting/github",
     "supporting/tabler",
@@ -754,6 +757,7 @@ INTERNAL_ONLY_DOMAINS: set[str] = {
     "supporting/terraform",
     "supporting/aws",
     "supporting/discovery",
+    "supporting/wiki",
 }
 
 

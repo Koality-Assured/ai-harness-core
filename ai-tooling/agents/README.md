@@ -23,6 +23,7 @@ Human index (not agent SoT):
 | [`as-code-agent/`](./as-code-agent/) | Dedicated Terraform/OpenTofu/IaC authoring & plan validation | high |
 | [`detailed-activity/`](./detailed-activity/) | Dedicated adversarial / antagonistic review and challenge audits | high |
 | [`benchmark-agent/`](./benchmark-agent/) | Empirical benchmarking: cost estimation, fleet dry runs, retrieval, tool efficiency | standard |
+| [`public-publication/`](./public-publication/) | Evidence-backed white-paper and blog candidate discovery and publication | standard |
 | [`github-ops/`](./github-ops/) | GitHub PR workflow, branch discipline, issue management | standard |
 | [`git-fast-operator/`](./git-fast-operator/) | Simple git fetch/status/log/diff/sync | fast |
 

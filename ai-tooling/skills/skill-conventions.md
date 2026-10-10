@@ -198,7 +198,7 @@ Keep `SKILL.md` under 200 lines when possible (hard cap 500). Link source of tru
 
 The following parent and specialist rules describe ai-router orchestration. Standalone downstream repositories follow their own dispatch and delegation instructions.
 
-When an orchestrating agent spawns a specialist subagent (operating with clean-slate non-inherited context for cost efficiency), context and goals must not be lost across delegation boundaries. The parent MUST construct the spawn payload following these rules:
+When an orchestrating agent spawns a specialist subagent, context and goals must not be lost across delegation boundaries. For every Codex collaboration spawn, the parent MUST explicitly pass `fork_turns: "none"`; the API defaults to `"all"`, so omission and `"all"` are prohibited. The task payload MUST restate delegated authority, exact scope, relevant facts, and any explicit user approval; do not pass conversation transcripts. The parent MUST construct the payload using [`../a2a/interaction-protocol.md`](../a2a/interaction-protocol.md) and [`../../docs/standards/context-management.md`](../../docs/standards/context-management.md), and follow these rules:
 
 1. **Exhaustive Entity Scope**: Explicitly list all target entities, files, repository names, and paths in the subagent's prompt payload. Subagents must never be expected to infer unspecified targets from implicit context.
 2. **Explicit External Side-Effects**: State whether the subagent is responsible for executing remote operations (e.g. `gh repo create`, `git push`, remote PR creation) or staging local artifacts for parent orchestrator reconciliation.
@@ -224,7 +224,7 @@ When an orchestrating agent spawns a specialist subagent (operating with clean-s
 
 ## Cost-layer boundaries (all skills)
 
-In ai-router, every skill inherits all three root Critical cost layers: **qmd** (Markdown discovery via `qmd search` / `qmd get` from the persistent detached `origin/main` source at `scratch/qmd-main` only), **ast-grep** (structured files / YAML frontmatter), and **Headroom** (bulky dumps — or summarize when unavailable). Sync that QMD checkout and run `qmd update` before retrieval; do not use a task worktree index. `## How to use` must not tell the agent to walk directory trees, retrieve Markdown from a task worktree, skip ast-grep for structured files, or skip Headroom for bulky dumps. `## Security` must include the sentence that starts with `Inherits Critical cost layers`. Standalone repositories follow their own agent instructions and tooling requirements.
+In ai-router, every skill inherits all three root Critical cost layers: **qmd** (Markdown discovery via `qmd search` / `qmd get` from the persistent detached `origin/main` source at `scratch/qmd-main` only), **ast-grep** (structured files / YAML frontmatter), and **Headroom** (bulky dumps — or summarize when unavailable). Every spawn payload MUST keep these requirements in the child instructions. Sync that QMD checkout and run `qmd update` before retrieval; do not use a task worktree index. `## How to use` must not tell the agent to walk directory trees, retrieve Markdown from a task worktree, skip ast-grep for structured files, or skip Headroom for bulky dumps. `## Security` must include the sentence that starts with `Inherits Critical cost layers`. Standalone repositories follow their own agent instructions and tooling requirements.
 
 ## Criticality mapping
 

@@ -95,6 +95,21 @@ class GitAdapterConfig:
 
 
 @dataclass
+class LocalModelAdapterConfig:
+    """Tool adapter settings for local model runtime serving (Ollama/llama-server)."""
+
+    enabled: bool = True
+    provider: str = "local"
+    runtime: str = "ollama"
+    base_url: str = "http://127.0.0.1:11434/v1"
+    default_model: str = "qwen2.5-coder:14b"
+    fast_model: str = "qwen2.5-coder:7b"
+    reasoning_model: str = "deepseek-r1:14b"
+    timeout_sec: int = 120
+    max_parallel_slots: int = 4
+
+
+@dataclass
 class AdaptersConfig:
     """Container for all tool adapter configurations."""
 
@@ -102,6 +117,7 @@ class AdaptersConfig:
     ast_grep: AstGrepAdapterConfig = field(default_factory=AstGrepAdapterConfig)
     headroom: HeadroomAdapterConfig = field(default_factory=HeadroomAdapterConfig)
     git: GitAdapterConfig = field(default_factory=GitAdapterConfig)
+    local_model: LocalModelAdapterConfig = field(default_factory=LocalModelAdapterConfig)
 
 
 @dataclass
@@ -242,6 +258,8 @@ class HarnessConfig:
             errors.append("Headroom timeout_sec must be positive")
         if not (1 <= self.adapters.headroom.port <= 65535):
             errors.append(f"Invalid Headroom port: {self.adapters.headroom.port}")
+        if self.adapters.local_model.timeout_sec <= 0:
+            errors.append("local_model timeout_sec must be positive")
 
         return errors
 
@@ -296,7 +314,26 @@ def _build_adapters(data: dict[str, Any] | None) -> AdaptersConfig:
         branch_prefix=str(git_data.get("branch_prefix", "codex")),
     )
 
-    return AdaptersConfig(qmd=qmd, ast_grep=ast_grep, headroom=headroom, git=git)
+    local_data = data.get("local_model", {})
+    local_model = LocalModelAdapterConfig(
+        enabled=bool(local_data.get("enabled", True)),
+        provider=str(local_data.get("provider", "local")),
+        runtime=str(local_data.get("runtime", "ollama")),
+        base_url=str(local_data.get("base_url", "http://127.0.0.1:11434/v1")),
+        default_model=str(local_data.get("default_model", "qwen2.5-coder:14b")),
+        fast_model=str(local_data.get("fast_model", "qwen2.5-coder:7b")),
+        reasoning_model=str(local_data.get("reasoning_model", "deepseek-r1:14b")),
+        timeout_sec=int(local_data.get("timeout_sec", 120)),
+        max_parallel_slots=int(local_data.get("max_parallel_slots", 4)),
+    )
+
+    return AdaptersConfig(
+        qmd=qmd,
+        ast_grep=ast_grep,
+        headroom=headroom,
+        git=git,
+        local_model=local_model,
+    )
 
 
 def _build_cache(data: dict[str, Any] | None) -> CacheConfig:

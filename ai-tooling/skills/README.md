@@ -56,6 +56,8 @@ Human index (not agent SoT):
 | [`model-memory-operate/`](./model-memory-operate/) | harness-operator | mutate |
 | [`noir-scan/`](./reporting/noir-scan/) | security-tooling-operator | mutate |
 | [`proposal-report/`](./reporting/proposal-report/) | document-operator | mutate |
+| [`blog-publication/`](./reporting/blog-publication/) | public-publication | mutate |
+| [`whitepaper-publication/`](./reporting/whitepaper-publication/) | public-publication | mutate |
 | [`public-llm-admin/`](./admin/public-llm-admin/) | cloud-operator | mutate |
 | [`qmd-efficiency/`](./meta/qmd-efficiency/) | harness-operator | mutate |
 | [`qmd-usage/`](./meta/qmd-usage/) | harness-operator | read-only |
@@ -97,6 +99,8 @@ Human index (not agent SoT):
 | [`terraform-module-builder/`](./iac/terraform-module-builder/) | as-code-agent | mutate |
 | [`iac-security-audit/`](./iac/iac-security-audit/) | as-code-agent | read-only |
 | [`web-crawling/`](./discovery/web-crawling/) | research-operator | read-only |
+| [`blog-candidate-discovery/`](./discovery/blog-candidate-discovery/) | public-publication | read-only |
+| [`whitepaper-candidate-discovery/`](./discovery/whitepaper-candidate-discovery/) | public-publication | read-only |
 | [`ad-windows-security-audit/`](./security/ad-windows-security-audit/) | security-tooling-operator | read-only |
 | [`us-law-reference-maintain/`](./legal/us-law-reference-maintain/) | document-operator | mutate |
 | [`us-law-reference-compare/`](./legal/us-law-reference-compare/) | document-operator | read-only |
