@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import re
 import subprocess
+import sys
 from pathlib import Path
 from typing import Callable, Iterable
 
@@ -23,6 +24,18 @@ from _harness_template import (
     is_harness_template_rel_kept,
     rel_has_instance_leak_name,
     script_test_is_kept,
+)
+
+_REPOS = Path(__file__).resolve().parents[1] / "repos"
+if str(_REPOS) not in sys.path:
+    sys.path.insert(0, str(_REPOS))
+
+from beautify_repo import (  # noqa: E402
+    MIT_LICENSE_TEMPLATE,
+    generate_readme_hero,
+    generate_vector_banner,
+    generate_vector_logo,
+    get_domain_spec,
 )
 
 DEFAULT_ORG = "Koality-Assured"
@@ -72,6 +85,8 @@ CORE_CHECKOUT_EXTRA_RELS: frozenset[str] = frozenset(
         "docs/standards/AGENTS.md",
         "references/AGENTS.md",
         "projects/project-prompts/README.md",
+        "assets/ai-harness-core-logo.svg",
+        "assets/ai-harness-core-banner.svg",
     }
 )
 
@@ -365,7 +380,54 @@ def domain_overlay_files(
     }
     if domain == "none":
         return files
+
+    # Automatically synthesize vector branding, live badges, and hardening
+    spec = get_domain_spec(name=name, domain=domain, org=org, visibility=visibility)
+    files[f"assets/{name}-logo.svg"] = generate_vector_logo(spec)
+    files[f"assets/{name}-banner.svg"] = generate_vector_banner(spec)
+    files["LICENSE"] = MIT_LICENSE_TEMPLATE
+
+    # Hardened pyproject.toml preventing setuptools flat-layout discovery collision
+    files["pyproject.toml"] = (
+        "[build-system]\n"
+        'requires = ["setuptools>=61.0"]\n'
+        'build-backend = "setuptools.build_meta"\n\n'
+        "[project]\n"
+        f'name = "{name}"\n'
+        'version = "1.0.0"\n'
+        f'description = "{spec.tagline}"\n'
+        'authors = [{ name = "Koality-Assured", email = "engineering@koality-assured.com" }]\n'
+        f'license = {{ text = "{spec.license_type}" }}\n'
+        'readme = "README.md"\n'
+        'requires-python = ">=3.11"\n'
+        "dependencies = []\n\n"
+        "[tool.setuptools]\n"
+        "packages = []\n"
+    )
+
+    hero = generate_readme_hero(spec)
     title = domain.replace("-", " ")
+
+    files["README.md"] = (
+        hero
+        + f"\n## Mission Statement\n\n"
+        f"Provide a dedicated, hardened domain harness and orchestration system for `{spec.title}` "
+        f"within the Koality-Assured ecosystem.\n\n"
+        f"## Operating Modes\n\n"
+        f"This repository operates as a **domain spoke** scaffolded from `ai-harness-core`. "
+        f"Feed {title} domain corpus, standards, skills, and references here, while keeping generic harness machinery synchronized with core.\n\n"
+        f"### Spoke ↔ Core Synchronization\n\n"
+        f"- **Pull generic core updates**: `python scripts/sync/pull_harness_core.py --dry-run --json`\n"
+        f"- **Propose generic improvements back to core**: `python scripts/sync/propose_core_update.py --dry-run --json`\n\n"
+        f"## Key Capabilities\n\n"
+        + "".join(f"- **{chip}**: Native domain competency and verified execution workflows.\n" for chip in spec.chips)
+        + f"\n## Verification & Testing\n\n"
+        f"```bash\n"
+        f"# Run local test suite\n"
+        f"python -m unittest discover -s scripts/tests\n"
+        f"```\n"
+    )
+
     files[f"docs/standards/{domain}-overlay.md"] = (
         "---\n"
         f"doc_kind: requirement\n"

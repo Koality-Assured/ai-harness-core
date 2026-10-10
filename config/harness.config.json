@@ -52,6 +52,17 @@
       "command": "git",
       "timeout_sec": 30,
       "branch_prefix": "codex"
+    },
+    "local_model": {
+      "enabled": true,
+      "provider": "local",
+      "runtime": "ollama",
+      "base_url": "http://127.0.0.1:11434/v1",
+      "default_model": "qwen2.5-coder:14b",
+      "fast_model": "qwen2.5-coder:7b",
+      "reasoning_model": "deepseek-r1:14b",
+      "timeout_sec": 120,
+      "max_parallel_slots": 4
     }
   },
   "cache": {
@@ -113,7 +124,7 @@
       "research_subagent_tier": "flash",
       "pacing_delay_sec": 1,
       "auto_schedule_on_429": true,
-      "description": "Platform-native models with standard quotas (e.g. Gemini 3.7 Flash in Antigravity)."
+      "description": "Platform-native models with standard quotas (e.g. Gemini 3.8 Flash in Antigravity)."
     },
     "metered_secondary": {
       "max_concurrent_subagents": 2,

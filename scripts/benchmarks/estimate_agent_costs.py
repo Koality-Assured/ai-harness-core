@@ -22,25 +22,25 @@ from paths import REPO_ROOT as ROOT  # noqa: E402
 # Standard pricing models per 1M tokens (USD)
 DEFAULT_PRICING_TABLE: dict[str, dict[str, Any]] = {
     "fast": {
-        "description": "Cheapest fastest model tier (Gemini 3.7 Flash / Claude 3.5 Haiku / GPT-4o mini)",
+        "description": "Cheapest fastest model tier (Composer 2.5 / Gemini Flash Lite / Claude 3.5 Haiku / GPT-4o mini)",
         "input_per_m": 0.15,
         "cached_input_per_m": 0.0375,
         "output_per_m": 0.60,
     },
     "standard": {
-        "description": "Standard tier (Gemini 3.7 Flash / GPT Luna / Grok 4.5)",
-        "input_per_m": 1.25,
-        "cached_input_per_m": 0.30,
-        "output_per_m": 5.00,
+        "description": "Standard tier (Gemini 3.8 Flash / GPT 6.0 Luna / Claude 5.5 Sonnet / Grok 4.7 256k)",
+        "input_per_m": 1.00,
+        "cached_input_per_m": 0.20,
+        "output_per_m": 4.00,
     },
     "high": {
-        "description": "High reasoning tier (Claude 3.7 Sonnet / GPT Terra / Grok 4.6)",
-        "input_per_m": 3.00,
-        "cached_input_per_m": 0.30,
-        "output_per_m": 15.00,
+        "description": "High reasoning tier (Claude 5.5 Sonnet Thinking / GPT Terra / Grok 4.7 500k Fast)",
+        "input_per_m": 2.50,
+        "cached_input_per_m": 0.25,
+        "output_per_m": 10.00,
     },
     "max": {
-        "description": "Max capability tier (Gemini 3.1 Pro / GPT Sol / Claude Extended Thinking)",
+        "description": "Max capability tier (Gemini 3.8 Pro / GPT Sol / Claude 5.5 Opus / Grok 4.7 Extra High Fast)",
         "input_per_m": 5.00,
         "cached_input_per_m": 1.25,
         "output_per_m": 25.00,
@@ -50,16 +50,25 @@ DEFAULT_PRICING_TABLE: dict[str, dict[str, Any]] = {
 # Provider-specific pricing presets
 PROVIDER_PRICING: dict[str, dict[str, dict[str, float]]] = {
     "google": {
-        "gemini-3-7-flash": {"input_per_m": 0.15, "cached_input_per_m": 0.0375, "output_per_m": 0.60},
-        "gemini-3-1-pro": {"input_per_m": 1.25, "cached_input_per_m": 0.3125, "output_per_m": 5.00},
+        "gemini-3-8-flash": {"input_per_m": 0.15, "cached_input_per_m": 0.0375, "output_per_m": 0.60},
+        "gemini-3-8-pro": {"input_per_m": 1.25, "cached_input_per_m": 0.3125, "output_per_m": 5.00},
     },
     "anthropic": {
-        "claude-3-5-haiku": {"input_per_m": 0.80, "cached_input_per_m": 0.08, "output_per_m": 4.00},
-        "claude-3-7-sonnet": {"input_per_m": 3.00, "cached_input_per_m": 0.30, "output_per_m": 15.00},
+        "claude-3-5-haiku": {"input_per_m": 0.25, "cached_input_per_m": 0.025, "output_per_m": 1.25},
+        "claude-5-5-sonnet": {"input_per_m": 1.50, "cached_input_per_m": 0.15, "output_per_m": 6.00},
+        "claude-5-5-opus": {"input_per_m": 5.00, "cached_input_per_m": 1.25, "output_per_m": 25.00},
     },
     "openai": {
         "gpt-4o-mini": {"input_per_m": 0.15, "cached_input_per_m": 0.075, "output_per_m": 0.60},
-        "gpt-5-4-turbo": {"input_per_m": 2.50, "cached_input_per_m": 1.25, "output_per_m": 10.00},
+        "gpt-6-0-luna": {"input_per_m": 1.25, "cached_input_per_m": 0.30, "output_per_m": 5.00},
+        "gpt-terra": {"input_per_m": 2.50, "cached_input_per_m": 0.60, "output_per_m": 10.00},
+        "gpt-sol": {"input_per_m": 5.00, "cached_input_per_m": 1.25, "output_per_m": 20.00},
+    },
+    "cursor": {
+        "composer-2-5": {"input_per_m": 0.15, "cached_input_per_m": 0.0375, "output_per_m": 0.60},
+        "cursor-grok-4-7-standard": {"input_per_m": 1.00, "cached_input_per_m": 0.20, "output_per_m": 4.00},
+        "cursor-grok-4-7-high": {"input_per_m": 2.50, "cached_input_per_m": 0.50, "output_per_m": 10.00},
+        "cursor-grok-4-7-max": {"input_per_m": 5.00, "cached_input_per_m": 1.00, "output_per_m": 20.00},
     },
 }
 

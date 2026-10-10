@@ -29,10 +29,10 @@ $$\text{Cost}_{\text{Turn } k} = \left(\frac{C_{k-1}}{10^6} \times P_{\text{cach
 
 | Model Tier | Uncached Input | Cached Input | Output | Reference Providers / Models |
 | --- | --- | --- | --- | --- |
-| `fast` | \$0.15 | \$0.0375 | \$0.60 | Gemini 3.7 Flash, Claude 3.5 Haiku, GPT-4o-mini |
-| `standard` | \$1.25 | \$0.30 | \$5.00 | Gemini 3.7 Flash, GPT Luna, Grok 4.5 |
-| `high` | \$3.00 | \$0.30 | \$15.00 | Claude 3.7 Sonnet, GPT Terra, Grok 4.6 |
-| `max` | \$5.00 | \$1.25 | \$25.00 | Gemini 3.1 Pro, GPT Sol, Claude Extended Thinking |
+| `fast` | \$0.15 | \$0.0375 | \$0.60 | Composer 2.5, Gemini Flash Lite, Claude 3.5 Haiku, GPT-4o-mini |
+| `standard` | \$1.00 | \$0.20 | \$4.00 | Gemini 3.8 Flash, GPT 6.0 Luna, Claude 5.5 Sonnet, Grok 4.7 (256k) |
+| `high` | \$2.50 | \$0.25 | \$10.00 | Claude 5.5 Sonnet (Thinking), GPT Terra, Grok 4.7 (500k Fast) |
+| `max` | \$5.00 | \$1.25 | \$25.00 | Gemini 3.8 Pro, GPT Sol, Claude 5.5 Opus, Grok 4.7 (Extra High Fast) |
 
 ---
 

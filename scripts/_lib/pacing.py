@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 from pathlib import Path
 from typing import Any
 
@@ -29,7 +30,7 @@ DEFAULT_QUOTA_PROFILES: dict[str, dict[str, Any]] = {
         "research_subagent_tier": "flash",
         "pacing_delay_sec": 1,
         "auto_schedule_on_429": True,
-        "description": "Platform-native models with standard quotas.",
+        "description": "Platform-native models with standard quotas (Gemini 3.8 Flash).",
     },
     "metered_secondary": {
         "max_concurrent_subagents": 2,
@@ -141,3 +142,244 @@ def format_schedule_wakeup(reset_seconds: int, prompt_action: str) -> dict[str, 
         "Prompt": prompt_action,
         "TimerCondition": "never",
     }
+
+
+def get_quota_state_path(repo_root: Path | None = None) -> Path:
+    """Path to the local scratch quota state tracker."""
+    root = repo_root or REPO_ROOT
+    return root / "scratch" / "quota_state.json"
+
+
+def record_secondary_exhaustion(
+    reset_seconds: int,
+    provider: str = "claude",
+    repo_root: Path | None = None,
+) -> dict[str, Any]:
+    """Record a 429 lockout window in the local quota state tracker."""
+    now = time.time()
+    reset_at = now + max(reset_seconds, 0)
+    state = {
+        "exhausted": True,
+        "provider": provider,
+        "exhausted_at": now,
+        "reset_at": reset_at,
+        "reset_seconds": reset_seconds,
+    }
+    path = get_quota_state_path(repo_root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2)
+    except OSError:
+        pass
+    return state
+
+
+def check_secondary_availability(repo_root: Path | None = None) -> tuple[bool, int]:
+    """Check if the secondary model allocation is available.
+
+    Returns:
+        (is_available, seconds_remaining_in_lockout)
+        If available, returns (True, 0).
+        If exhausted/in-cooldown, returns (False, remaining_seconds).
+    """
+    path = get_quota_state_path(repo_root)
+    if not path.is_file():
+        return True, 0
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not data.get("exhausted"):
+            return True, 0
+        reset_at = float(data.get("reset_at", 0))
+        now = time.time()
+        remaining = int(reset_at - now)
+        if remaining <= 0:
+            clear_secondary_exhaustion(repo_root)
+            return True, 0
+        return False, remaining
+    except (OSError, json.JSONDecodeError, ValueError):
+        return True, 0
+
+
+def clear_secondary_exhaustion(repo_root: Path | None = None) -> None:
+    """Clear secondary exhaustion state after reset window expires."""
+    path = get_quota_state_path(repo_root)
+    if path.is_file():
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump({"exhausted": False}, f, indent=2)
+        except OSError:
+            pass
+
+
+# Canonical triggers for Antigravity Ultra secondary model (Claude) deferral
+DEFERRAL_TRIGGERS: dict[str, list[str]] = {
+    "state_and_concurrency": [
+        r"\brace condition\b",
+        r"\bdistributed lock(?:ing)?\b",
+        r"\bmutex hierarch(?:y|ies)\b",
+        r"\bdeadlock\b",
+        r"\bchannel synchroniz\w+\b",
+        r"\batomic state machine\b",
+        r"\bthread safety\b",
+        r"\bmemory ordering\b",
+        r"\bconcurrent state machine\b",
+        r"\bgoroutine leak\b",
+        r"\block inversion\b",
+    ],
+    "rigid_invariant_refactoring": [
+        r"\binvariant refactor(?:ing)?\b",
+        r"\bpreserv(?:e|ing) invariants\b",
+        r"\bstructural refactor(?:ing)?\b",
+        r"\brigid (?:type|semantic) invariants\b",
+        r"\bsemantic invariants\b",
+        r"\bcross-module coupling\b",
+        r"\binterface invariants\b",
+        r"\barchitectural refactor(?:ing)?\b",
+    ],
+    "adversarial_security_audit": [
+        r"\badversarial (?:code )?audit\b",
+        r"\bsecurity audit\b",
+        r"\btiming attack\b",
+        r"\btiming leak\b",
+        r"\bauth(?:orization)? bypass\b",
+        r"\bcryptographic flaw\b",
+        r"\breentrancy\b",
+        r"\bside-channel\b",
+        r"\bconstant-time\b",
+        r"\bprivilege escalation\b",
+    ],
+    "ast_and_regex_parser": [
+        r"\btree-sitter grammar\b",
+        r"\bast (?:compiler|parser)\b",
+        r"\bcompiler grammar\b",
+        r"\bregex engine\b",
+        r"\bnested regex\b",
+        r"\btoken-level grammar\b",
+        r"\bparser grammar\b",
+        r"\blexer tokens\b",
+    ],
+    "dense_technical_rfc": [
+        r"\barchitectural? rfc\b",
+        r"\bformal api schema\b",
+        r"\btechnical specification\b",
+        r"\brfc draft\b",
+        r"\barchitectural? proposal\b",
+        r"\bformal schema definition\b",
+        r"\barchitectural decision record\b",
+    ],
+}
+
+# Negative anti-triggers (operational plumbing best served by Gemini Ultra)
+DISQUALIFYING_OPERATIONAL_PATTERNS: list[str] = [
+    r"^(?:run|execute)\s+(?:pytest|unittest|tests?|suite)\b",
+    r"^(?:git\s+)?(?:status|add|commit|push|pull|merge|checkout|fetch)\b",
+    r"^(?:grep|rg|search)\s+(?:codebase|repo|files?|directory|docs?)\b",
+    r"^(?:fix|clean)\s+(?:lint|linter|flake8|markdownlint|formatting|style)\b",
+    r"^(?:generate|write)\s+(?:docstrings?|boilerplate|getters|setters)\b",
+]
+
+
+def classify_deferral_eligibility(
+    prompt: str,
+    host: str = "antigravity",
+    is_subagent: bool = False,
+    subagent_type: str | None = None,
+    repo_root: Path | None = None,
+) -> dict[str, Any]:
+    """Classify whether a task is eligible for secondary (Claude) deferral in Antigravity Ultra.
+
+    Enforces:
+      1. Anti-waste guardrails: Subagent leaf workers and operational tasks stay on Gemini.
+      2. Material pillar matching: Concurrency, invariant refactoring, security audits,
+         grammars/parsers, and dense RFCs qualify.
+      3. Zero-stall circuit-breaker: Automatically pivots to Gemini 3.8 Flash (High) on 429 lockout.
+    """
+    prompt_clean = (prompt or "").strip()
+    host_norm = (host or "").strip().lower()
+
+    # Rule 1: Non-Antigravity hosts follow their own platform-native rules
+    if host_norm != "antigravity":
+        return {
+            "should_defer": False,
+            "recommended_model": "platform-native",
+            "trigger": None,
+            "reason": f"Host '{host}' follows platform-native model tiering.",
+            "quota_profile": "unmetered" if host_norm in ("cursor", "enterprise") else "standard",
+            "fallback_active": False,
+            "remaining_cooldown_sec": 0,
+        }
+
+    # Rule 2: Subagents must strictly down-tier to flash (never inherit secondary Claude)
+    if is_subagent:
+        tier = "flash_lite" if subagent_type == "research" else "flash"
+        return {
+            "should_defer": False,
+            "recommended_model": tier,
+            "trigger": None,
+            "reason": "Subagent leaf workers must down-tier to flash to preserve secondary quota.",
+            "quota_profile": "metered_secondary",
+            "fallback_active": False,
+            "remaining_cooldown_sec": 0,
+        }
+
+    # Rule 3: Check for purely operational commands (hard disqualifiers)
+    for pattern in DISQUALIFYING_OPERATIONAL_PATTERNS:
+        if re.search(pattern, prompt_clean, re.IGNORECASE):
+            return {
+                "should_defer": False,
+                "recommended_model": "Gemini 3.8 Flash",
+                "trigger": None,
+                "reason": "Operational plumbing task reserved for Gemini Ultra high-throughput capacity.",
+                "quota_profile": "standard",
+                "fallback_active": False,
+                "remaining_cooldown_sec": 0,
+            }
+
+    # Rule 4: Match positive deferral triggers
+    matched_trigger: str | None = None
+    for category, regex_list in DEFERRAL_TRIGGERS.items():
+        for regex in regex_list:
+            if re.search(regex, prompt_clean, re.IGNORECASE):
+                matched_trigger = category
+                break
+        if matched_trigger:
+            break
+
+    if not matched_trigger:
+        return {
+            "should_defer": False,
+            "recommended_model": "Gemini 3.8 Flash",
+            "trigger": None,
+            "reason": "Task does not meet material secondary deferral criteria; default to Gemini Ultra.",
+            "quota_profile": "standard",
+            "fallback_active": False,
+            "remaining_cooldown_sec": 0,
+        }
+
+    # Rule 5: Check secondary quota availability (Circuit-Breaker check)
+    is_available, rem = check_secondary_availability(repo_root)
+    if not is_available:
+        return {
+            "should_defer": False,
+            "recommended_model": "Gemini 3.8 Flash (High)",
+            "trigger": matched_trigger,
+            "reason": f"Matches trigger '{matched_trigger}', but secondary quota is exhausted ({rem}s remaining). Zero-stall circuit-breaker fallback to Gemini 3.8 Flash (High).",
+            "quota_profile": "metered_secondary",
+            "fallback_active": True,
+            "remaining_cooldown_sec": rem,
+        }
+
+    # Rule 6: Fully eligible and window is active
+    return {
+        "should_defer": True,
+        "recommended_model": "Claude 5.5 Sonnet",
+        "trigger": matched_trigger,
+        "reason": f"Matches material deferral trigger '{matched_trigger}'. Active in rolling use-it-or-lose-it window.",
+        "quota_profile": "metered_secondary",
+        "fallback_active": False,
+        "remaining_cooldown_sec": 0,
+    }
+
+

@@ -32,18 +32,35 @@ from paths import REPO_ROOT  # noqa: E402
 
 from cli.provider_client import (  # noqa: E402
     ANTHROPIC_DEFAULT_MODEL,
+    LOCAL_DEFAULT_MODEL,
     PROVIDER_ALIASES,
     ProviderError,
+    SUPPORTED_PROVIDERS,
     normalize_provider,
 )
-
-SUPPORTED_PROVIDERS: tuple[str, ...] = ("anthropic", "openai", "gemini", "cursor")
 
 SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 CONVENTIONAL_COMMIT_PATTERN = re.compile(
     r"^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)"
     r"(\([a-zA-Z0-9_\-\./]+\))?(!)?:\s*.+"
 )
+
+
+def worktree_delete_blocked(status_porcelain: str, commits_not_in_base: int | list[Any]) -> str | None:
+    """Validate whether tracked changes or unmerged commits block worktree deletion."""
+    tracked_reason = "worktree has uncommitted tracked changes"
+    tracked_codes = frozenset("MADRCU")
+    for line in status_porcelain.splitlines():
+        if len(line) < 2:
+            continue
+        if line.startswith("??") or line.startswith("!!"):
+            continue
+        if line[0] in tracked_codes or line[1] in tracked_codes:
+            return tracked_reason
+    count = len(commits_not_in_base) if isinstance(commits_not_in_base, list) else int(commits_not_in_base)
+    if count > 0:
+        return f"worktree has {count} commit(s) not contained in the base branch"
+    return None
 
 
 def get_primary_repo_root(cwd: Path | None = None) -> Path:
@@ -507,7 +524,10 @@ def cmd_auth_login(args: argparse.Namespace) -> int:
         )
 
     try:
-        if provider == "anthropic":
+        if provider == "local":
+            print("Notice: local model runtime executes on localhost without requiring vault API keys.")
+            return 0
+        elif provider == "anthropic":
             AnthropicOAuthFlow.login(no_browser=no_browser, api_key=api_key)
         elif provider == "cursor":
             CursorAuthFlow.login(no_browser=no_browser, api_key=api_key)
@@ -532,6 +552,17 @@ def cmd_auth_status(args: argparse.Namespace) -> int:
     statuses: list[dict[str, Any]] = []
 
     for prov in SUPPORTED_PROVIDERS:
+        if prov == "local":
+            statuses.append({
+                "provider": "local",
+                "authenticated": True,
+                "status": "NO_KEY_REQUIRED",
+                "profile": "Localhost (No Vault Key Required)",
+                "expires": "Never (Local Runtime)",
+                "token_masked": "local",
+                "token_type": "None",
+            })
+            continue
         cred = vault.get_credential(prov)
         if cred:
             expired = is_token_expired(cred)
@@ -608,6 +639,10 @@ def cmd_auth_logout(args: argparse.Namespace) -> int:
     if not provider:
         print(f"error: unsupported provider '{raw_provider}'. Supported: {', '.join(SUPPORTED_PROVIDERS)}", file=sys.stderr)
         return 2
+
+    if provider == "local":
+        print("Notice: local model runtime uses no stored vault credentials.")
+        return 0
 
     deleted = vault.delete_credential(provider)
     if deleted:
@@ -780,6 +815,8 @@ def cmd_tui(args: argparse.Namespace) -> int:
 
 def _resolve_chat_credential(provider: str) -> tuple[str | None, int]:
     """Return (access_token, exit_code). Never prints raw tokens."""
+    if provider == "local":
+        return "local", 0
     from cli.auth.keyring_vault import get_vault
     from cli.auth.oauth_flows import ensure_fresh_token
 
@@ -841,6 +878,8 @@ def _open_or_resume_session(args: argparse.Namespace, store: Any) -> tuple[dict[
     model = getattr(args, "model", None) or ""
     if provider == "anthropic" and not model:
         model = ANTHROPIC_DEFAULT_MODEL
+    elif provider == "local" and not model:
+        model = LOCAL_DEFAULT_MODEL
     title = getattr(args, "title", None) or ""
     session = store.create_session(
         title=title,
@@ -1040,6 +1079,8 @@ def cmd_chat(
         model_holder = [getattr(args, "model", None) or session.get("model") or ""]
         if provider == "anthropic" and not model_holder[0]:
             model_holder[0] = ANTHROPIC_DEFAULT_MODEL
+        elif provider == "local" and not model_holder[0]:
+            model_holder[0] = LOCAL_DEFAULT_MODEL
         if provider in ("openai", "gemini") and not model_holder[0]:
             print(
                 f"error: provider '{provider}' requires --model "
@@ -1305,6 +1346,257 @@ def cmd_commands(args: argparse.Namespace) -> int:
     return 0
 
 
+def probe_local_hardware() -> dict[str, Any]:
+    """Inspect host compute capabilities (CPU, RAM, GPU VRAM) and determine Hardware Profile Tier."""
+    import platform
+    import shutil
+
+    os_desc = f"{platform.system()} {platform.release()} ({platform.machine()})"
+    cpu_cores = os.cpu_count() or 1
+    ram_gb: float | None = None
+    try:
+        import psutil  # type: ignore
+
+        ram_gb = round(psutil.virtual_memory().total / (1024**3), 1)
+    except Exception:
+        pass
+
+    gpu_name: str | None = None
+    vram_gb: float | None = None
+    nvsmi = shutil.which("nvidia-smi")
+    if nvsmi:
+        try:
+            res = subprocess.run(
+                [nvsmi, "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=5,
+            )
+            if res.returncode == 0 and res.stdout.strip():
+                parts = [p.strip() for p in res.stdout.strip().splitlines()[0].split(",")]
+                if len(parts) >= 2:
+                    gpu_name = parts[0]
+                    vram_gb = round(float(parts[1]) / 1024.0, 1)
+        except Exception:
+            pass
+
+    if vram_gb is not None and vram_gb >= 14:
+        tier = "Tier A"
+        tier_desc = "High-Performance GPU Workstation (16 GB+ VRAM)"
+        models = [
+            {"name": "qwen2.5-coder:14b", "role": "Primary coding workhorse (100% in VRAM)"},
+            {"name": "qwen2.5-coder:7b", "role": "High-velocity subagent deferral"},
+            {"name": "deepseek-r1:14b", "role": "Local reasoning specialist"},
+            {"name": "nomic-embed-text", "role": "Local embeddings"},
+        ]
+    elif vram_gb is not None and vram_gb >= 10:
+        tier = "Tier B"
+        tier_desc = "Standard GPU Workstation (10-12 GB VRAM)"
+        models = [
+            {"name": "qwen2.5-coder:14b", "role": "Primary coding workhorse (bounded context 8k-16k)"},
+            {"name": "qwen2.5-coder:7b", "role": "High-velocity worker (100% in VRAM)"},
+            {"name": "nomic-embed-text", "role": "Local embeddings"},
+        ]
+    elif vram_gb is not None and vram_gb >= 6:
+        tier = "Tier C"
+        tier_desc = "Entry / Mobile GPU Workstation (6-8 GB VRAM)"
+        models = [
+            {"name": "qwen2.5-coder:7b", "role": "Primary coding workhorse (100% in VRAM)"},
+            {"name": "qwen2.5-coder:3b", "role": "Lightweight subagent worker"},
+            {"name": "nomic-embed-text", "role": "Local embeddings"},
+        ]
+    elif platform.system() == "Darwin" and platform.machine().lower() in ("arm64", "aarch64"):
+        tier = "Tier D"
+        tier_desc = "Unified Memory / Apple Silicon Workstation"
+        models = [
+            {"name": "qwen2.5-coder:14b", "role": "Primary coding workhorse (Metal accelerated)"},
+            {"name": "qwen2.5-coder:7b", "role": "High-velocity subagent worker"},
+            {"name": "deepseek-r1:14b", "role": "Local reasoning specialist"},
+        ]
+    else:
+        tier = "Tier E"
+        tier_desc = "CPU-Only / Vector Acceleration Workstation"
+        models = [
+            {"name": "qwen2.5-coder:1.5b", "role": "High-speed CPU coding model"},
+            {"name": "qwen2.5-coder:7b", "role": "Standard CPU coding model (AVX2/AVX-512)"},
+        ]
+
+    system_one_models = [
+        {"name": "laya-modernbert-large", "role": "System 1 non-autoregressive decision engine (421M, ~15-35ms)"},
+        {"name": "smollm2:360m", "role": "FSM grammar-constrained fast triage SLM (360M, ~30-50ms)"},
+    ]
+
+    return {
+        "os": os_desc,
+        "cpu_cores": cpu_cores,
+        "system_ram_gb": ram_gb,
+        "gpu_name": gpu_name,
+        "vram_gb": vram_gb,
+        "tier": tier,
+        "tier_description": tier_desc,
+        "recommended_models": models,
+        "system_one_models": system_one_models,
+    }
+
+
+def cmd_local(args: argparse.Namespace) -> int:
+    import urllib.parse
+    import urllib.request
+    from cli.provider_client import DEFAULT_LOCAL_BASE_URL, HARNESS_LOCAL_BASE_URL_ENV
+
+    base_url = os.environ.get(HARNESS_LOCAL_BASE_URL_ENV, "").strip() or DEFAULT_LOCAL_BASE_URL
+    try:
+        parsed = urllib.parse.urlsplit(base_url)
+        if (
+            parsed.scheme not in {"http", "https"}
+            or not parsed.netloc
+            or parsed.hostname not in {"127.0.0.1", "localhost", "::1"}
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError(f"expected a loopback HTTP(S) origin (127.0.0.1, localhost, or ::1), got '{base_url}'")
+    except Exception as exc:
+        if getattr(args, "json", False):
+            print(json.dumps({"status": "invalid_config", "base_url": base_url, "error": str(exc)}, indent=2))
+            return 1
+        print("=== Local Model Runtime Status ===")
+        print(f"Endpoint: {base_url}")
+        print(f"Status:   INVALID CONFIG ({exc})")
+        return 1
+
+    models_url = base_url.rstrip("/") + "/models"
+    action = getattr(args, "local_cmd", None) or "status"
+
+    if action == "onboarding":
+        hw = probe_local_hardware()
+        is_approved = getattr(args, "approve", False)
+        is_profile_only = getattr(args, "profile_only", False)
+
+        endpoint_online = False
+        loaded_models: list[str] = []
+        try:
+            req = urllib.request.Request(models_url, headers={"User-Agent": "ai-router-harness"})
+            with urllib.request.urlopen(req, timeout=2) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                endpoint_online = True
+                raw_models = data.get("data") or data.get("models") or []
+                loaded_models = [m.get("id") or m.get("name") for m in raw_models if isinstance(m, dict)]
+        except Exception:
+            pass
+
+        if getattr(args, "json", False):
+            print(
+                json.dumps(
+                    {
+                        "action": "onboarding",
+                        "human_approved": is_approved,
+                        "profile_only": is_profile_only,
+                        "hardware": hw,
+                        "endpoint": base_url,
+                        "endpoint_online": endpoint_online,
+                        "loaded_models": loaded_models,
+                        "satellite_repo": "https://github.com/Koality-Assured/local-ai-management",
+                    },
+                    indent=2,
+                )
+            )
+            return 0
+
+        print("=== Local AI Hardware Profile & Capability Probe ===")
+        print(f"OS:               {hw['os']}")
+        print(f"CPU Cores:        {hw['cpu_cores']}")
+        print(f"System RAM:       {hw['system_ram_gb']} GB" if hw['system_ram_gb'] else "System RAM:       unknown")
+        if hw["gpu_name"]:
+            print(f"GPU:              {hw['gpu_name']} ({hw['vram_gb']} GB VRAM)")
+        else:
+            print("GPU:              None / CPU-only inference")
+        print(f"Hardware Profile: {hw['tier']} - {hw['tier_description']}")
+        print("\nRecommended Models:")
+        for m in hw["recommended_models"]:
+            print(f"  - {m['name']:<18} ({m['role']})")
+
+        print("\nSystem 1 Decision Models (Sub-50ms Routing/Triage):")
+        for m in hw.get("system_one_models", []):
+            print(f"  - {m['name']:<22} ({m['role']})")
+
+        print(f"\nLocal Endpoint:   {base_url} ({'ONLINE' if endpoint_online else 'OFFLINE'})")
+        if loaded_models:
+            print(f"Loaded Models ({len(loaded_models)}):")
+            for lm in loaded_models:
+                print(f"  * {lm}")
+
+        if is_profile_only:
+            print("\nProfile-only mode requested. No changes performed.")
+            return 0
+
+        if not is_approved:
+            print("\n" + "=" * 55)
+            print("[HUMAN APPROVAL REQUIRED]")
+            print("Local AI model execution is completely optional and requires")
+            print("explicit human approval in this specific environment before")
+            print("installing runtimes or downloading gigabytes of model weights.")
+            print("=" * 55)
+            print("\nTo approve and view activation steps:")
+            print("  harness local onboarding --approve")
+            print("\nSatellite Toolkit & Full Model Catalog:")
+            print("  https://github.com/Koality-Assured/local-ai-management")
+            return 0
+
+        print("\n=== Activation Steps (Human Approved) ===")
+        if endpoint_online:
+            print("Local AI engine is ONLINE and responding at " + base_url)
+            print("You can immediately chat with local models via:")
+            default_m = hw["recommended_models"][0]["name"]
+            print(f"  harness chat --provider local --model {default_m} -q \"Hello from local AI\"")
+        else:
+            print("Local AI runtime is currently offline. To complete activation:")
+            print("  1. Install Ollama:")
+            print("     Windows: winget install Ollama.Ollama")
+            print("     macOS:   brew install ollama")
+            print("     Linux:   curl -fsSL https://ollama.com/install.sh | sh")
+            print("  2. Start service: ollama serve")
+            print("  3. Pull recommended models:")
+            for m in hw["recommended_models"][:3]:
+                print(f"     ollama pull {m['name']}")
+            print("  4. Verify connectivity:")
+            print("     harness local status")
+        return 0
+
+    if action == "status":
+        req = urllib.request.Request(models_url, headers={"User-Agent": "ai-router-harness"})
+        try:
+            with urllib.request.urlopen(req, timeout=3) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+        except Exception as exc:
+            if getattr(args, "json", False):
+                print(json.dumps({"status": "offline", "base_url": base_url, "error": str(exc)}, indent=2))
+                return 1
+            print("=== Local Model Runtime Status ===")
+            print(f"Endpoint: {base_url}")
+            print(f"Status:   OFFLINE / UNREACHABLE ({exc})")
+            print("\nTo start Ollama, run: ollama serve")
+            return 1
+
+        models = data.get("data") or data.get("models") or []
+        model_names = [m.get("id") or m.get("name") for m in models if isinstance(m, dict)]
+
+        if getattr(args, "json", False):
+            print(json.dumps({"status": "online", "base_url": base_url, "models": model_names}, indent=2))
+            return 0
+
+        print("=== Local Model Runtime Status ===")
+        print(f"Endpoint: {base_url}")
+        print("Status:   ONLINE")
+        print(f"Models ({len(model_names)}):")
+        if not model_names:
+            print("  (none loaded)")
+        for m in model_names:
+            print(f"  - {m}")
+        return 0
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     shared = argparse.ArgumentParser(add_help=False)
     shared.add_argument("--json", action="store_true", help="Format output as machine-readable JSON")
@@ -1356,7 +1648,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # auth login
     p_login = auth_sub.add_parser("login", help="Authenticate with an AI model provider", parents=[shared])
-    p_login.add_argument("provider", choices=["anthropic", "claude", "cursor", "gemini", "google", "openai", "gpt"], help="Target model provider")
+    p_login.add_argument("provider", choices=["anthropic", "claude", "cursor", "gemini", "google", "openai", "gpt", "local", "ollama", "llamacpp", "llama-server"], help="Target model provider")
     p_login.add_argument("--no-browser", action="store_true", help="Use terminal/manual code entry instead of launching browser")
     p_login.add_argument("--device-code", action="store_true", help="Use RFC 8628 Device Authorization Grant")
     p_login.add_argument("--api-key", help="Direct API key onboarding into secure vault")
@@ -1366,7 +1658,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # auth logout
     p_logout = auth_sub.add_parser("logout", help="Safely delete credentials from OS vault and encrypted fallback", parents=[shared])
-    p_logout.add_argument("provider", nargs="?", choices=["anthropic", "claude", "cursor", "gemini", "google", "openai", "gpt"], default=None, help="Provider to log out from")
+    p_logout.add_argument("provider", nargs="?", choices=["anthropic", "claude", "cursor", "gemini", "google", "openai", "gpt", "local", "ollama", "llamacpp", "llama-server"], default=None, help="Provider to log out from")
     p_logout.add_argument("--all", action="store_true", help="Purge all credentials across all providers")
 
     # register
@@ -1396,6 +1688,26 @@ def build_parser() -> argparse.ArgumentParser:
     # tui
     sub.add_parser("tui", aliases=["switcher"], help="Launch interactive terminal UI switcher", parents=[shared])
 
+    # local
+    p_local = sub.add_parser("local", help="Inspect, probe, and onboard host-local model runtime", parents=[shared])
+    local_sub = p_local.add_subparsers(dest="local_cmd")
+    local_sub.add_parser("status", help="Probe local runtime health and list loaded models", parents=[shared])
+    p_local_onboarding = local_sub.add_parser(
+        "onboarding",
+        help="Probe hardware capability and guide optional human-approved local AI onboarding",
+        parents=[shared],
+    )
+    p_local_onboarding.add_argument(
+        "--approve",
+        action="store_true",
+        help="Explicit human approval to proceed with local AI onboarding in this environment",
+    )
+    p_local_onboarding.add_argument(
+        "--profile-only",
+        action="store_true",
+        help="Only display detected hardware profile and recommendations without prompting",
+    )
+
     # chat
     p_chat = sub.add_parser("chat", help="One-shot or interactive agent conversation", parents=[shared])
     p_chat.add_argument("-q", "--query", dest="query", default=None, help="One-shot user message")
@@ -1406,7 +1718,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_chat.add_argument(
         "--provider",
         default=None,
-        choices=["anthropic", "claude", "cursor", "gemini", "google", "openai", "gpt"],
+        choices=["anthropic", "claude", "cursor", "gemini", "google", "openai", "gpt", "local", "ollama", "llamacpp", "llama-server"],
         help="Model provider (default: anthropic)",
     )
     p_chat.add_argument("--title", default=None, help="Session title")
@@ -1476,6 +1788,8 @@ def main(
         return cmd_clean(args)
     if args.cmd == "auth":
         return cmd_auth(args)
+    if args.cmd == "local":
+        return cmd_local(args)
     if args.cmd == "register":
         return cmd_register(args)
     if args.cmd in ("deregister", "rm", "remove"):

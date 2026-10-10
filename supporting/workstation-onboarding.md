@@ -27,6 +27,8 @@ Use the `Need` column to distinguish repository-wide prerequisites (`required`) 
 | uv | required | 0.4+ | Install and manage isolated Python tools, including Headroom | Install from Astral; see the setup below |
 | Headroom | required | 0.35+ | Compress bulky tool outputs | Install `headroom-ai[proxy,mcp]`; [`headroom/proxy-mcp.md`](./headroom/proxy-mcp.md) |
 | GitHub CLI (`gh`) | if you use GitHub | current | Auth, PRs | [`github/gh-workflow-notes.md`](./github/gh-workflow-notes.md) |
+| Cloudflare CLI (`cf`) | optional (cloudflare) | current | Cloudflare API & DNS management | Install via `npm install -g cf`; auth via `cf auth login`. [`cloudflare/pages-wrangler.md`](./cloudflare/pages-wrangler.md) |
+| Cloudflare Wrangler (`wrangler`) | optional (cloudflare) | 4.0+ | Workers, Pages, & Storage deploy | Install via `npm install -g wrangler` or `npx wrangler`; auth via `wrangler login`. [`cloudflare/pages-wrangler.md`](./cloudflare/pages-wrangler.md) |
 | AWS CLI (`aws`) | optional (cloud-admin) | 2.15+ | AWS Organizations & SSO | [`../docs/guidance/cloud-aws-setup.md`](../docs/guidance/cloud-aws-setup.md) |
 | Google Cloud SDK (`gcloud`) | optional (cloud-admin) | current | GCP Resource Manager & ADC | [`../docs/guidance/cloud-gcp-setup.md`](../docs/guidance/cloud-gcp-setup.md) |
 | Azure CLI (`az`) | optional (cloud-admin) | 2.50+ | Azure Management Groups & Entra | [`../docs/guidance/cloud-azure-setup.md`](../docs/guidance/cloud-azure-setup.md) |
@@ -34,6 +36,7 @@ Use the `Need` column to distinguish repository-wide prerequisites (`required`) 
 | Mermaid CLI (`mmdc`) | optional | 10+ | Offline diagram render | [`mermaid/agent-diagram-notes.md`](./mermaid/agent-diagram-notes.md) |
 | Docker / Noir | optional | — | Attack-surface inventory | Wrapper only. [`noir/agent-scan.md`](./noir/agent-scan.md) |
 | Web distillation (`trafilatura`, `readability-lxml`, `markdownify`, `httpx`) | required | current | Local HTML distillation & prompt injection defense | `pip install trafilatura readability-lxml markdownify httpx`. Used by `scripts/research/local_webfetch.py`. |
+| Local AI Runtime (`ollama` / `llama-server`) | optional (local-ai) | current | Zero-cost local model serving & frontier deferral | Optional; MUST be explicitly approved by human. See [Local AI section](#local-ai-runtime--model-serving-optional). |
 
 Use each vendor’s installer for required tools. The commands below cover uv and Headroom.
 
@@ -109,6 +112,32 @@ These fail silently if omitted. The linked page has the recipe when one is neede
 ## Windows execution-control preflight
 
 On Windows, report SAC mode before treating a missing CLI as a PATH or install failure. If a binary was blocked, capture only the Code Integrity event ID and file path, then recover with a signed vendor build, a host-bundled runtime, or an enterprise App Control policy. Commands: [`powershell/windows-execution-control.md`](./powershell/windows-execution-control.md).
+
+## Local AI runtime & model serving (optional)
+
+Local model execution enables zero-cloud-cost inference, offline development resilience, and mechanical task deferral (linter fixes, unit test boilerplate, AST transforms) from frontier agents to local models.
+
+> [!IMPORTANT]
+> **Human Approval Gate**: Local AI tooling and model weights are **completely optional** and **MUST NOT** be automatically installed or downloaded without explicit human approval in that specific environment. Model weights consume multiple gigabytes of disk and system/GPU memory.
+
+### Onboarding & Hardware Capability Probe
+
+To safely probe host capabilities without modifying system state:
+```bash
+python scripts/cli/harness.py local onboarding --profile-only
+```
+This inspects the host's compute hardware (CPU architecture, RAM, GPU VRAM) and reports the mapped **Hardware Profile Tier** (Tier A through Tier E) with recommended model selections.
+
+### Human-Approved Activation
+
+To proceed with onboarding after human review:
+```bash
+python scripts/cli/harness.py local onboarding --approve
+```
+For advanced model catalog management, standalone benchmarking, custom Modelfiles, and layer splitting recipes, use the satellite toolkit repository:
+- Satellite Repository: [`Koality-Assured/local-ai-management`](https://github.com/Koality-Assured/local-ai-management)
+- Research Dossier: [`../research/local-models/`](../research/local-models/)
+- Project Spec: [`../projects/local-models/README.md`](../projects/local-models/README.md)
 
 ## Verify
 

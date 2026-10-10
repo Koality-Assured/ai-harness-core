@@ -12,6 +12,7 @@ Ingest simply; do not duplicate skills or paste root Critical — link [`../../A
 4. Never expand scope from an agent suggestion without human OK.
 5. Formalize a new reusable specialist through `agent-builder` and its canonical `AGENT.md`; do not create a deprecated standalone card.
 6. Never waive Critical cost layers in a spawn prompt.
+7. Every Codex collaboration spawn explicitly sets `fork_turns: "none"`; restate authority, scope, relevant facts, and user approval in its task payload. Never pass conversation transcripts; see [`interaction-protocol.md`](./interaction-protocol.md).
 
 ## Defaults (human-overridable)
 

@@ -28,6 +28,10 @@ StreamTransport = Callable[[str, dict[str, str], bytes], tuple[int, Iterable[byt
 DEFAULT_TIMEOUT_SEC = 120
 ANTHROPIC_BASE_URL_ENV = "HARNESS_ANTHROPIC_BASE_URL"
 ANTHROPIC_MESSAGES_PATH = "/v1/messages"
+HARNESS_LOCAL_BASE_URL_ENV = "HARNESS_LOCAL_BASE_URL"
+DEFAULT_LOCAL_BASE_URL = "http://127.0.0.1:11434/v1"
+LOCAL_DEFAULT_MODEL = "qwen2.5-coder:14b"
+SUPPORTED_PROVIDERS: tuple[str, ...] = ("anthropic", "openai", "gemini", "cursor", "local")
 
 
 def _anthropic_messages_url() -> str:
@@ -56,6 +60,36 @@ def _anthropic_messages_url() -> str:
         )
     return base.rstrip("/") + ANTHROPIC_MESSAGES_PATH
 
+
+def _openai_chat_url(provider: str = "openai") -> str:
+    if provider == "local":
+        base = os.environ.get(HARNESS_LOCAL_BASE_URL_ENV, "").strip() or DEFAULT_LOCAL_BASE_URL
+        try:
+            parsed = urllib.parse.urlsplit(base)
+            parsed.port
+        except ValueError as exc:
+            raise ProviderError(
+                f"invalid {HARNESS_LOCAL_BASE_URL_ENV}; expected a loopback HTTP(S) origin"
+            ) from exc
+        if (
+            parsed.scheme not in {"http", "https"}
+            or not parsed.netloc
+            or parsed.hostname not in {"127.0.0.1", "localhost", "::1"}
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.query
+            or "?" in base
+            or parsed.fragment
+        ):
+            raise ProviderError(
+                f"invalid {HARNESS_LOCAL_BASE_URL_ENV}; expected a loopback HTTP(S) origin (127.0.0.1, localhost, or ::1)"
+            )
+        return base.rstrip("/") + "/chat/completions"
+    base = os.environ.get("HARNESS_OPENAI_BASE_URL", "").strip()
+    if base:
+        return base.rstrip("/") + "/chat/completions"
+    return "https://api.openai.com/v1/chat/completions"
+
 # Confirmed alias in Anthropic Messages API docs:
 # https://platform.claude.com/docs/en/api/messages
 # https://platform.claude.com/docs/en/build-with-claude/working-with-messages
@@ -75,6 +109,10 @@ PROVIDER_ALIASES: dict[str, str] = {
     "google": "gemini",
     "openai": "openai",
     "gpt": "openai",
+    "local": "local",
+    "ollama": "local",
+    "llamacpp": "local",
+    "llama-server": "local",
 }
 
 
@@ -115,7 +153,7 @@ class CompletionResult:
 
 def _validate_required_tool_call_ids(provider: str, tool_calls: list[ToolCall]) -> None:
     """Reject native calls that cannot receive a valid paired result message."""
-    if provider not in ("anthropic", "openai"):
+    if provider not in ("anthropic", "openai", "local"):
         return
     if any(not isinstance(call.id, str) or not call.id.strip() for call in tool_calls):
         raise ProviderError(f"{provider} returned a tool call without a required call ID")
@@ -410,6 +448,8 @@ def _require_model(provider: str, model: str | None) -> str:
 def _resolve_model(provider: str, model: str | None) -> str:
     if provider == "anthropic":
         return (model or "").strip() or ANTHROPIC_DEFAULT_MODEL
+    if provider == "local":
+        return (model or "").strip() or LOCAL_DEFAULT_MODEL
     return _require_model(provider, model)
 
 
@@ -536,6 +576,7 @@ def _complete_openai(
     api_key: str,
     transport: Transport,
     tools: list[dict[str, Any]] | None = None,
+    provider: str = "openai",
 ) -> CompletionResult:
     payload: dict[str, Any] = {"model": model, "messages": _messages_for_openai(messages)}
     if tools:
@@ -551,14 +592,16 @@ def _complete_openai(
             for tool in tools
         ]
     body = json.dumps(payload).encode("utf-8")
+    auth_token = "local" if provider == "local" else (api_key or "local")
     headers = {
         "content-type": "application/json",
-        "authorization": f"Bearer {api_key}",
+        "authorization": f"Bearer {auth_token}",
     }
-    status, raw = transport("https://api.openai.com/v1/chat/completions", headers, body)
+    url = _openai_chat_url(provider)
+    status, raw = transport(url, headers, body)
     if status != 200:
         raise ProviderError(
-            f"openai HTTP {status}",
+            f"{provider} HTTP {status}",
             status=status,
             body_excerpt=_safe_excerpt(raw, api_key),
         )
@@ -586,7 +629,7 @@ def _complete_openai(
                     arguments=function.get("arguments"),
                 )
             )
-    _validate_required_tool_call_ids("openai", tool_calls)
+    _validate_required_tool_call_ids(provider, tool_calls)
     usage = data.get("usage") or {}
     return CompletionResult(
         text,
@@ -602,12 +645,12 @@ def _messages_for_openai(messages: list[dict[str, Any]]) -> list[dict[str, Any]]
     for message in messages:
         role = message.get("role", "user")
         data = _provider_data(message)
-        if role == "assistant" and data.get("provider") == "openai":
+        if role == "assistant" and data.get("provider") in ("openai", "local"):
             native = data.get("message")
             if isinstance(native, dict) and native.get("role") == "assistant":
                 contents.append(native)
                 continue
-        if role == "tool" and data.get("provider") == "openai":
+        if role == "tool" and data.get("provider") in ("openai", "local"):
             result = data.get("tool_result") or {}
             if isinstance(result, dict):
                 contents.append(
@@ -821,7 +864,7 @@ def _stream_request(
             ]
         headers.update({"x-api-key": api_key, "anthropic-version": "2023-06-01"})
         return _anthropic_messages_url(), headers, json.dumps(payload).encode("utf-8")
-    if provider == "openai":
+    if provider in ("openai", "local"):
         payload = {
             "model": model,
             "messages": _messages_for_openai(messages),
@@ -840,8 +883,9 @@ def _stream_request(
                 }
                 for tool in tools
             ]
-        headers["authorization"] = f"Bearer {api_key}"
-        return "https://api.openai.com/v1/chat/completions", headers, json.dumps(payload).encode("utf-8")
+        auth_token = "local" if provider == "local" else (api_key or "local")
+        headers["authorization"] = f"Bearer {auth_token}"
+        return _openai_chat_url(provider), headers, json.dumps(payload).encode("utf-8")
     payload = {"contents": _gemini_contents(messages)}
     system = _system_from_messages(messages)
     if system:
@@ -877,7 +921,7 @@ def stream_complete(
     canonical = normalize_provider(provider) or (provider or "").lower().strip()
     if canonical == "cursor":
         raise ProviderError("provider 'cursor' chat is not wired: no documented public chat endpoint to call")
-    if canonical not in ("anthropic", "openai", "gemini"):
+    if canonical not in ("anthropic", "openai", "gemini", "local"):
         raise ProviderError(f"unsupported provider '{provider}'")
 
     resolved = _resolve_model(canonical, model)
@@ -950,7 +994,7 @@ def stream_complete(
         for event_name, raw_data in _iter_sse_events(chunks):
             if cancel_event is not None and cancel_event.is_set():
                 raise StreamCancelled("provider stream was cancelled")
-            if canonical == "openai" and raw_data == "[DONE]":
+            if canonical in ("openai", "local") and raw_data == "[DONE]":
                 break
             try:
                 data = json.loads(raw_data)
@@ -991,7 +1035,11 @@ def stream_complete(
                         partial = delta.get("partial_json")
                         if isinstance(index, int) and isinstance(partial, str):
                             anthropic_arguments.setdefault(index, []).append(partial)
-            elif canonical == "openai":
+            elif canonical in ("openai", "local"):
+                if data.get("error"):
+                    err_val = data.get("error")
+                    err_msg = err_val.get("message") if isinstance(err_val, dict) else str(err_val)
+                    raise ProviderError(f"{canonical} returned a streaming error: {err_msg}")
                 usage = data.get("usage") or {}
                 if isinstance(usage, dict):
                     if "prompt_tokens" in usage:
@@ -1060,6 +1108,10 @@ def stream_complete(
                         for key, value in part.items():
                             if key not in ("text", "functionCall"):
                                 existing[key] = value
+    except (http.client.HTTPException, ConnectionResetError, TimeoutError, OSError) as exc:
+        if cancel_event is not None and cancel_event.is_set():
+            raise StreamCancelled("provider stream was cancelled") from None
+        raise ProviderError(f"{canonical} stream connection dropped: {exc}") from exc
     except Exception:
         if cancel_event is not None and cancel_event.is_set():
             raise StreamCancelled("provider stream was cancelled") from None
@@ -1095,7 +1147,7 @@ def stream_complete(
                 )
             blocks.append(block)
         provider_message = {"role": "assistant", "content": blocks}
-    elif canonical == "openai":
+    elif canonical in ("openai", "local"):
         native_calls = [openai_calls[index] for index in sorted(openai_calls)]
         for call in native_calls:
             function = call["function"]
@@ -1170,7 +1222,7 @@ def complete_result(
         raise ProviderError(
             "provider 'cursor' chat is not wired: no documented public chat endpoint to call"
         )
-    if canonical not in ("anthropic", "openai", "gemini"):
+    if canonical not in ("anthropic", "openai", "gemini", "local"):
         raise ProviderError(f"unsupported provider '{provider}'")
 
     resolved = _resolve_model(canonical, model)
@@ -1178,6 +1230,6 @@ def complete_result(
 
     if canonical == "anthropic":
         return _complete_anthropic(resolved, messages, api_key, xport, tools)
-    if canonical == "openai":
-        return _complete_openai(resolved, messages, api_key, xport, tools)
+    if canonical in ("openai", "local"):
+        return _complete_openai(resolved, messages, api_key, xport, tools, provider=canonical)
     return _complete_gemini(resolved, messages, api_key, xport, tools)

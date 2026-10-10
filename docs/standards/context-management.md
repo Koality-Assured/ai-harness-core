@@ -160,13 +160,16 @@ Delegated agents should receive only the context needed for their task. Context 
 
 When an orchestrator delegates work:
 - **Bounded context**: Provide the task, necessary parameters, applicable local instructions, and working location. Do not include unrelated conversation history or private data.
+- **Codex zero-flight control**: Every specialist spawned through Codex Multi-Agent v2 `collaboration.spawn_agent` MUST explicitly set `fork_turns: "none"`. If omitted, `fork_turns` defaults to `"all"` and forks full history; a positive integer string forks that many recent turns. A clean-slate instruction in the task message does not prevent history from being forked. This setting controls history inheritance; it does not provide process or filesystem isolation or prevent transcript text from being copied into the task message.
+- **Task authority and approval**: The task payload MUST restate the delegated authority, exact scope, relevant facts, and any explicit user approval needed for the task. Do not pass the parent conversation transcript; provide only the approval and task facts the specialist needs.
 - **Targeted discovery**: Let the delegated agent acquire other context using search and code-inspection tools supported by the repository.
-- **History controls**: Do not copy or forward unrelated transcripts. Check whether the host includes conversation history by default and use documented filtering controls where needed.
+- **Other host history controls**: For delegation APIs other than Codex Multi-Agent v2 `collaboration.spawn_agent`, check whether the host includes conversation history by default and use its documented filtering controls where available.
 
 ### 2. Multi-Host Configuration and Enforcement Matrix
 
 | Product or API | Documented behavior | Boundary to verify |
 | :--- | :--- | :--- |
+| **Codex Multi-Agent v2 `collaboration.spawn_agent`** | `fork_turns` is optional and defaults to `"all"` when omitted: `"all"` forks full history, a positive integer string forks that many recent turns, and `"none"` forks no parent history. | Set `fork_turns: "none"` on every delegated specialist spawn. This controls history inheritance; it does not provide process or filesystem isolation. Restate authority, scope, facts, and approval in the task payload without forwarding transcripts. |
 | **Claude Code subagents** | Each subagent has its own context window and configurable tools/permissions. `isolation: worktree` controls the working directory. | Confirm which prompt and project instructions are loaded. A separate context window or worktree does not itself prove data or process isolation. |
 | **OpenAI Agents SDK handoffs** | A receiving agent gets the conversation history by default; `input_filter` can change what history it receives. | A handoff filter controls input history; it is not a sandbox or filesystem boundary. Configure and test those controls separately. |
 | **Other hosts and APIs** | Behavior depends on the product, version, and delegation feature. | Consult the product’s current documentation and test the actual passed history, instructions, tools, permissions, and working directory. Do not infer enforcement from a config filename or a prompt alone. |
@@ -192,7 +195,9 @@ When an orchestrator delegates work:
 
 - AI Development Security: [`ai-development-security.md`](./ai-development-security.md)
 - Data Protection: [`data-protection.md`](./data-protection.md)
-- Provider documentation: [Anthropic prompt caching](https://platform.claude.com/docs/en/build-with-claude/prompt-caching), [Claude Code subagents](https://code.claude.com/docs/en/sub-agents), [Claude Code settings](https://code.claude.com/docs/en/settings), [OpenAI prompt caching](https://developers.openai.com/api/docs/guides/prompt-caching), [OpenAI Agents SDK handoffs](https://openai.github.io/openai-agents-python/handoffs/), [Gemini context caching](https://ai.google.dev/gemini-api/docs/caching), [Gemini Interactions token usage](https://ai.google.dev/gemini-api/docs/tokens), [Gemini GenerateContent token usage](https://ai.google.dev/gemini-api/docs/generate-content/tokens)
+- Provider documentation: Codex [Multi-Agent v2 tool schema](https://github.com/openai/codex/blob/main/codex-rs/core/src/tools/handlers/multi_agents_spec.rs) and [spawn handler](https://github.com/openai/codex/blob/main/codex-rs/core/src/tools/handlers/multi_agents_v2/spawn.rs), [Anthropic prompt caching](https://platform.claude.com/docs/en/build-with-claude/prompt-caching), [Claude Code subagents](https://code.claude.com/docs/en/sub-agents), [Claude Code settings](https://code.claude.com/docs/en/settings), [OpenAI prompt caching](https://developers.openai.com/api/docs/guides/prompt-caching), [OpenAI Agents SDK handoffs](https://openai.github.io/openai-agents-python/handoffs/), [Gemini context caching](https://ai.google.dev/gemini-api/docs/caching), [Gemini Interactions token usage](https://ai.google.dev/gemini-api/docs/tokens), [Gemini GenerateContent token usage](https://ai.google.dev/gemini-api/docs/generate-content/tokens)
 
 AI Router may maintain additional internal harness notes as optional provenance. Access to those notes or tools is not required to apply, validate, or maintain this standard.
+
+For ai-router delegation procedures, see [`ai-tooling/a2a/interaction-protocol.md`](../../ai-tooling/a2a/interaction-protocol.md) and [`ai-tooling/skills/skill-conventions.md`](../../ai-tooling/skills/skill-conventions.md).
 

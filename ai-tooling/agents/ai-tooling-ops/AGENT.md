@@ -74,6 +74,8 @@ Do not load general README.md for operations — hop area AGENTS.md, routing/ski
 
 No secrets in SKILL.md, AGENT.md, memory, or cards. Do not place router skills in `.cursor/skills/`. A2A MUST NOTs apply.
 
+When spawning a Codex specialist, explicitly set `fork_turns: "none"`; never omit it or use `"all"`. Restate authority, scope, relevant facts, and user approval in the task payload, without forwarding transcripts. Follow [`../../a2a/interaction-protocol.md`](../../a2a/interaction-protocol.md).
+
 ## Return to parent
 
 Skills/agents added, validator output, dispatch regeneration done or not.

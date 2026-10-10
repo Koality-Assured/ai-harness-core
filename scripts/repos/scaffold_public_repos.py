@@ -10,6 +10,7 @@ import argparse
 import ast
 import json
 import os
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -27,6 +28,13 @@ from _harness_template import (  # noqa: E402
     GENERIC_TEMPLATE_README,
     GENERIC_TEMPLATE_REFERENCES_AGENTS,
     GENERIC_TEMPLATE_STUB_AGENTS,
+)
+from beautify_repo import (  # noqa: E402
+    generate_readme_hero,
+    generate_vector_banner,
+    generate_vector_logo,
+    get_domain_spec,
+    harden_pyproject_toml_content,
 )
 
 
@@ -2491,6 +2499,21 @@ def scaffold_repo(
     defn = REPO_REGISTRY[repo_name]
     repo_root = target_dir / repo_name
     files = defn.builder()
+
+    # Automatically beautify and harden public ecosystem repositories
+    spec = get_domain_spec(name=repo_name, domain="none", org="Koality-Assured")
+    logo_key = f"assets/{repo_name}-logo.svg"
+    banner_key = f"assets/{repo_name}-banner.svg"
+    if logo_key not in files:
+        files[logo_key] = generate_vector_logo(spec)
+    if banner_key not in files:
+        files[banner_key] = generate_vector_banner(spec)
+    if "pyproject.toml" in files:
+        files["pyproject.toml"] = harden_pyproject_toml_content(files["pyproject.toml"])
+    if "README.md" in files and not files["README.md"].startswith('<div align="center">'):
+        hero = generate_readme_hero(spec)
+        clean_body = re.sub(r"^#\s+[^\n]+\n+", "", files["README.md"]).lstrip()
+        files["README.md"] = hero + "\n" + clean_body
 
     if repo_root.exists() and not overwrite and not dry_run:
         # Check if directory is non-empty
