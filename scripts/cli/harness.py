@@ -1805,9 +1805,9 @@ def cmd_local(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     shared = argparse.ArgumentParser(add_help=False)
-    shared.add_argument("--json", action="store_true", help="Format output as machine-readable JSON")
-    shared.add_argument("--dry-run", action="store_true", help="Simulate operation without mutating state")
-    shared.add_argument("--harness", help="Target specific registered domain harness by ID or path")
+    shared.add_argument("--json", action="store_true", default=argparse.SUPPRESS, help="Format output as machine-readable JSON")
+    shared.add_argument("--dry-run", action="store_true", default=argparse.SUPPRESS, help="Simulate operation without mutating state")
+    shared.add_argument("--harness", default=argparse.SUPPRESS, help="Target specific registered domain harness by ID or path")
 
     parser = argparse.ArgumentParser(
         prog="harness",
