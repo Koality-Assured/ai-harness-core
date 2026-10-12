@@ -14,13 +14,13 @@ from pathlib import Path
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from areas import (  # noqa: E402
+from areas import (
     AreasYamlError,
     check_areas_consistency,
     load_area_ids,
 )
-from md import agent_ids, parse_frontmatter, skill_paths  # noqa: E402
-from paths import REPO_ROOT as ROOT  # noqa: E402
+from md import agent_ids, parse_frontmatter, skill_paths
+from paths import REPO_ROOT as ROOT
 
 QMD_EXCLUDED = ("change-history", "scratch")
 DOC_SKIP_NAMES = {"README.md"}
@@ -120,7 +120,7 @@ def check_ops_docs_split(errors: list[str]) -> None:
 
 
 def check_scripts(errors: list[str]) -> None:
-    tag_re = re.compile(r"tags:\s*\[", re.I)
+    tag_re = re.compile(r"tags:\s*\[", re.IGNORECASE)
     scripts_root = ROOT / "scripts"
     for path in sorted(scripts_root.rglob("*.py")):
         rel_parts = path.relative_to(scripts_root).parts

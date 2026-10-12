@@ -17,15 +17,15 @@ for _p in (_LIB, _ROUTING, _REPOS):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from md import load_skill_record, skill_paths  # noqa: E402
-from areas import AreasYamlError  # noqa: E402
-from generate_routing_index import render_agent_dispatch, render_area_map  # noqa: E402
-from generate_script_index import render_script_index  # noqa: E402
-from beautify_repo import (  # noqa: E402
+from areas import AreasYamlError
+from beautify_repo import (
     generate_vector_banner,
     generate_vector_logo,
     get_domain_spec,
 )
+from generate_routing_index import render_agent_dispatch, render_area_map
+from generate_script_index import render_script_index
+from md import load_skill_record, skill_paths
 
 HARNESS_TEMPLATE_MODE = "harness_template"
 WIKI_TEMPLATE_MODE = HARNESS_TEMPLATE_MODE  # Backward compatibility alias
@@ -504,7 +504,7 @@ Clone this repository as a clean base to create a specialized domain harness (e.
 Embed the core engine directly into an existing software project to give AI coding agents isolation, caching, and retrieval capabilities:
 1. Scaffold configuration and skeleton directories via CLI:
    ```bash
-   python scripts/harness_init.py --target /path/to/target-repo
+   python .harness/cli/harness_init.py --target /path/to/target-repo
    ```
 2. Configure provider thresholds and adapter paths in `config/harness.config.json`.
 3. Use Git worktrees for task isolation as documented by the destination repository; leverage `.harness/` adapters for prompt-cache planning, Headroom compression, and tool integrations.

@@ -12,13 +12,13 @@ import shutil
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT  # noqa: E402
+from paths import REPO_ROOT as ROOT
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     try:
@@ -200,7 +200,7 @@ def evaluate_retrieval(query_items: list[dict[str, Any]], k_values: list[int] = 
 
 def render_retrieval_report(eval_data: dict[str, Any]) -> str:
     """Render structured Markdown retrieval benchmark report."""
-    now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now_utc = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     lines = [
         "---",
         "doc_kind: result",
@@ -251,7 +251,7 @@ def main(argv: list[str] | None = None) -> int:
     eval_data = evaluate_retrieval(BENCHMARK_QUERIES)
     report_md = render_retrieval_report(eval_data)
 
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
     out_rel = args.out or f"results/benchmarks/retrieval/{today}"
     out_dir = ROOT / out_rel
 

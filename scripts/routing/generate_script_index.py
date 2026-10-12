@@ -14,8 +14,8 @@ from pathlib import Path
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT  # noqa: E402
-from paths import SCRIPTS_ROOT  # noqa: E402
+from paths import REPO_ROOT as ROOT
+from paths import SCRIPTS_ROOT
 
 OUT = SCRIPTS_ROOT / "script-index.md"
 
@@ -65,7 +65,7 @@ def extract_meta(path: Path, scripts_root: Path | None = None) -> dict:
 
 def render_script_index(scripts_root: Path, *, now: str | None = None) -> str:
     """Return script-index.md for the Python files under ``scripts_root``."""
-    stamp = now or dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    stamp = now or dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     rows: list[dict] = []
     if scripts_root.is_dir():
         for path in sorted(scripts_root.rglob("*.py")):

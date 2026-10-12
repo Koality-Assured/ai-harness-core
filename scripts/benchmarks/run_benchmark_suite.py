@@ -10,15 +10,14 @@ import argparse
 import json
 import subprocess
 import sys
-import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT  # noqa: E402
-from tool_output import format_tool_execution  # noqa: E402
+from paths import REPO_ROOT as ROOT
+from tool_output import format_tool_execution
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     try:
@@ -64,7 +63,7 @@ def run_benchmark_script(script_name: str, args: list[str]) -> tuple[int, dict[s
 
 def render_combined_report(results: dict[str, Any], date_str: str) -> str:
     """Render unified master benchmark report."""
-    now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now_utc = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     lines = [
         "---",
         "doc_kind: result",
@@ -128,7 +127,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", help="Print JSON results")
     args = parser.parse_args(argv)
 
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
     out_rel = args.out or f"results/benchmarks/combined/{today}"
     out_dir = ROOT / out_rel
 

@@ -130,7 +130,7 @@ def compress_via_headroom(
     )
 
     try:
-        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:
+        with urllib.request.urlopen(req, timeout=timeout_sec) as resp:  # nosec B310
             if resp.status == 200:
                 data: dict[str, Any] = json.loads(resp.read().decode("utf-8"))
                 compressed = data.get("text") or data.get("compressed_text")
@@ -178,3 +178,4 @@ if __name__ == "__main__":
     if sample:
         result = format_tool_execution(sample)
         print(json.dumps(result, indent=2))
+

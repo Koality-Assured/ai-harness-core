@@ -13,14 +13,19 @@ from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from areas import (  # noqa: E402
+from areas import (
     AreasYamlError,
     check_areas_consistency,
     load_area_records,
     load_nested_defaults,
 )
-from md import agent_paths, load_agent_record, load_skill_record, parse_frontmatter, skill_paths  # noqa: E402
-from paths import REPO_ROOT as ROOT  # noqa: E402
+from md import (
+    agent_paths,
+    load_agent_record,
+    load_skill_record,
+    skill_paths,
+)
+from paths import REPO_ROOT as ROOT
 
 GENERATOR = "scripts/routing/generate_routing_index.py"
 AREA_MAP = ROOT / "routing" / "area-map.md"
@@ -29,7 +34,7 @@ AGENT_DISPATCH = ROOT / "routing" / "agent-dispatch.md"
 
 
 def _utc_now() -> str:
-    return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _md_cell(value: str) -> str:

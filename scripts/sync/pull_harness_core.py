@@ -14,7 +14,7 @@ import argparse
 import json
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -24,8 +24,7 @@ for _p in (_SYNC, _LIB):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from paths import resolve_repo_root  # noqa: E402
-from _harness_core_protocol import (  # noqa: E402
+from _harness_core_protocol import (
     CORE_REMOTE_NAME,
     classify_spoke_path,
     current_branch,
@@ -34,6 +33,7 @@ from _harness_core_protocol import (  # noqa: E402
     run_git,
     unique_paths,
 )
+from paths import resolve_repo_root
 
 
 def _run_python_script(script_path: Path, cwd: Path, timeout: int = 120) -> tuple[int, str, str]:
@@ -49,7 +49,7 @@ def _run_python_script(script_path: Path, cwd: Path, timeout: int = 120) -> tupl
 
 
 def _branch_name() -> str:
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     return f"chore/pull-harness-core-{stamp}"
 
 
@@ -240,7 +240,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Pull harness core ({mode})")
         print(f"  spoke:   {payload['spoke']}")
         print(f"  ref:     {payload['ref']}")
-        print(f"  merged:  no")
+        print("  merged:  no")
         if payload.get("branch"):
             print(f"  branch:  {payload['branch']}")
         for rel in payload["updates"]:

@@ -10,18 +10,21 @@ import json
 import os
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from cli.auth.keyring_vault import _enforce_private_dir_permissions, _enforce_private_permissions
+from cli.auth.keyring_vault import (
+    _enforce_private_dir_permissions,
+    _enforce_private_permissions,
+)
 
 BUSY_MODES = ("interrupt", "queue", "steer")
 
 
 def _utcnow_iso() -> str:
     # Include microseconds so same-second creates still order correctly.
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 def default_state_db_path() -> Path:

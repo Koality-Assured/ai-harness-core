@@ -26,16 +26,14 @@ for _p in (str(_LIB_DIR), str(_SCRIPTS_DIR)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from areas import load_area_records  # noqa: E402
-from md import agent_paths, load_agent_record  # noqa: E402
-from paths import REPO_ROOT  # noqa: E402
+from areas import load_area_records
+from md import agent_paths, load_agent_record
 
-from cli.provider_client import (  # noqa: E402
+from cli.provider_client import (
     ANTHROPIC_DEFAULT_MODEL,
     LOCAL_DEFAULT_MODEL,
-    PROVIDER_ALIASES,
-    ProviderError,
     SUPPORTED_PROVIDERS,
+    ProviderError,
     normalize_provider,
 )
 
@@ -194,7 +192,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 
     # Worktrees are reported from Git's registration database, without area metadata.
     try:
-        from routing.spawn_worktree import parse_worktrees  # noqa: E402
+        from routing.spawn_worktree import parse_worktrees
 
         worktree_proc = run_git(["worktree", "list", "--porcelain"], cwd=primary_root, check=False)
         if worktree_proc.returncode != 0:
@@ -272,7 +270,7 @@ def cmd_branch(args: argparse.Namespace) -> int:
     else:
         primary_root = get_primary_repo_root()
 
-    from routing.spawn_worktree import cmd_create  # noqa: E402
+    from routing.spawn_worktree import cmd_create
 
     return cmd_create(
         slug,
@@ -395,7 +393,7 @@ def cmd_pr(args: argparse.Namespace) -> int:
         print("error: cannot create PR from detached HEAD. Please checkout a named branch first.", file=sys.stderr)
         return 1
 
-    from routing.spawn_worktree import default_branch_name  # noqa: E402
+    from routing.spawn_worktree import default_branch_name
 
     try:
         base_branch = args.base or default_branch_name(primary_root)
@@ -499,7 +497,7 @@ def cmd_clean(args: argparse.Namespace) -> int:
         return 2
 
     primary_root = get_primary_repo_root()
-    from routing.spawn_worktree import cmd_cleanup  # noqa: E402
+    from routing.spawn_worktree import cmd_cleanup
 
     return cmd_cleanup(
         args.branch,
@@ -592,7 +590,7 @@ def cmd_auth_status(args: argparse.Namespace) -> int:
             if exp_val is None:
                 exp_str = "Never (API Key)"
             elif isinstance(exp_val, (int, float)):
-                exp_str = dt.datetime.fromtimestamp(exp_val, dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+                exp_str = dt.datetime.fromtimestamp(exp_val, dt.UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
             else:
                 exp_str = str(exp_val)
 
@@ -1509,7 +1507,6 @@ def cmd_commands(args: argparse.Namespace) -> int:
 
 def cmd_deferral(args: argparse.Namespace) -> int:
     from pacing import (
-        check_secondary_availability,
         classify_deferral_eligibility,
         clear_secondary_exhaustion,
         format_deferral_notice,
@@ -1649,6 +1646,7 @@ def probe_local_hardware() -> dict[str, Any]:
 def cmd_local(args: argparse.Namespace) -> int:
     import urllib.parse
     import urllib.request
+
     from cli.provider_client import DEFAULT_LOCAL_BASE_URL, HARNESS_LOCAL_BASE_URL_ENV
 
     base_url = os.environ.get(HARNESS_LOCAL_BASE_URL_ENV, "").strip() or DEFAULT_LOCAL_BASE_URL
@@ -1683,7 +1681,7 @@ def cmd_local(args: argparse.Namespace) -> int:
         loaded_models: list[str] = []
         try:
             req = urllib.request.Request(models_url, headers={"User-Agent": "ai-router-harness"})
-            with urllib.request.urlopen(req, timeout=2) as resp:
+            with urllib.request.urlopen(req, timeout=2) as resp:  # nosec B310 - internal harness gateway URL
                 data = json.loads(resp.read().decode("utf-8"))
                 endpoint_online = True
                 raw_models = data.get("data") or data.get("models") or []
@@ -1772,7 +1770,7 @@ def cmd_local(args: argparse.Namespace) -> int:
     if action == "status":
         req = urllib.request.Request(models_url, headers={"User-Agent": "ai-router-harness"})
         try:
-            with urllib.request.urlopen(req, timeout=3) as resp:
+            with urllib.request.urlopen(req, timeout=3) as resp:  # nosec B310 - internal URL known safe
                 data = json.loads(resp.read().decode("utf-8"))
         except Exception as exc:
             if getattr(args, "json", False):
@@ -2069,3 +2067,4 @@ def main(
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

@@ -11,11 +11,9 @@ import getpass
 import hashlib
 import hmac
 import http.server
-import json
 import re
 import secrets
 import sys
-import threading
 import time
 import urllib.parse
 import webbrowser

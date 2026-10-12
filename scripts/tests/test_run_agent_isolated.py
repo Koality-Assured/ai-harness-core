@@ -20,7 +20,7 @@ for _p in (str(_SCRIPTS), str(_LIB)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from cli.run_agent_isolated import execute_agent_isolated, find_harness_binary, main  # noqa: E402
+from cli.run_agent_isolated import execute_agent_isolated, find_harness_binary, main
 
 
 class TestRunAgentIsolated(unittest.TestCase):

@@ -17,19 +17,17 @@ sys.path.insert(0, str(_SCRIPTS))
 sys.path.insert(0, str(_SCRIPTS / "benchmarks"))
 sys.path.insert(0, str(_SCRIPTS / "_lib"))
 
-from paths import REPO_ROOT as ROOT  # noqa: E402
-from estimate_agent_costs import (  # noqa: E402
+from benchmark_agent_fleet import benchmark_single_agent
+from benchmark_retrieval import evaluate_retrieval
+from benchmark_task_eval import evaluate_task, load_task_suite
+from benchmark_tool_efficiency import TOOL_FIXTURES, benchmark_fixture
+from estimate_agent_costs import (
     DEFAULT_PRICING_TABLE,
     compute_trajectory_cost,
     estimate_agent_and_skill,
     estimate_tokens,
-    inspect_agent_tokens,
 )
-from benchmark_agent_fleet import benchmark_single_agent  # noqa: E402
-from benchmark_retrieval import evaluate_retrieval, fallback_search  # noqa: E402
-from benchmark_tool_efficiency import benchmark_fixture, TOOL_FIXTURES  # noqa: E402
-from benchmark_task_eval import evaluate_task, load_task_suite  # noqa: E402
-from run_benchmark_suite import run_benchmark_script  # noqa: E402
+from paths import REPO_ROOT as ROOT
 
 
 class BenchmarkSuiteUnitTests(unittest.TestCase):

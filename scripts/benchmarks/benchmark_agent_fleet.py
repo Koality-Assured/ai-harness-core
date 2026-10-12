@@ -10,28 +10,25 @@ import argparse
 import json
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from md import (  # noqa: E402
-    agent_ids,
-    agent_paths,
-    load_agent_record,
-    load_skill_record,
-    parse_frontmatter,
-    skill_paths,
-)
-from paths import REPO_ROOT as ROOT  # noqa: E402
-
 # Import local cost calculation helpers
-from estimate_agent_costs import (  # noqa: E402
+from estimate_agent_costs import (
     compute_trajectory_cost,
     inspect_agent_tokens,
     inspect_skill_tokens,
 )
+from md import (
+    agent_ids,
+    agent_paths,
+    parse_frontmatter,
+    skill_paths,
+)
+from paths import REPO_ROOT as ROOT
 
 
 def benchmark_single_agent(
@@ -114,7 +111,7 @@ def render_fleet_report(
     summary_stats: dict[str, Any],
 ) -> str:
     """Render comprehensive Markdown fleet report."""
-    now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now_utc = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     lines = [
         "---",
         "doc_kind: result",
@@ -144,7 +141,7 @@ def render_fleet_report(
     ]
 
     for item in fleet_results:
-        status_badge = f"**{item['status']}**" if item['status'] == "PASS" else f"**FAIL**"
+        status_badge = f"**{item['status']}**" if item['status'] == "PASS" else "**FAIL**"
         cache_badge = "Yes" if item['prompt_cache_invariant'] else "No"
         lines.append(
             f"| [`{item['agent_id']}`](../../../ai-tooling/agents/{item['agent_id']}/AGENT.md) | "
@@ -209,7 +206,7 @@ def main(argv: list[str] | None = None) -> int:
 
     report_md = render_fleet_report(fleet_results, summary_stats)
 
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
     out_rel = args.out or f"results/benchmarks/fleet/{today}"
     out_dir = ROOT / out_rel
 

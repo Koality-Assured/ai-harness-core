@@ -12,7 +12,7 @@
 
 [![CI](https://github.com/Koality-Assured/ai-harness-core/actions/workflows/ci.yml/badge.svg)](https://github.com/Koality-Assured/ai-harness-core/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](pyproject.toml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)]()
 [![Architecture: Decoupled Harness](https://img.shields.io/badge/architecture-decoupled%20harness-blueviolet.svg)]()
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
@@ -46,7 +46,7 @@ Clone this repository as a clean base to create a specialized domain harness (e.
 Embed the core engine directly into an existing software project to give AI coding agents isolation, caching, and retrieval capabilities:
 1. Scaffold configuration and skeleton directories via CLI:
    ```bash
-   python scripts/harness_init.py --target /path/to/target-repo
+   python .harness/cli/harness_init.py --target /path/to/target-repo
    ```
 2. Configure provider thresholds and adapter paths in `config/harness.config.json`.
 3. Use Git worktrees for task isolation as documented by the destination repository; leverage `.harness/` adapters for prompt-cache planning, Headroom compression, and tool integrations.

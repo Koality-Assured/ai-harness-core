@@ -12,7 +12,8 @@ Purpose subfolders. Keep this file, human [`README.md`](./README.md), and genera
 | --- | --- |
 | `_lib/` | Shared helpers — not indexed |
 | `change-history/` | Provenance append / quarter scaffold |
-| `routing/` | Script index, routing index, skill dispatch, worktree spawn |
+\| `routing/` \| Script index, routing index, skill dispatch, worktree spawn \|
+| `cli/` | Fallback Python runtime vs the Go harness-cli binary |
 | `qmd/` / `cost-layers/` | Retrieval + combined validation |
 | `ai-tooling/` / `docs/` / `projects/` | Catalog / wiki / scaffold helpers |
 
@@ -29,3 +30,4 @@ Every indexed script starts with a docstring tag block (`tags:`, optional `routi
 - Idempotent when practical; clear usage on bad args; no secrets.
 - Change-history mutations only via `change-history/` scripts.
 - Do not index `_lib/` or files whose names start with `_`.
+

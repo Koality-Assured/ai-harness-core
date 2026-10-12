@@ -10,13 +10,12 @@ from __future__ import annotations
 
 import io
 import json
-import os
 import sys
 import tempfile
 import threading
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 _SCRIPTS = Path(__file__).resolve().parents[1]
 _CLI = _SCRIPTS / "cli"
@@ -25,13 +24,13 @@ for _p in (str(_CLI), str(_SCRIPTS), str(_LIB)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from cli.registry import (  # noqa: E402
+from cli.registry import (
     HarnessRegistry,
     infer_harness_domain,
     inspect_harness,
     slugify_id,
 )
-from cli.schema_adapter import (  # noqa: E402
+from cli.schema_adapter import (
     load_dynamic_agents,
     load_dynamic_areas,
     resolve_harness_root,

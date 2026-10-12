@@ -16,7 +16,7 @@ _SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_SCRIPTS))
 sys.path.insert(0, str(_SCRIPTS / "_lib"))
 
-from pacing import (  # noqa: E402
+from pacing import (
     check_secondary_availability,
     chunk_tasks,
     clear_secondary_exhaustion,

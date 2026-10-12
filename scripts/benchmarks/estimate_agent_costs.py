@@ -10,14 +10,14 @@ import argparse
 import json
 import math
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from md import agent_paths, load_agent_record, load_skill_record, parse_frontmatter, skill_paths  # noqa: E402
-from paths import REPO_ROOT as ROOT  # noqa: E402
+from md import agent_paths, parse_frontmatter, skill_paths
+from paths import REPO_ROOT as ROOT
 
 # Standard pricing models per 1M tokens (USD)
 DEFAULT_PRICING_TABLE: dict[str, dict[str, Any]] = {
@@ -299,7 +299,7 @@ def estimate_agent_and_skill(
 
 def render_markdown_report(estimates: list[dict[str, Any]], title: str = "Agent & Paired Skill Cost Estimation") -> str:
     """Render a structured Markdown report."""
-    now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now_utc = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     lines = [
         "---",
         "doc_kind: result",

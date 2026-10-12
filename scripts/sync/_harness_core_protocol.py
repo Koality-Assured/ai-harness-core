@@ -10,8 +10,8 @@ import json
 import re
 import subprocess
 import sys
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Callable, Iterable
 
 from _harness_template import (
     HARNESS_TEMPLATE_DEST_EXCLUDE_RELS,
@@ -30,7 +30,7 @@ _REPOS = Path(__file__).resolve().parents[1] / "repos"
 if str(_REPOS) not in sys.path:
     sys.path.insert(0, str(_REPOS))
 
-from beautify_repo import (  # noqa: E402
+from beautify_repo import (
     MIT_LICENSE_TEMPLATE,
     generate_readme_hero,
     generate_vector_banner,
@@ -42,7 +42,7 @@ DEFAULT_ORG = "Koality-Assured"
 CORE_REPO_NAME = "ai-harness-core"
 CORE_REMOTE_NAME = "harness-core"
 ORIGIN_REMOTE_NAME = "origin"
-DOMAIN_CHOICES: tuple[str, ...] = ("legal", "ui-ux", "financial", "game-dev", "none")
+DOMAIN_CHOICES: tuple[str, ...] = ("legal", "ui-ux", "financial", "game-dev", "art", "none")
 VISIBILITY_CHOICES: tuple[str, ...] = ("public", "private")
 CORE_SOURCE_CHOICES: tuple[str, ...] = ("export", "clone", "path")
 
@@ -51,6 +51,7 @@ DOMAIN_DEFAULT_REPO_NAMES: dict[str, str | None] = {
     "ui-ux": "ui-ux-router",
     "financial": "financial-advisement-router",
     "game-dev": "game-dev-router",
+    "art": "art-router",
     "none": None,
 }
 
@@ -60,6 +61,7 @@ DOMAIN_DEFAULT_VISIBILITY: dict[str, str] = {
     "ui-ux": "public",
     "financial": "public",
     "game-dev": "private",
+    "art": "public",
     "none": "private",
 }
 
@@ -421,11 +423,11 @@ def domain_overlay_files(
         f"- **Propose generic improvements back to core**: `python scripts/sync/propose_core_update.py --dry-run --json`\n\n"
         f"## Key Capabilities\n\n"
         + "".join(f"- **{chip}**: Native domain competency and verified execution workflows.\n" for chip in spec.chips)
-        + f"\n## Verification & Testing\n\n"
-        f"```bash\n"
-        f"# Run local test suite\n"
-        f"python -m unittest discover -s scripts/tests\n"
-        f"```\n"
+        + "\n## Verification & Testing\n\n"
+        "```bash\n"
+        "# Run local test suite\n"
+        "python -m unittest discover -s scripts/tests\n"
+        "```\n"
     )
 
     files[f"docs/standards/{domain}-overlay.md"] = (

@@ -103,8 +103,9 @@ class A2AResultEnvelope:
     result_data: Any = None
     error: str | None = None
     agent_id: str = ""
+    signature: str | None = None
     timestamp_utc: str = field(
-        default_factory=lambda: dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        default_factory=lambda: dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     )
 
     def to_dict(self) -> dict[str, Any]:
@@ -148,7 +149,7 @@ class A2ABudgetTracker:
         self.extensions.append({
             "added": additional_exchanges,
             "authorization": authorization_note,
-            "timestamp_utc": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "timestamp_utc": dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         })
 
 
@@ -161,20 +162,30 @@ class A2AExchange:
     request: dict[str, Any] | str
     response: A2AResultEnvelope
     timestamp_utc: str = field(
-        default_factory=lambda: dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        default_factory=lambda: dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     )
 
 
 class A2AProtocol:
     """Validates and enforces the sandboxed Agent-to-Agent protocol."""
 
-    def __init__(self, config: A2AConfig | HarnessConfig | None = None) -> None:
+    def __init__(self, config: A2AConfig | HarnessConfig | None = None, signature_key: str | bytes | None = None) -> None:
         if isinstance(config, HarnessConfig):
             self.config = config.a2a
         elif isinstance(config, A2AConfig):
             self.config = config
         else:
             self.config = A2AConfig()
+            
+        self.signature_key = signature_key.encode('utf-8') if isinstance(signature_key, str) else signature_key
+
+    def _generate_signature(self, task_id: str, status: str, agent_id: str, timestamp_utc: str) -> str:
+        import hashlib
+        import hmac
+        if not self.signature_key:
+            return ""
+        msg = f"{task_id}:{status}:{agent_id}:{timestamp_utc}".encode()
+        return hmac.new(self.signature_key, msg, hashlib.sha256).hexdigest()
 
     @staticmethod
     def detect_injections(text: str) -> list[str]:
@@ -235,7 +246,7 @@ class A2AProtocol:
         error = data.get("error")
         agent_id = str(data.get("agent_id", ""))
         timestamp_utc = str(
-            data.get("timestamp_utc", dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+            data.get("timestamp_utc", dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ"))
         )
 
         # Validate security and content hygiene if enabled
@@ -268,6 +279,13 @@ class A2AProtocol:
                                 f"Destructive delegation '{action}' is disallowed without explicit 'human_authorization'"
                             )
 
+        signature = str(data.get("signature", "")) if "signature" in data else None
+        if strict_security and self.signature_key:
+            expected = self._generate_signature(task_id, status, agent_id, timestamp_utc)
+            import hmac
+            if not signature or not hmac.compare_digest(expected, signature):
+                raise A2ASecurityError("Envelope content rejected: signature tamper detection failed")
+
         return A2AResultEnvelope(
             task_id=task_id,
             status=status,
@@ -277,6 +295,7 @@ class A2AProtocol:
             result_data=result_data,
             error=str(error) if error is not None else None,
             agent_id=agent_id,
+            signature=signature,
             timestamp_utc=timestamp_utc,
         )
 
@@ -303,7 +322,7 @@ class A2AProtocol:
 
         return A2AExchangeSession(
             protocol=self,
-            session_id=f"a2a-{task_id}-{dt.datetime.now(dt.timezone.utc).strftime('%H%M%S')}",
+            session_id=f"a2a-{task_id}-{dt.datetime.now(dt.UTC).strftime('%H%M%S')}",
             task_id=task_id,
             parent_agent=parent_agent,
             target_agent=target_agent,

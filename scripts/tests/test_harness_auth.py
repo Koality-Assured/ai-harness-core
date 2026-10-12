@@ -45,7 +45,6 @@ from cli.auth.oauth_flows import (
     extract_code_and_state_from_input,
     extract_code_from_input,
     generate_pkce_pair,
-    refresh_token,
 )
 from harness import main
 
@@ -487,7 +486,7 @@ class TestLoopbackAndOAuthSecurity(unittest.TestCase):
             time.sleep(0.1)
             attack_url = f"http://127.0.0.1:{port}/callback?code=evil_code&state=ATTACKER_INJECTED_STATE"
             try:
-                urllib.request.urlopen(attack_url, timeout=2.0)
+                urllib.request.urlopen(attack_url, timeout=2.0)  # nosec B310 - local test server request
             except urllib.error.HTTPError as e:
                 # Expect 400 Bad Request
                 self.assertEqual(e.code, 400)
@@ -676,4 +675,5 @@ class TestOAuthCSRFAndTimingHardening(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
 

@@ -24,8 +24,7 @@ for _p in (_SYNC, _LIB):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from paths import resolve_repo_root  # noqa: E402
-from _harness_core_protocol import (  # noqa: E402
+from _harness_core_protocol import (
     CORE_REMOTE_NAME,
     CORE_REPO_NAME,
     CORE_SOURCE_CHOICES,
@@ -39,16 +38,17 @@ from _harness_core_protocol import (  # noqa: E402
     default_visibility,
     detect_instance_leakage,
     domain_overlay_files,
-    refuse_public_game_dev,
     ensure_initial_commit,
     git_init_if_needed,
     github_https_url,
     instance_corpus_rels,
+    refuse_public_game_dev,
     run_git,
     validate_org,
     validate_repo_name,
 )
-from sync_public_repos import SyncEngine  # noqa: E402
+from paths import resolve_repo_root
+from sync_public_repos import SyncEngine
 
 
 def _resolve_exported_core(dest_root: Path) -> Path:

@@ -18,14 +18,15 @@ import stat
 import subprocess
 import sys
 import uuid
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 from urllib.parse import urlsplit
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT  # noqa: E402
+from paths import REPO_ROOT as ROOT
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 WORKTREE_BRANCH_RE = re.compile(r"^codex/[a-z0-9][a-z0-9-]{0,159}$")
@@ -259,7 +260,7 @@ def fetch_branch(branch: str, *, root: Path | None = None) -> Iterator[str]:
 
 
 def _new_worktree_identity(slug: str) -> tuple[str, str]:
-    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dt%H%M%Sz").lower()
+    stamp = dt.datetime.now(dt.UTC).strftime("%Y%m%dt%H%M%Sz").lower()
     worktree_id = f"{slug}-{stamp}-{uuid.uuid4().hex[:8]}"
     return worktree_id, f"codex/{worktree_id}"
 
@@ -1570,7 +1571,7 @@ def _resume_archive_transaction(
         _same_path(Path(item["path"]), checkout_original) or _same_path(Path(item["path"]), checkout_archive)
         for item in remaining
     ):
-        raise RuntimeError(f"Git still registers an archive checkout path after exact admin metadata relocation")
+        raise RuntimeError("Git still registers an archive checkout path after exact admin metadata relocation")
 
     late_entries = _status_entries(checkout_archive, root=root)
     manifest["state"] = "complete"
@@ -1626,7 +1627,7 @@ def _create_archive_manifest(
     manifest: dict[str, Any] = {
         "schema_version": 2,
         "state": "prepared",
-        "created_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "created_at_utc": dt.datetime.now(dt.UTC).isoformat(),
         "pr_number": pr_number,
         "pr_url": pr_url,
         "default_branch": default_branch,

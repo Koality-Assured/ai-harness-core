@@ -8,14 +8,14 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import sys
-from typing import Any
 import urllib.request
+from pathlib import Path
+from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT  # noqa: E402
+from paths import REPO_ROOT as ROOT
 
 CACHE_DIR = ROOT / "scratch" / "cache"
 CACHE_FILE = CACHE_DIR / "benchlm_benchmarks.json"
@@ -385,7 +385,7 @@ def fetch_or_load_benchmarks(force_refresh: bool = False) -> list[dict[str, Any]
                 BENCHLM_DATA_URL,
                 headers={"User-Agent": "Mozilla/5.0 (compatible; BenchLMFetcher/1.0)"},
             )
-            with urllib.request.urlopen(req, timeout=5) as resp:
+            with urllib.request.urlopen(req, timeout=5) as resp:  # nosec B310 - fetching known API endpoints
                 data = json.loads(resp.read().decode("utf-8"))
                 models = data if isinstance(data, list) else data.get("models", SAMPLE_MODELS)
                 CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -576,3 +576,4 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
