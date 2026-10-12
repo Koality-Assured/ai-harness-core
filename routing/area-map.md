@@ -39,6 +39,7 @@ Match [`skill-dispatch.md`](./skill-dispatch.md) first. Use this table only when
 | `supporting/github/` | [`github-ops`](../ai-tooling/agents/github-ops/AGENT.md) |
 | `supporting/qmd/` | [`harness-operator`](../ai-tooling/agents/harness-operator/AGENT.md) |
 | `supporting/headroom/` | [`harness-operator`](../ai-tooling/agents/harness-operator/AGENT.md) |
+| `supporting/local-llms/` | [`harness-operator`](../ai-tooling/agents/harness-operator/AGENT.md) |
 | `supporting/ast-grep/` | [`harness-operator`](../ai-tooling/agents/harness-operator/AGENT.md) |
 | `supporting/powershell/` | [`harness-operator`](../ai-tooling/agents/harness-operator/AGENT.md) |
 | `supporting/slack/` | [`document-operator`](../ai-tooling/agents/document-operator/AGENT.md) |

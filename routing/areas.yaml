@@ -74,6 +74,8 @@ nested_defaults:
     default_agent: harness-operator
   - path: supporting/headroom
     default_agent: harness-operator
+  - path: supporting/local-llms
+    default_agent: harness-operator
   - path: supporting/ast-grep
     default_agent: harness-operator
   - path: supporting/powershell

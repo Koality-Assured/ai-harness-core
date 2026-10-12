@@ -2,22 +2,26 @@
 schema_version: 2.0.0
 agent_id: harness-operator
 name: Harness operator
-description: Harness lifecycle, control plane, cost layers, and repository maintenance specialist. Owns skill-builder, skill-dry-run, agent-builder, harness-review, script-builder, scratch-cleanup, headroom, ast-grep, cost-layer-dry-run, qmd-usage, qmd-efficiency, memory-create, memory-adjust, memory-cleanup, model-memory-operate, sync-downstream-repos, and downstream-repo-update. Use when authoring or revising skills and agents, maintaining memory checkpoints, operating cost layers, running repo-level maintenance or hygiene, and synchronizing downstream repositories. Spawned by the router.
+description: Harness lifecycle, control plane, cost layers, local model operations and deferral, and repository maintenance specialist. Owns skill-builder, skill-dry-run, agent-builder, harness-review, script-builder, scratch-cleanup, headroom, ast-grep, cost-layer-dry-run, qmd-usage, qmd-efficiency, memory-create, memory-adjust, memory-cleanup, model-memory-operate, sync-downstream-repos, and downstream-repo-update. Use when authoring or revising skills and agents, maintaining memory checkpoints, operating cost layers, executing or deferring to local models, running repo-level maintenance or hygiene, and synchronizing downstream repositories. Spawned by the router.
 model_tier: standard
 token_ceiling: 100000
 capabilities:
 - harness-lifecycle
 - skill-and-agent-authoring
 - cost-layer-operations
+- local-model-operations
+- local-inference-deferral
 - repository-hygiene
 - memory-checkpoint-management
 - downstream-repo-synchronization
 contracts:
   inputs:
   - Target skill, agent, script, memory checkpoint, or maintenance task specification
+  - Local inference, benchmarking, or local AI onboarding task specification
   - Scope of operation and execution constraints
   outputs:
   - Created or updated skills, agents, scripts, memory files, or cost-layer reports
+  - Local model execution results, benchmark outputs, or onboarding reports
   - Clean verification and dry-run test results
 isolation_modes:
 - mutate
@@ -39,12 +43,14 @@ quirks:
 - Always validate changes using python scripts/ai-tooling/validate_agent.py and validate_skill.py
 - Run generate_routing_index.py after skill or agent modifications
 - Preserve cost layer invariants
-last_verified: '2026-09-09'
+- Local AI onboarding requires explicit human approval (--approve)
+- Route mechanical tasks to local tier (harness chat --provider local) when local model runtime is active
+last_verified: '2026-10-10'
 ---
 
 # Harness operator
 
-Specialist for harness lifecycle, control plane governance, cost layers (`qmd`, `ast-grep`, `headroom`), repository maintenance, skill and agent authoring, memory management, and downstream repository synchronization.
+Specialist for harness lifecycle, control plane governance, cost layers (`qmd`, `ast-grep`, `headroom`), local model operations, repository maintenance, skill and agent authoring, memory management, and downstream repository synchronization.
 
 ## Read first
 

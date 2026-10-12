@@ -38,9 +38,11 @@ from cli.auth.oauth_flows import (
     AnthropicOAuthFlow,
     CursorAuthFlow,
     GeminiOAuthFlow,
+    LoopbackAuthHandler,
     LoopbackAuthServer,
     OpenAIAuthFlow,
     ensure_fresh_token,
+    extract_code_and_state_from_input,
     extract_code_from_input,
     generate_pkce_pair,
     refresh_token,
@@ -606,6 +608,70 @@ class TestSilentRefreshTokenRotation(unittest.TestCase):
 
             res = ensure_fresh_token("openai", vault=vault, buffer_seconds=900)
             self.assertEqual(res["access_token"], "sk-static-api-key")
+
+
+class TestOAuthCSRFAndTimingHardening(unittest.TestCase):
+    """Test suite validating CSRF protection, constant-time validation, and secret redaction."""
+
+    def test_extract_code_and_state_from_input(self) -> None:
+        # Raw code
+        code, state = extract_code_and_state_from_input("my_auth_code_123")
+        self.assertEqual(code, "my_auth_code_123")
+        self.assertIsNone(state)
+
+        # Full URL with code and state
+        url = "http://localhost:8085/callback?code=extracted_code_456&state=expected_state_abc"
+        code, state = extract_code_and_state_from_input(url)
+        self.assertEqual(code, "extracted_code_456")
+        self.assertEqual(state, "expected_state_abc")
+
+        # extract_code_from_input backwards compatibility
+        self.assertEqual(extract_code_from_input(url), "extracted_code_456")
+
+    def test_loopback_state_mismatch_constant_time_and_no_secret_leak(self) -> None:
+        handler = LoopbackAuthHandler.__new__(LoopbackAuthHandler)
+        mock_server = MagicMock()
+        mock_server.expected_state = "super_secret_expected_state_xyz"
+        mock_server.captured_error = None
+        mock_server.captured_error_description = None
+        handler.server = mock_server
+
+        handler.path = "/callback?code=attacker_code&state=wrong_state"
+        handler.send_response = MagicMock()
+        handler.send_header = MagicMock()
+        handler.end_headers = MagicMock()
+        handler.wfile = io.BytesIO()
+
+        handler.do_GET()
+
+        handler.send_response.assert_called_with(400)
+        self.assertEqual(mock_server.captured_error, "state_mismatch")
+        # Verify expected secret is NOT leaked in error description
+        self.assertNotIn("super_secret_expected_state_xyz", mock_server.captured_error_description)
+
+    def test_loopback_missing_state_rejected(self) -> None:
+        handler = LoopbackAuthHandler.__new__(LoopbackAuthHandler)
+        mock_server = MagicMock()
+        mock_server.expected_state = "required_state_123"
+        handler.server = mock_server
+
+        # Callback without state parameter
+        handler.path = "/callback?code=injected_code"
+        handler.send_response = MagicMock()
+        handler.send_header = MagicMock()
+        handler.end_headers = MagicMock()
+        handler.wfile = io.BytesIO()
+
+        handler.do_GET()
+
+        handler.send_response.assert_called_with(400)
+        self.assertEqual(mock_server.captured_error, "state_mismatch")
+
+    def test_anthropic_manual_pasted_url_csrf_check(self) -> None:
+        with patch("builtins.input", return_value="http://localhost:8085/callback?code=test&state=wrong"):
+            with patch("sys.stdin.isatty", return_value=True):
+                with self.assertRaisesRegex(RuntimeError, "potential CSRF attack"):
+                    AnthropicOAuthFlow.login(no_browser=True)
 
 
 if __name__ == "__main__":

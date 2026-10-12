@@ -9,6 +9,7 @@ from __future__ import annotations
 import base64
 import getpass
 import hashlib
+import hmac
 import http.server
 import json
 import re
@@ -62,15 +63,16 @@ class LoopbackAuthHandler(http.server.BaseHTTPRequestHandler):
         error = query_params.get("error", [None])[0]
         error_description = query_params.get("error_description", ["Unknown error"])[0]
 
-        # Antagonistic CSRF Defense: Validate state against expected state
-        if self.server.expected_state and state != self.server.expected_state:
-            self.server.captured_error = "state_mismatch"
-            self.server.captured_error_description = (
-                f"State mismatch: expected '{self.server.expected_state}', got '{state}'. Possible CSRF attack."
-            )
-            self.send_response(400)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.end_headers()
+        # Antagonistic CSRF Defense: Validate state against expected state in constant time
+        if self.server.expected_state:
+            if not state or not hmac.compare_digest(state, self.server.expected_state):
+                self.server.captured_error = "state_mismatch"
+                self.server.captured_error_description = (
+                    "State parameter mismatch or missing. Possible CSRF attack."
+                )
+                self.send_response(400)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
             html = """<!DOCTYPE html>
 <html>
 <head><title>Authentication Failed - State Mismatch</title></head>
@@ -174,8 +176,9 @@ class LoopbackAuthServer(http.server.HTTPServer):
         if not self.captured_code:
             raise TimeoutError(f"OAuth loopback callback timed out after {timeout_sec:.0f} seconds.")
 
-        if self.expected_state and self.captured_state != self.expected_state:
-            raise RuntimeError(f"OAuth state mismatch: expected '{self.expected_state}', got '{self.captured_state}'. Potential CSRF attack detected.")
+        if self.expected_state:
+            if not self.captured_state or not hmac.compare_digest(self.captured_state, self.expected_state):
+                raise RuntimeError("OAuth state mismatch: state parameter invalid or missing. Potential CSRF attack detected.")
 
         return {
             "code": self.captured_code,
@@ -183,15 +186,22 @@ class LoopbackAuthServer(http.server.HTTPServer):
         }
 
 
-def extract_code_from_input(user_input: str) -> str:
-    """Extract code from manual input, supporting raw code or pasted callback URL."""
+def extract_code_and_state_from_input(user_input: str) -> tuple[str, str | None]:
+    """Extract code and optional state from manual input, supporting raw code or pasted callback URL."""
     clean = user_input.strip()
-    if "code=" in clean:
+    if "code=" in clean or "state=" in clean:
         parsed = urllib.parse.urlparse(clean)
         qs = urllib.parse.parse_qs(parsed.query)
-        if "code" in qs and qs["code"]:
-            return qs["code"][0]
-    return clean
+        code = qs.get("code", [None])[0] or clean
+        state = qs.get("state", [None])[0]
+        return code, state
+    return clean, None
+
+
+def extract_code_from_input(user_input: str) -> str:
+    """Extract code from manual input, supporting raw code or pasted callback URL."""
+    code, _ = extract_code_and_state_from_input(user_input)
+    return code
 
 
 class AnthropicOAuthFlow:
@@ -244,9 +254,11 @@ class AnthropicOAuthFlow:
             if user_code_raw.lower() == "key":
                 return cls._prompt_api_key(vault)
 
-            code = extract_code_from_input(user_code_raw)
+            code, extracted_state = extract_code_and_state_from_input(user_code_raw)
             if not code:
                 raise ValueError("No authorization code provided.")
+            if extracted_state is not None and not hmac.compare_digest(extracted_state, state):
+                raise RuntimeError("OAuth state parameter mismatch: potential CSRF attack.")
         else:
             server = LoopbackAuthServer(DEFAULT_LOOPBACK_HOST, DEFAULT_LOOPBACK_PORT, expected_state=state)
             params["redirect_uri"] = server.redirect_uri
@@ -261,7 +273,8 @@ class AnthropicOAuthFlow:
                 print(f"Waiting for browser callback on localhost:{server.server_port}...")
                 cb_data = server.wait_for_callback(timeout_sec=timeout_sec)
                 code = cb_data["code"]
-                if cb_data.get("state") != state:
+                cb_state = cb_data.get("state")
+                if not cb_state or not hmac.compare_digest(cb_state, state):
                     raise RuntimeError("OAuth state parameter mismatch: potential CSRF attack.")
             finally:
                 server.server_close()
@@ -347,9 +360,11 @@ class CursorAuthFlow:
             if raw_input.lower() == "key":
                 return cls._prompt_api_key(vault)
 
-            token = extract_code_from_input(raw_input)
+            token, extracted_state = extract_code_and_state_from_input(raw_input)
             if not token:
                 raise ValueError("No session token provided.")
+            if extracted_state is not None and not hmac.compare_digest(extracted_state, state):
+                raise RuntimeError("OAuth state parameter mismatch: potential CSRF attack.")
         else:
             server = LoopbackAuthServer(DEFAULT_LOOPBACK_HOST, DEFAULT_LOOPBACK_PORT, expected_state=state)
             params["redirect_uri"] = server.redirect_uri
@@ -364,7 +379,8 @@ class CursorAuthFlow:
                 print(f"Waiting for Cursor SSO callback on localhost:{server.server_port}...")
                 cb_data = server.wait_for_callback(timeout_sec=timeout_sec)
                 token = cb_data["code"]
-                if cb_data.get("state") != state:
+                cb_state = cb_data.get("state")
+                if not cb_state or not hmac.compare_digest(cb_state, state):
                     raise RuntimeError("OAuth state parameter mismatch: potential CSRF attack.")
             finally:
                 server.server_close()
@@ -456,8 +472,8 @@ class GeminiOAuthFlow:
 
             print(f"Waiting for Google OAuth callback on localhost:{server.server_port}...")
             cb_data = server.wait_for_callback(timeout_sec=timeout_sec)
-            code = cb_data["code"]
-            if cb_data.get("state") != state:
+            cb_state = cb_data.get("state")
+            if not cb_state or not hmac.compare_digest(cb_state, state):
                 raise RuntimeError("OAuth state parameter mismatch: potential CSRF attack.")
         finally:
             server.server_close()
@@ -516,32 +532,40 @@ class GeminiOAuthFlow:
 
     @classmethod
     def _installed_app_manual_flow(cls, vault: Any) -> dict[str, Any]:
+        verifier, challenge = generate_pkce_pair()
+        state = secrets.token_urlsafe(16)
         params = {
             "client_id": cls.DEFAULT_CLIENT_ID,
             "response_type": "code",
             "redirect_uri": DEFAULT_REDIRECT_URI,
             "scope": "https://www.googleapis.com/auth/generative-language",
+            "code_challenge": challenge,
+            "code_challenge_method": "S256",
+            "state": state,
         }
         auth_url = f"{cls.AUTH_ENDPOINT}?{urllib.parse.urlencode(params)}"
         print("\n=== Google Gemini Manual OAuth ===")
         print(f"1. Open URL in browser:\n   {auth_url}\n")
         try:
-            raw_input = input("Enter authorization code (or 'key' for GEMINI_API_KEY): ").strip()
+            raw_input = input("Enter authorization code (or full redirect URL, or 'key' for GEMINI_API_KEY): ").strip()
         except (EOFError, KeyboardInterrupt):
             raise RuntimeError("Authentication canceled: input stream closed or interrupted.")
 
         if raw_input.lower() == "key":
             return cls._prompt_api_key(vault)
 
-        code = extract_code_from_input(raw_input)
+        code, extracted_state = extract_code_and_state_from_input(raw_input)
         if not code:
             raise ValueError("No authorization code provided.")
+        if extracted_state is not None and not hmac.compare_digest(extracted_state, state):
+            raise RuntimeError("OAuth state parameter mismatch: potential CSRF attack.")
 
         token_data = {
             "provider": cls.PROVIDER_NAME,
             "token_type": "Bearer",
             "access_token": f"ya29.manual_{code[:12]}",
             "refresh_token": f"1//refresh_{secrets.token_hex(16)}",
+            "code_verifier": verifier,
             "expires_at": time.time() + 3600,
             "profile": "google-user",
             "scopes": ["generative-language"],

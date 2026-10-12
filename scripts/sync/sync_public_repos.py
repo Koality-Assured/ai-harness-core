@@ -758,6 +758,7 @@ INTERNAL_ONLY_DOMAINS: set[str] = {
     "supporting/aws",
     "supporting/discovery",
     "supporting/wiki",
+    "supporting/local-llms",
 }
 
 
