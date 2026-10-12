@@ -31,6 +31,7 @@ When work requires mutating the repository, create one unique Git worktree and b
 | **Author / revise agent definitions** | `ai-tooling/agents/` | [`ai-tooling-ops`](../ai-tooling/agents/ai-tooling-ops/AGENT.md) | [`agent-builder`](../ai-tooling/skills/meta/agent-builder/SKILL.md) | `python scripts/ai-tooling/validate_agent.py` |
 | **Public downstream repo sync** | Public slice repos | [`repo-sync-ops`](../ai-tooling/agents/repo-sync-ops/AGENT.md) | [`sync-downstream-repos`](../ai-tooling/skills/meta/sync-downstream-repos/SKILL.md) | `python scripts/sync/sync_public_repos.py --dry-run` |
 | **Scratch & worktree hygiene** | `scratch/` | [`router-maintenance`](../ai-tooling/agents/router-maintenance/AGENT.md) | [`scratch-cleanup`](../ai-tooling/skills/meta/scratch-cleanup/SKILL.md) | `python scripts/routing/spawn_worktree.py list --json`; preview merged worktrees with `python scripts/cli/harness.py clean --pr <number>`, then add `--apply` only if all checks pass; preserve retained archives |
+| **Local artistic generation & media synthesis** | `art-router` (domain spoke) | `artistic-production` *(on art-router)* | `video-generation`, `danbooru-tagging` | `harness video`, `harness prompt` (strictly operator opt-in; never default; outputs to `~/Videos/Generated`) |
 
 ---
 
