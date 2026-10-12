@@ -1803,41 +1803,6 @@ def cmd_local(args: argparse.Namespace) -> int:
     return 0
 
 
-def _delegate_to_art_router(subcommand: str) -> int:
-    """Delegate domain commands (video, prompt) to registered art-router domain harness."""
-    from cli.registry import get_registry
-    reg = get_registry()
-    art_harness = reg.get_harness("art-router")
-    if isinstance(art_harness, dict) and "path" in art_harness:
-        art_path = Path(art_harness["path"])
-    elif hasattr(art_harness, "path"):
-        art_path = Path(art_harness.path)
-    else:
-        art_path = Path(r"C:\Code\KA\art-router")
-    art_script = art_path / "scripts" / "cli" / "harness.py"
-    if not art_script.exists():
-        print(f"error: art-router harness script not found at {art_script}", file=sys.stderr)
-        return 1
-
-    try:
-        idx = sys.argv.index(subcommand)
-        forward_args = sys.argv[idx:]
-    except ValueError:
-        forward_args = [subcommand]
-
-    cmd = [sys.executable, str(art_script)] + forward_args
-    proc = subprocess.run(cmd)
-    return proc.returncode
-
-
-def cmd_video(args: argparse.Namespace) -> int:
-    return _delegate_to_art_router("video")
-
-
-def cmd_prompt(args: argparse.Namespace) -> int:
-    return _delegate_to_art_router("prompt")
-
-
 def build_parser() -> argparse.ArgumentParser:
     shared = argparse.ArgumentParser(add_help=False)
     shared.add_argument("--json", action="store_true", help="Format output as machine-readable JSON")
@@ -2020,14 +1985,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_deferral.add_argument("--record-429", type=int, default=None, metavar="SECONDS", help="Record secondary 429 lockout window in seconds")
     p_deferral.add_argument("--clear-429", action="store_true", help="Clear secondary 429 lockout cooldown")
 
-    # video
-    p_video = sub.add_parser("video", help="Interact with local ComfyUI Wan 2.1/2.2 video generation (delegates to art-router)", parents=[shared])
-    p_video.add_argument("video_args", nargs=argparse.REMAINDER, help="Arguments passed to art-router video harness")
-
-    # prompt
-    p_prompt = sub.add_parser("prompt", help="Compile and evaluate Danbooru tag prompts (delegates to art-router)", parents=[shared])
-    p_prompt.add_argument("prompt_args", nargs=argparse.REMAINDER, help="Arguments passed to art-router prompt harness")
-
     return parser
 
 
@@ -2092,10 +2049,6 @@ def main(
         return cmd_commands(args)
     if args.cmd == "deferral":
         return cmd_deferral(args)
-    if args.cmd == "video":
-        return cmd_video(args)
-    if args.cmd == "prompt":
-        return cmd_prompt(args)
 
     return 2
 
