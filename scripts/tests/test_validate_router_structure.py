@@ -17,7 +17,7 @@ _SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_SCRIPTS / "docs"))
 sys.path.insert(0, str(_SCRIPTS / "_lib"))
 
-from validate_router_structure import (  # noqa: E402
+from validate_router_structure import (
     ALLOWED_RESULTS_FAMILIES,
     check_results_layout,
 )

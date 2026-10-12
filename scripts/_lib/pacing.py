@@ -16,7 +16,6 @@ from typing import Any
 
 from paths import REPO_ROOT
 
-
 DEFAULT_QUOTA_PROFILES: dict[str, dict[str, Any]] = {
     "unmetered": {
         "max_concurrent_subagents": 8,

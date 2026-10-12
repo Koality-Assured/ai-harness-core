@@ -22,9 +22,9 @@ from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from areas import load_area_records, load_nested_defaults  # noqa: E402
-from md import heading_titles, load_skill_record, parse_frontmatter, skill_paths  # noqa: E402
-from paths import REPO_ROOT as DEFAULT_ROOT  # noqa: E402
+from areas import load_area_records
+from md import load_skill_record, skill_paths
+from paths import REPO_ROOT as DEFAULT_ROOT
 
 STOP_WORDS = {
     "a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are",

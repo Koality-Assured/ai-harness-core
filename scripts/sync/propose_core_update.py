@@ -23,8 +23,7 @@ for _p in (_SYNC, _LIB):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-from paths import resolve_repo_root  # noqa: E402
-from _harness_core_protocol import (  # noqa: E402
+from _harness_core_protocol import (
     CORE_REPO_NAME,
     DEFAULT_ORG,
     classify_spoke_path,
@@ -32,6 +31,7 @@ from _harness_core_protocol import (  # noqa: E402
     posix_rel,
     unique_paths,
 )
+from paths import resolve_repo_root
 
 
 class DomainPathRefused(ValueError):
@@ -270,7 +270,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Propose core update ({mode})")
         print(f"  repo:    {payload['core_repo']}")
         print(f"  title:   {payload['title']}")
-        print(f"  merged:  no")
+        print("  merged:  no")
         for rel in payload["paths"]:
             print(f"  path:    {rel}")
     return 0

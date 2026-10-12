@@ -14,20 +14,21 @@ import threading
 import time
 import uuid
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Callable, TextIO
+from typing import Any, TextIO
 
 from cli.conversation import TurnCancelled, compact_session, run_turn
+from cli.mcp_stdio import ACPSessionMCP, MCPStdioError, validate_mcp_servers
 from cli.provider_client import (
     ANTHROPIC_DEFAULT_MODEL,
     ProviderError,
     normalize_provider,
 )
 from cli.session_store import SessionStore, default_state_db_path
-from cli.tool_registry import ToolRegistry, ToolOutcome
-from cli.mcp_stdio import ACPSessionMCP, MCPStdioError, validate_mcp_servers
+from cli.tool_registry import ToolOutcome, ToolRegistry
 
 MAX_HTTP_BODY = 1_048_576
 GATEWAY_ROUTE = "/v1/chat/completions"
@@ -531,7 +532,7 @@ def build_gateway_handler(runtime: AdapterRuntime, api_key: str) -> type[BaseHTT
                 def write_frame(payload: dict[str, Any], event: str | None = None) -> None:
                     frame = bytearray()
                     if event:
-                        frame.extend(f"event: {event}\n".encode("utf-8"))
+                        frame.extend(f"event: {event}\n".encode())
                     frame.extend(b"data: " + json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n\n")
                     with stream_lock:
                         self.wfile.write(frame)

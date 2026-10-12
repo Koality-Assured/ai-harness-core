@@ -939,7 +939,7 @@ def generate_vector_banner(spec: DomainBrandingSpec) -> str:
 def validate_svg_xml(content: str) -> bool:
     """Empirically parse SVG content to ensure valid XML syntax."""
     try:
-        ET.fromstring(content)
+        ET.fromstring(content)  # nosec B314 - purely local SVG generation
         return True
     except ET.ParseError:
         return False
@@ -1250,3 +1250,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

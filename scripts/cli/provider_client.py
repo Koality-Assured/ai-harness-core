@@ -16,8 +16,9 @@ import threading
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
-from typing import Any, Callable, Iterable, Iterator
+from typing import Any
 
 # Injectable transport: (url, headers, body_bytes) -> (status, body_bytes)
 Transport = Callable[[str, dict[str, str], bytes], tuple[int, bytes]]
@@ -178,7 +179,7 @@ def _excerpt(body: bytes | str, limit: int = 240) -> str:
 def _default_transport(url: str, headers: dict[str, str], body: bytes) -> tuple[int, bytes]:
     req = urllib.request.Request(url, data=body, headers=headers, method="POST")
     try:
-        with urllib.request.urlopen(req, timeout=DEFAULT_TIMEOUT_SEC) as resp:
+        with urllib.request.urlopen(req, timeout=DEFAULT_TIMEOUT_SEC) as resp:  # nosec B310 - expected API schemes only
             return int(resp.status), resp.read()
     except urllib.error.HTTPError as exc:
         raw = exc.read() if hasattr(exc, "read") else b""
@@ -266,7 +267,7 @@ class _CancellableHTTPStream:
         if self._monitor is not None and self._monitor is not threading.current_thread():
             self._monitor.join(timeout=0.2)
 
-    def __iter__(self) -> "_CancellableHTTPStream":
+    def __iter__(self) -> _CancellableHTTPStream:
         return self
 
     def __next__(self) -> bytes:
@@ -821,13 +822,13 @@ def _iter_sse_events(chunks: Iterable[bytes]) -> Iterator[tuple[str, str]]:
         buffer += decoder.decode(bytes(chunk), final=False)
         while "\n" in buffer:
             line, buffer = buffer.split("\n", 1)
-            result = consume_line(line[:-1] if line.endswith("\r") else line)
+            result = consume_line(line.removesuffix("\r"))
             if result is not None:
                 yield result
 
     buffer += decoder.decode(b"", final=True)
     if buffer:
-        result = consume_line(buffer[:-1] if buffer.endswith("\r") else buffer)
+        result = consume_line(buffer.removesuffix("\r"))
         if result is not None:
             yield result
     result = consume_line("")
@@ -1233,3 +1234,4 @@ def complete_result(
     if canonical in ("openai", "local"):
         return _complete_openai(resolved, messages, api_key, xport, tools, provider=canonical)
     return _complete_gemini(resolved, messages, api_key, xport, tools)
+

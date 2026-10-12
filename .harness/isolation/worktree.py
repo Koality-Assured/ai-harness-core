@@ -51,7 +51,7 @@ class WorktreeClaim:
     areas: list[str]
     agent: str
     created: str = field(
-        default_factory=lambda: dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        default_factory=lambda: dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     )
     metadata: dict[str, Any] = field(default_factory=dict)
 
@@ -307,7 +307,7 @@ class WorktreeManager:
     ) -> list[str]:
         """Clean up dangling claim files whose worktree path is gone, or claims exceeding max age."""
         cleaned: list[str] = []
-        now = dt.datetime.now(dt.timezone.utc)
+        now = dt.datetime.now(dt.UTC)
 
         for claim in self.load_claims():
             target_path = Path(claim.path)

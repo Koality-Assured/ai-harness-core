@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -19,9 +18,8 @@ from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as DEFAULT_ROOT  # noqa: E402
-
-from sync_public_repos import (  # noqa: E402
+from paths import REPO_ROOT as DEFAULT_ROOT
+from sync_public_repos import (
     DEFAULT_REPO_MAPPINGS,
     RedactionEngine,
     SyncEngine,
@@ -30,7 +28,7 @@ from sync_public_repos import (  # noqa: E402
 )
 
 DOWNSTREAM_REPOS = list(DEFAULT_REPO_MAPPINGS.keys())
-from _harness_template import (  # noqa: E402
+from _harness_template import (
     HARNESS_TEMPLATE_SKILL_FAMILIES,
     INSTANCE_SKILL_FAMILIES,
 )

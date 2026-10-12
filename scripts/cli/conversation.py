@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import json
 import threading
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from cli.provider_client import (
     CompletionResult,
@@ -22,7 +23,6 @@ from cli.provider_client import (
 )
 from cli.session_store import SessionStore
 from cli.tool_registry import ToolOutcome, ToolRegistry
-
 
 MAX_TOOL_REQUEST_ROUNDS = 8
 

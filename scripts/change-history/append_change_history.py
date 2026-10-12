@@ -14,7 +14,7 @@ from pathlib import Path
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT  # noqa: E402
+from paths import REPO_ROOT as ROOT
 
 CH_ROOT = ROOT / "change-history"
 

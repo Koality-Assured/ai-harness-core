@@ -10,13 +10,13 @@ import argparse
 import json
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT  # noqa: E402
+from paths import REPO_ROOT as ROOT
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     try:
@@ -121,7 +121,7 @@ def evaluate_task(task: dict[str, Any]) -> dict[str, Any]:
 
 def render_task_eval_report(suite_info: dict[str, Any], results: list[dict[str, Any]], summary_stats: dict[str, Any]) -> str:
     """Render structured Markdown scorecard report."""
-    now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now_utc = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     lines = [
         "---",
         "doc_kind: result",
@@ -151,7 +151,7 @@ def render_task_eval_report(suite_info: dict[str, Any], results: list[dict[str, 
     ]
 
     for r in results:
-        status_badge = f"**{r['status']}**" if r["status"] == "PASS" else f"**FAIL**"
+        status_badge = f"**{r['status']}**" if r["status"] == "PASS" else "**FAIL**"
         artifacts_str = ", ".join([f"`{a}`" for a in r["expected_artifacts"]])
         lines.append(
             f"| `{r['task_id']}` | {r['title']} | `{r['difficulty']}` | "
@@ -194,7 +194,7 @@ def main(argv: list[str] | None = None) -> int:
 
     report_md = render_task_eval_report(suite_data, results, summary_stats)
 
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
     out_rel = args.out or f"results/benchmarks/task-eval/{today}"
     out_dir = ROOT / out_rel
 

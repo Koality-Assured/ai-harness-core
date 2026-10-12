@@ -20,7 +20,7 @@ if str(_ROUTING_DIR) not in sys.path:
     sys.path.insert(0, str(_ROUTING_DIR))
 
 try:
-    from spawn_worktree import find_harness_binary  # noqa: E402
+    from spawn_worktree import find_harness_binary
 except Exception:
     def find_harness_binary() -> str | None:
         bin_name = "harness.exe" if os.name == "nt" else "harness"

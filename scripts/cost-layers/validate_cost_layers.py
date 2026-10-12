@@ -12,13 +12,13 @@ import re
 import shutil
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT  # noqa: E402
-from tool_output import format_tool_execution  # noqa: E402
+from paths import REPO_ROOT as ROOT
+from tool_output import format_tool_execution
 
 
 def prune_old_baselines(combined_root: Path, retain_count: int = 3) -> list[str]:
@@ -107,7 +107,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--skip-webfetch", action="store_true", help="Skip local webfetch distillation benchmark")
     args = parser.parse_args(argv)
 
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = datetime.now(UTC).strftime("%Y-%m-%d")
     out_rel = args.out or f"results/cost-layers/combined/{today}"
     out = ROOT / out_rel
     out.mkdir(parents=True, exist_ok=True)
@@ -126,7 +126,7 @@ def main(argv: list[str] | None = None) -> int:
     wf_dir = out / "webfetch"
 
     results: dict = {
-        "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_at_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "trials_count": args.trials,
         "qmd": None,
         "headroom": None,

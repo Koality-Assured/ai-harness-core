@@ -81,7 +81,7 @@ class HeadroomAdapter:
         for url in endpoints:
             try:
                 req = urllib.request.Request(url, method="GET")
-                with urllib.request.urlopen(req, timeout=min(2.0, self.timeout_sec)) as resp:
+                with urllib.request.urlopen(req, timeout=min(2.0, self.timeout_sec)) as resp:  # nosec B310
                     if resp.status in {200, 204}:
                         return True
             except (urllib.error.URLError, TimeoutError, OSError):
@@ -133,7 +133,7 @@ class HeadroomAdapter:
                 headers={"Content-Type": "application/json"},
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=self.timeout_sec) as resp:
+            with urllib.request.urlopen(req, timeout=self.timeout_sec) as resp:  # nosec B310
                 if resp.status == 200:
                     data = json.loads(resp.read().decode("utf-8"))
                     compressed_msgs = data.get("messages", messages)
@@ -213,3 +213,4 @@ class HeadroomAdapter:
                 return str(msg.get("content", raw_output)), res
 
         return raw_output, res
+

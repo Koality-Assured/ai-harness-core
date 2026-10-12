@@ -13,7 +13,7 @@ from pathlib import Path
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from md import (  # noqa: E402
+from md import (
     ISOLATION,
     RANKS,
     REQUIRED_SKILL_HEADINGS,
@@ -23,7 +23,7 @@ from md import (  # noqa: E402
     parse_frontmatter,
     skill_paths,
 )
-from paths import REPO_ROOT as ROOT  # noqa: E402
+from paths import REPO_ROOT as ROOT
 
 NAME_MAX = 64
 DESC_MAX = 1024

@@ -273,7 +273,7 @@ class HarnessRegistry:
                 return data
             except Exception as exc:
                 # Corrupted registry recovery
-                ts = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d_%H%M%S")
+                ts = dt.datetime.now(dt.UTC).strftime("%Y%m%d_%H%M%S")
                 backup_path = self.path.with_name(f"{self.path.name}.corrupted.{ts}")
                 try:
                     shutil.copy2(self.path, backup_path)
@@ -367,7 +367,7 @@ class HarnessRegistry:
                     counter += 1
                 hid = f"{hid}-{counter}"
 
-            now_iso = dt.datetime.now(dt.timezone.utc).isoformat()
+            now_iso = dt.datetime.now(dt.UTC).isoformat()
             detected_domain = domain or infer_harness_domain(resolved)
             friendly_name = name or harnesses.get(hid, {}).get("name") or resolved.name
 
@@ -477,7 +477,7 @@ class HarnessRegistry:
                 )
 
             data["active_harness"] = target_id
-            now_iso = dt.datetime.now(dt.timezone.utc).isoformat()
+            now_iso = dt.datetime.now(dt.UTC).isoformat()
             record["last_switched_at"] = now_iso
             harnesses[target_id] = record
             data["harnesses"] = harnesses

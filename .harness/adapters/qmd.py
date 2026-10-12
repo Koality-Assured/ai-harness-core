@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 import os
 import re
 import shutil
@@ -12,10 +12,11 @@ import sys
 import tempfile
 import time
 import uuid
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 try:
     from ..config import HarnessConfig, QMDAdapterConfig
@@ -386,8 +387,7 @@ class QMDAdapter:
     @staticmethod
     def _normalize_file_uri(file_uri: str) -> str:
         path = (file_uri or "").strip()
-        if path.startswith("qmd://"):
-            path = path[len("qmd://") :]
+        path = path.removeprefix("qmd://")
         return path.replace("\\", "/")
 
     def _build_hits(self, raw_items: list[dict[str, Any]]) -> list[QMDHit]:

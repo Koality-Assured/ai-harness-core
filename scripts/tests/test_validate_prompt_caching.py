@@ -16,7 +16,7 @@ sys.path.insert(0, str(_SCRIPTS))
 sys.path.insert(0, str(_SCRIPTS / "cost-layers"))
 sys.path.insert(0, str(_SCRIPTS / "_lib"))
 
-from validate_prompt_caching import check_prompt_head, validate_all_prompts  # noqa: E402
+from validate_prompt_caching import check_prompt_head
 
 
 class TestValidatePromptCaching(unittest.TestCase):

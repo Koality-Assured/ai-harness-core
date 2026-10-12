@@ -15,9 +15,9 @@ from unittest.mock import patch
 _QMD = Path(__file__).resolve().parents[1] / "qmd"
 sys.path.insert(0, str(_QMD))
 
-import qmd_preflight  # noqa: E402
-import refresh_qmd_index  # noqa: E402
-import setup_qmd_collections  # noqa: E402
+import qmd_preflight
+import refresh_qmd_index
+import setup_qmd_collections
 
 
 class QmdPreflightTests(unittest.TestCase):

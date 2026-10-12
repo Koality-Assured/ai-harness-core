@@ -16,15 +16,15 @@ from pathlib import Path
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
 
-from github_paths import (  # noqa: E402
+from github_paths import (
     GithubPathError,
     github_https_url,
     parse_github_origin,
     rewrite_repo_hrefs,
     validate_ref,
 )
-from md_to_html import format_inline  # noqa: E402
-from safe_href import is_safe_href, neutralize_href  # noqa: E402
+from md_to_html import format_inline
+from safe_href import is_safe_href, neutralize_href
 
 
 class SafeHrefTests(unittest.TestCase):

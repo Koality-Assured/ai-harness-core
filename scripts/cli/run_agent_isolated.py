@@ -11,8 +11,8 @@ import os
 import shutil
 import subprocess
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 _SCRIPTS_DIR = Path(__file__).resolve().parents[1]
 _LIB_DIR = _SCRIPTS_DIR / "_lib"
@@ -20,9 +20,10 @@ for _p in (str(_LIB_DIR), str(_SCRIPTS_DIR)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from cli.auth.keyring_vault import get_vault, mask_token  # noqa: E402
-from cli.auth.oauth_flows import ensure_fresh_token  # noqa: E402
-from paths import REPO_ROOT  # noqa: E402
+from paths import REPO_ROOT
+
+from cli.auth.keyring_vault import get_vault, mask_token
+from cli.auth.oauth_flows import ensure_fresh_token
 
 
 def find_harness_binary() -> str | None:

@@ -18,9 +18,9 @@ sys.path.insert(0, str(_SCRIPTS))
 sys.path.insert(0, str(_SCRIPTS / "ai-tooling"))
 sys.path.insert(0, str(_SCRIPTS / "_lib"))
 
-from md import agent_ids, agent_paths  # noqa: E402
-from paths import REPO_ROOT as ROOT  # noqa: E402
-from validate_agent import check_agent, extract_frontmatter_and_body, main  # noqa: E402
+from md import agent_ids, agent_paths
+from paths import REPO_ROOT as ROOT
+from validate_agent import check_agent, extract_frontmatter_and_body, main
 
 
 class ValidateAgentUnitTests(unittest.TestCase):

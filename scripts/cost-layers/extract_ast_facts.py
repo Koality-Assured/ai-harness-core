@@ -10,14 +10,14 @@ import argparse
 import json
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from ast_grep import AstGrepError, run_ast_grep  # noqa: E402
-from md import agent_paths, skill_paths  # noqa: E402
-from paths import REPO_ROOT as ROOT  # noqa: E402
+from ast_grep import AstGrepError, run_ast_grep
+from md import agent_paths, skill_paths
+from paths import REPO_ROOT as ROOT
 
 FACTS_PER_FILE = 40
 SKIP_DIR_NAMES = {
@@ -48,7 +48,7 @@ AREA_IDS = (
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def rel_posix(path: Path, root: Path = ROOT) -> str:

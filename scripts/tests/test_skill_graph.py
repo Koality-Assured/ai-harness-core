@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import io
 import json
-import shutil
 import sys
 import tempfile
 import unittest
@@ -32,12 +31,9 @@ if str(_ROUTING) not in sys.path:
 if str(_LIB) not in sys.path:
     sys.path.insert(0, str(_LIB))
 
-from resolve_skill_graph import (  # noqa: E402
-    ALLOWED_FAILURE_POLICIES,
-    DEFAULT_FAILURE_POLICY,
-    ExecutionPlan,
+from md import check_required_skill_v2_contracts
+from resolve_skill_graph import (
     InvalidLifecyclePolicyError,
-    InvalidSkillSchemaError,
     MissingSkillDependencyError,
     SkillDefinition,
     SkillGraph,
@@ -45,9 +41,7 @@ from resolve_skill_graph import (  # noqa: E402
     SkillNotFoundError,
     load_skill_from_file,
     main,
-    parse_skill_frontmatter,
 )
-from md import check_required_skill_v2_contracts  # noqa: E402
 
 _INSTANCE_CATALOG_SKILLS = ("aws-read", "noir-scan", "threat-model")
 

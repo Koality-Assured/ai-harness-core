@@ -11,7 +11,6 @@ from __future__ import annotations
 import io
 import json
 import os
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -24,19 +23,13 @@ for _p in (str(_SCRIPTS), str(_LIB)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-import cli.harness as harness_module  # noqa: E402
-from routing.spawn_worktree import WORKTREE_BRANCH_RE, _new_worktree_identity  # noqa: E402
-
-from cli.harness import (  # noqa: E402
+from cli.harness import (
     SLUG_PATTERN,
     build_parser,
-    cmd_agent,
-    cmd_branch,
-    cmd_clean,
-    cmd_status,
     is_conventional_commit,
     main,
 )
+from routing.spawn_worktree import WORKTREE_BRANCH_RE, _new_worktree_identity
 
 
 class TestHarnessArgParsing(unittest.TestCase):
@@ -254,9 +247,8 @@ class TestHarnessCommands(unittest.TestCase):
 
     def test_clean_requires_only_pr(self) -> None:
         err_capture = io.StringIO()
-        with patch("sys.stderr", err_capture):
-            with self.assertRaises(SystemExit):
-                build_parser().parse_args(["clean"])
+        with patch("sys.stderr", err_capture), self.assertRaises(SystemExit):
+            build_parser().parse_args(["clean"])
         self.assertIn("--pr", err_capture.getvalue())
 
     def test_clean_delegates_to_verified_cleanup(self) -> None:
@@ -389,11 +381,10 @@ class TestHarnessCommands(unittest.TestCase):
 
     def test_harness_missing_command_exits_2(self) -> None:
         err_capture = io.StringIO()
-        with patch("sys.stderr", err_capture):
-            with patch("sys.stdin") as mock_stdin:
-                mock_stdin.isatty.return_value = False
-                with self.assertRaises(SystemExit) as ctx:
-                    main([])
+        with patch("sys.stderr", err_capture), patch("sys.stdin") as mock_stdin:
+            mock_stdin.isatty.return_value = False
+            with self.assertRaises(SystemExit) as ctx:
+                main([])
         self.assertEqual(ctx.exception.code, 2)
 
     def test_branch_does_not_require_clean_primary_checkout(self) -> None:

@@ -18,13 +18,12 @@ _SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_SCRIPTS / "docs"))
 sys.path.insert(0, str(_SCRIPTS / "_lib"))
 
-from validate_structure_fast import (  # noqa: E402
+from validate_structure_fast import (
     extract_headings_and_h1,
     extract_links_from_text,
     main,
     parse_yaml_frontmatter,
     slugify,
-    validate_all_structure,
     validate_file_frontmatter,
     validate_file_h1,
     validate_relative_links,

@@ -8,15 +8,16 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
-import hashlib
 import datetime as dt
+import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import shutil
 import sys
-from typing import Any, Callable
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any
 
 _SYNC = Path(__file__).resolve().parent
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
@@ -25,13 +26,14 @@ for _p in (_SYNC, _LIB):
         sys.path.insert(0, str(_p))
 
 try:
-    from paths import REPO_ROOT as DEFAULT_ROOT, resolve_repo_root
+    from paths import REPO_ROOT as DEFAULT_ROOT
+    from paths import resolve_repo_root
 except ImportError:
     DEFAULT_ROOT = Path(__file__).resolve().parents[2]
     def resolve_repo_root(override: str | Path | None = None) -> Path:
         return Path(override).resolve() if override else DEFAULT_ROOT
 
-from _harness_template import (  # noqa: E402
+from _harness_template import (
     HARNESS_TEMPLATE_MODE,
     WIKI_TEMPLATE_ALLOWED_DOT_DIRS,
     harness_template_dir_may_contain_kept,
@@ -40,7 +42,6 @@ from _harness_template import (  # noqa: E402
     harness_template_sanitize_file_content,
     is_harness_template_rel_kept,
 )
-
 
 DEFAULT_REPO_MAPPINGS: dict[str, dict[str, str]] = {
     "agent-skills-and-tools": {
@@ -628,7 +629,7 @@ class SyncEngine:
 
     def sync_all(self, repo_filter: str | None = None) -> SyncReport:
         """Run synchronization across selected or all repositories."""
-        now_utc = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        now_utc = dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         report = SyncReport(
             timestamp_utc=now_utc,
             source_root=str(self.source_root),
@@ -823,7 +824,7 @@ def format_text_report(report: SyncReport) -> str:
     """Format human-readable sync and audit summary."""
     lines: list[str] = [
         "=" * 70,
-        f"Multi-Repo Synchronization & Redaction Report",
+        "Multi-Repo Synchronization & Redaction Report",
         f"Timestamp: {report.timestamp_utc}",
         f"Source:    {report.source_root}",
         f"Dest:      {report.dest_root}",
