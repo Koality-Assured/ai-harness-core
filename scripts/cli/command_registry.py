@@ -23,6 +23,8 @@ BUILTIN_COMMANDS: tuple[CommandDef, ...] = (
     CommandDef("compact", "Summarize middle turns into a new session"),
     CommandDef("title", "Rename the active session (usage: /title <text>)"),
     CommandDef("busy", "Show or set busy input mode: interrupt, queue, or steer"),
+    CommandDef("preset", "Show or switch system preset (usage: /preset <name>)"),
+    CommandDef("system", "Show or set custom system prompt (usage: /system <prompt>)"),
     CommandDef("quit", "Exit the interactive REPL"),
 )
 

@@ -349,6 +349,37 @@ class SessionStore:
             return None
         return dict(row)
 
+    def set_system_prompt(self, session_id: str, content: str) -> None:
+        """Replace or clear the session system prompt.
+
+        Deletes any prior system messages for this session. If content is non-empty,
+        inserts a single system message positioned at the beginning of the conversation.
+        """
+        session = self.get_session(session_id)
+        created_at = session["created_at"] if session else _utcnow_iso()
+        with self._conn:
+            self._conn.execute(
+                "DELETE FROM messages WHERE session_id = ? AND role = 'system'",
+                (session_id,),
+            )
+            if content:
+                mid = str(uuid.uuid4())
+                self._conn.execute(
+                    """
+                    INSERT INTO messages (id, session_id, role, content, created_at)
+                    VALUES (?, ?, 'system', ?, ?)
+                    """,
+                    (mid, session_id, content, created_at),
+                )
+
+    def get_system_prompt(self, session_id: str) -> str | None:
+        """Get the active system prompt for a session, if any."""
+        row = self._conn.execute(
+            "SELECT content FROM messages WHERE session_id = ? AND role = 'system' ORDER BY created_at DESC LIMIT 1",
+            (session_id,),
+        ).fetchone()
+        return str(row["content"]) if row else None
+
     def append_messages(
         self,
         session_id: str,

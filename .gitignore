@@ -45,6 +45,17 @@ results/**/*.xlsx
 results/**/*.pdf
 results/**/*.zip
 
+# Generated media and video assets (MUST NEVER be committed)
+results/video/
+*.mp4
+*.webm
+*.mkv
+*.avi
+*.mov
+*.flv
+*.wmv
+
+
 # Reference full dumps / binaries (keep compact catalogs/*.json)
 references/**/*.pdf
 references/**/*.zip

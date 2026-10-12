@@ -59,10 +59,23 @@ def _enforce_private_permissions(path: Path) -> None:
 
 
 def _enforce_private_dir_permissions(path: Path) -> None:
-    """Enforce strict user-only permissions on directory (0700 on POSIX)."""
+    """Enforce strict user-only permissions on directory (0700 on POSIX, restricted ACLs on Windows)."""
     if not path.exists():
         return
-    if os.name != "nt":
+    if os.name == "nt":
+        user = os.environ.get("USERNAME")
+        if user:
+            try:
+                import subprocess
+
+                subprocess.run(
+                    ["icacls", str(path), "/inheritance:r", "/grant:r", f"{user}:(OI)(CI)(F)"],
+                    capture_output=True,
+                    check=False,
+                )
+            except Exception:
+                pass
+    else:
         try:
             os.chmod(path, 0o700)
         except Exception:

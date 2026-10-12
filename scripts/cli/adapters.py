@@ -198,8 +198,9 @@ class AdapterRuntime:
         return token if code == 0 else None
 
     @staticmethod
-    def principal_for_token(token: str) -> str:
-        return hashlib.sha256(token.encode("utf-8")).hexdigest()
+    def principal_for_token(token: str, client_id: str | None = None) -> str:
+        key = f"{token}:{client_id}" if client_id else token
+        return hashlib.sha256(key.encode("utf-8")).hexdigest()
 
     def _queue(self, adapter: str, principal: str, route: str, handle: str) -> _SessionTurnQueue:
         key = (adapter, principal, route, handle)
@@ -492,7 +493,8 @@ def build_gateway_handler(runtime: AdapterRuntime, api_key: str) -> type[BaseHTT
                 if not isinstance(model, str) or not model:
                     raise ValueError("model is required and must be a non-empty string")
                 external_id = self.headers.get("X-Hermes-Session-Id")
-                principal = runtime.principal_for_token(self._authorized_token())
+                client_id = self.headers.get("X-Client-Id") or self.headers.get("X-Tenant-Id")
+                principal = runtime.principal_for_token(self._authorized_token(), client_id=client_id)
                 handle, session = runtime.bind_session(
                     "gateway",
                     principal,

@@ -247,8 +247,14 @@ DEFERRAL_TRIGGERS: dict[str, list[str]] = {
         r"\bcryptographic flaw\b",
         r"\breentrancy\b",
         r"\bside-channel\b",
-        r"\bconstant-time\b",
+        r"\bconstant[- ]time\b",
         r"\bprivilege escalation\b",
+        r"\btoken refresh\b",
+        r"\bsession verification\b",
+        r"\bsession fixation\b",
+        r"\bcsrf (?:protection|attack|token|defense|mismatch)\b",
+        r"\boauth (?:security|audit|vulnerability|flaw)\b",
+        r"\btoken lifecycle\b",
     ],
     "ast_and_regex_parser": [
         r"\btree-sitter grammar\b",
@@ -381,5 +387,24 @@ def classify_deferral_eligibility(
         "fallback_active": False,
         "remaining_cooldown_sec": 0,
     }
+
+
+def format_deferral_notice(deferral_info: dict[str, Any]) -> str | None:
+    """Format human-facing notice required by GEMINI.md when secondary deferral is recommended or fallback occurs."""
+    if deferral_info.get("fallback_active"):
+        rem_sec = deferral_info.get("remaining_cooldown_sec", 0)
+        rem_min = max(1, round(rem_sec / 60))
+        return (
+            f"⚠️ Secondary Claude allocation exhausted (resets in {rem_min}m). "
+            "Executing via Gemini 3.8 Flash (High) with enhanced reasoning prompts instead."
+        )
+    if deferral_info.get("should_defer"):
+        trigger = deferral_info.get("trigger", "high-leverage reasoning")
+        model = deferral_info.get("recommended_model", "Claude 5.5 Sonnet")
+        return (
+            f"ℹ️ Task qualifies for Antigravity Ultra secondary model deferral ({trigger}). "
+            f"Active in rolling 5-hour window -> Recommended model: {model}."
+        )
+    return None
 
 
