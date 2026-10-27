@@ -1,3 +1,9 @@
+"""Unit tests for the embeddable .harness core engine.
+
+tags: [tests, harness, engine, a2a, cache, isolation]
+routing_hints: [tests, harness-engine]
+"""
+
 import datetime as dt
 import importlib.util
 import json
