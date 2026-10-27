@@ -98,6 +98,35 @@ ai-harness-core/
 └── actionable/ projects/ research/ results/ scratch/ change-history/ # Managed lifecycle zones
 ```
 
+### Repository Taxonomy & Operational Boundaries
+
+| Directory | Purpose & Operational Role |
+| --- | --- |
+| [`actionable/`](./actionable/) | **Human drop zone** — intake zone for human notes and tasks before an agent claims them. |
+| [`ai-tooling/`](./ai-tooling/) | **Agent enablement** — Schema V2 skills, specialist agents, A2A interaction cards, and project memory. |
+| [`change-history/`](./change-history/) | **Provenance log** — quarterly audit logs updated strictly via script. |
+| [`docs/`](./docs/) | **Authoritative knowledge** — engineering standards, session security MUSTs, and architecture. |
+| [`projects/`](./projects/) | **Initiative specifications** — initiative specs and project plans. |
+| [`references/`](./references/) | **External frameworks** — reference copies of standards (Conventional Commits, valid sources). |
+| [`research/`](./research/) | **Investigative notes** — working research notes and technical spikes. |
+| [`results/`](./results/) | **Run outputs** — benchmark measurements, reports, and generated evaluation artifacts. |
+| [`routing/`](./routing/) | **Navigation & dispatch** — area-map, 3-tier hybrid dispatch, and generated skill dispatch. |
+| [`scratch/`](./scratch/) | **Ephemeral workspace** — scratch files and detached worktrees. |
+| [`scripts/`](./scripts/) | **Automation suite** — routing generators, cost-layer benchmarks, and sync utilities. |
+| [`supporting/`](./supporting/) | **Runtime tool patterns** — QMD patterns, ast-grep rules, Headroom compression adapters. |
+
+### Quickstart & Verification
+
+Verify the harness core environment and execute the full regression suite:
+
+```bash
+# Run the complete test suite (278+ tests)
+pytest scripts/tests
+
+# Validate repository structure, frontmatter schemas, and area taxonomy
+python scripts/docs/validate_router_structure.py
+```
+
 ---
 
 ## Key Elements & Architectural Layers

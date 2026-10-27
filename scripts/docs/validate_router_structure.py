@@ -321,10 +321,14 @@ def check_context_budget_limits(errors: list[str]) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    global ROOT
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--dry-run", action="store_true", help="Alias: validation never mutates")
+    parser.add_argument("--root", "--repo-root", dest="root", type=Path, default=None, help="Root path of the repository to validate")
     args = parser.parse_args(argv)
+    if args.root:
+        ROOT = args.root.resolve()
     errors: list[str] = []
     warnings: list[str] = []
     check_areas(errors)
