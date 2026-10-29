@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
+import hashlib
 import os
 import re
 import shutil
@@ -12,11 +12,10 @@ import sys
 import tempfile
 import time
 import uuid
-from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 try:
     from ..config import HarnessConfig, QMDAdapterConfig
@@ -387,7 +386,8 @@ class QMDAdapter:
     @staticmethod
     def _normalize_file_uri(file_uri: str) -> str:
         path = (file_uri or "").strip()
-        path = path.removeprefix("qmd://")
+        if path.startswith("qmd://"):
+            path = path[len("qmd://") :]
         return path.replace("\\", "/")
 
     def _build_hits(self, raw_items: list[dict[str, Any]]) -> list[QMDHit]:
@@ -434,10 +434,36 @@ class QMDAdapter:
         raw_hits = data if isinstance(data, list) else data.get("results") or data.get("hits") or []
         return self._build_hits(raw_hits)
 
+    def vsearch(
+        self,
+        query: str,
+        collection: str | None = None,
+        min_score: float | None = None,
+        limit: int | None = None,
+    ) -> list[QMDHit]:
+        """Perform dense vector similarity search (embeddings-only, no LLM rerank)."""
+        score_val = min_score if min_score is not None else self.config.default_min_score
+        n_val = limit if limit is not None else self.config.default_limit
+
+        args = ["vsearch", "--format", "json", "--min-score", str(score_val), "-n", str(n_val)]
+        if collection:
+            args.extend(["-c", collection])
+        args.append(query)
+
+        code, stdout, stderr = self._run(args)
+        if code != 0:
+            raise QMDError(f"QMD vsearch failed ({code}): {(stderr or stdout).strip()}")
+
+        data = self._parse_json(stdout)
+        raw_hits = data if isinstance(data, list) else data.get("results") or data.get("hits") or []
+        return self._build_hits(raw_hits)
+
     def query(
         self,
         lex: str | None = None,
         vec: str | None = None,
+        intent: str | None = None,
+        hyde: str | None = None,
         prompt: str | None = None,
         min_score: float | None = None,
         limit: int | None = None,
@@ -451,13 +477,21 @@ class QMDAdapter:
         if not rerank:
             args.append("--no-rerank")
 
-        if lex or vec:
-            qdoc = f"lex: {lex or ''}\nvec: {vec or ''}"
-            args.append(qdoc)
+        if intent or lex or vec or hyde:
+            lines: list[str] = []
+            if intent:
+                lines.append(f"intent: {intent}")
+            if lex:
+                lines.append(f"lex: {lex}")
+            if vec:
+                lines.append(f"vec: {vec}")
+            if hyde:
+                lines.append(f"hyde: {hyde}")
+            args.append("\n".join(lines))
         elif prompt:
             args.append(prompt)
         else:
-            raise ValueError("Must provide either (lex, vec) or prompt string to query()")
+            raise ValueError("Must provide at least one of (intent, lex, vec, hyde) or prompt to query()")
 
         code, stdout, stderr = self._run(args)
         if code != 0:
@@ -466,6 +500,55 @@ class QMDAdapter:
         data = self._parse_json(stdout)
         raw_hits = data if isinstance(data, list) else data.get("results") or data.get("hits") or []
         return self._build_hits(raw_hits)
+
+    def multi_get(
+        self,
+        targets: str | list[str],
+        max_lines: int | None = None,
+        max_bytes: int | None = None,
+        output_format: str = "md",
+    ) -> str:
+        """Batch-retrieve multiple documents by docid list, pattern, or glob."""
+        target_str = ",".join(targets) if isinstance(targets, list) else targets
+        args = ["multi-get", target_str, "--format", output_format]
+        if max_lines is not None:
+            args.extend(["-l", str(max_lines)])
+        if max_bytes is not None:
+            args.extend(["--max-bytes", str(max_bytes)])
+
+        code, stdout, stderr = self._run(args)
+        if code != 0:
+            raise QMDError(f"QMD multi-get failed ({code}): {(stderr or stdout).strip()}")
+        return stdout
+
+    def cleanup(self, dry_run: bool = False) -> str:
+        """Drop inactive doc records, prune orphaned vector chunks, vacuum SQLite."""
+        args = ["cleanup"]
+        if dry_run:
+            args.append("--dry-run")
+        code, stdout, stderr = self._run(args)
+        if code != 0:
+            raise QMDError(f"QMD cleanup failed ({code}): {(stderr or stdout).strip()}")
+        return stdout
+
+    def embed(
+        self,
+        collection: str | None = None,
+        force: bool = False,
+        timeout: int | None = 10,
+    ) -> str:
+        """Hydrate vector embeddings for missing content hashes."""
+        args = ["embed"]
+        if collection:
+            args.extend(["-c", collection])
+        if force:
+            args.append("-f")
+        if timeout is not None:
+            args.extend(["--timeout", str(timeout)])
+        code, stdout, stderr = self._run(args)
+        if code != 0:
+            raise QMDError(f"QMD embed failed ({code}): {(stderr or stdout).strip()}")
+        return stdout
 
     def get(self, docid_or_uri: str) -> str:
         """Fetch raw document content by docid or URI."""
