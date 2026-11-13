@@ -1,15 +1,14 @@
 """Single-turn conversation loop over the session store and provider client.
 
 tags: [harness, cli, conversation, turn, chat]
-routing_hints: [conversation, turn, chat, resume, repl]
+routing_hints: [conversation, turn, chat, resume, repl, permissions]
 """
 
 from __future__ import annotations
 
 import json
 import threading
-from collections.abc import Callable
-from typing import Any
+from typing import Any, Callable
 
 from cli.provider_client import (
     CompletionResult,
@@ -21,8 +20,11 @@ from cli.provider_client import (
     normalize_provider,
     stream_complete,
 )
+from cli.model_catalog import calculate_token_cost, get_context_window
+from cli.permissions import PermissionPolicy
 from cli.session_store import SessionStore
 from cli.tool_registry import ToolOutcome, ToolRegistry
+
 
 MAX_TOOL_REQUEST_ROUNDS = 8
 
@@ -286,6 +288,11 @@ def run_turn(
     on_tool_start: Callable[[str | None, str, dict[str, Any] | None], None] | None = None,
     on_tool_complete: Callable[[str | None, str, dict[str, Any] | None, ToolOutcome], None] | None = None,
     cancel_event: threading.Event | None = None,
+    thinking_budget: int | None = None,
+    reasoning_effort: str | None = None,
+    thinking: str | int | None = None,
+    permission_policy: PermissionPolicy | None = None,
+    prompt_callback: Callable[..., Any] | None = None,
 ) -> str:
     """Run a provider turn with bounded tool cycles in the same conversation loop.
 
@@ -319,6 +326,9 @@ def run_turn(
                     transport=stream_transport,
                     tools=tool_specs,
                     cancel_event=cancel_event,
+                    thinking_budget=thinking_budget,
+                    reasoning_effort=reasoning_effort,
+                    thinking=thinking,
                 ):
                     check_cancelled()
                     if isinstance(update, CompletionResult):
@@ -337,6 +347,9 @@ def run_turn(
                 api_key=api_key,
                 transport=transport,
                 tools=tool_specs,
+                thinking_budget=thinking_budget,
+                reasoning_effort=reasoning_effort,
+                thinking=thinking,
             )
 
         check_cancelled()
@@ -389,11 +402,18 @@ def run_turn(
                 arguments, argument_error = _tool_arguments(call.arguments)
                 if on_tool_start is not None:
                     on_tool_start(call.id, call.name, arguments)
-                outcome = (
-                    ToolOutcome(error=argument_error)
-                    if argument_error
-                    else registry.execute(call.name, arguments)
-                )
+                if argument_error:
+                    outcome = ToolOutcome(error=argument_error)
+                elif permission_policy is not None:
+                    allowed, denial_reason = permission_policy.check_permission(
+                        call.name, arguments or {}, prompt_callback=prompt_callback
+                    )
+                    if not allowed:
+                        outcome = ToolOutcome(error=denial_reason or f"Execution of tool '{call.name}' was denied.")
+                    else:
+                        outcome = registry.execute(call.name, arguments)
+                else:
+                    outcome = registry.execute(call.name, arguments)
 
             if outcome.error is None:
                 try:
@@ -460,12 +480,12 @@ def session_status_payload(store: SessionStore, session_id: str) -> dict[str, An
         message.get("input_tokens") is not None or message.get("output_tokens") is not None
         for message in messages
     )
-    input_total = sum(
+    active_input = sum(
         int(message.get("input_tokens") or 0)
         for message in messages
         if message.get("input_tokens") is not None
     )
-    output_total = sum(
+    active_output = sum(
         int(message.get("output_tokens") or 0)
         for message in messages
         if message.get("output_tokens") is not None
@@ -474,19 +494,34 @@ def session_status_payload(store: SessionStore, session_id: str) -> dict[str, An
     carried_input = sum(value[0] for value in carried_values)
     carried_output = sum(value[1] for value in carried_values)
     carried_known = any(value[2] for value in carried_values)
-    input_total += carried_input
-    output_total += carried_output
+
+    cumulative_input = active_input + carried_input
+    cumulative_output = active_output + carried_output
     has_usage = has_usage or carried_known
+
+    provider = session.get("provider") or ""
+    model = session.get("model") or ""
+    context_window = get_context_window(model, provider)
+
+    # Active working context tokens (excluding carried historical tokens from prior compactions)
+    working_tokens = (active_input + active_output) if has_usage else 0
+    context_pct = round((working_tokens / context_window) * 100, 2) if (context_window and has_usage) else 0.0
+
+    # Billing cost uses cumulative tokens across all turns and compactions
+    cost = calculate_token_cost(provider, model, cumulative_input, cumulative_output) if has_usage else 0.0
+
     return {
         "session_id": session["id"],
         "title": session.get("title") or "",
         "cwd": session.get("cwd") or "",
-        "provider": session.get("provider") or "",
-        "model": session.get("model") or "",
+        "provider": provider,
+        "model": model,
         "message_count": len(messages),
-        "input_tokens": input_total if has_usage else None,
-        "output_tokens": output_total if has_usage else None,
+        "input_tokens": cumulative_input if has_usage else None,
+        "output_tokens": cumulative_output if has_usage else None,
         "busy_mode": session.get("busy_mode") or "interrupt",
-        "cost": None,
+        "context_window": context_window,
+        "context_pct": context_pct,
+        "cost": cost,
         "updated_at": session.get("updated_at") or "",
     }

@@ -15,7 +15,7 @@ sys.path.insert(0, str(_SCRIPTS))
 sys.path.insert(0, str(_SCRIPTS / "research"))
 sys.path.insert(0, str(_SCRIPTS / "_lib"))
 
-from local_webfetch import (
+from local_webfetch import (  # noqa: E402
     distill_html_to_markdown,
     est_tokens,
     run_dry_run,

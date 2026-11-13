@@ -14,13 +14,13 @@ from pathlib import Path
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from areas import (
+from areas import (  # noqa: E402
     AreasYamlError,
     check_areas_consistency,
     load_area_ids,
 )
-from md import agent_ids, parse_frontmatter, skill_paths
-from paths import REPO_ROOT as ROOT
+from md import agent_ids, parse_frontmatter, skill_paths  # noqa: E402
+from paths import REPO_ROOT as ROOT  # noqa: E402
 
 QMD_EXCLUDED = ("change-history", "scratch")
 DOC_SKIP_NAMES = {"README.md"}
@@ -78,6 +78,24 @@ def check_areas(errors: list[str]) -> None:
             err(errors, f"root README.md layout missing {area}/")
 
 
+def check_supporting_subfolders(errors: list[str], *, root: Path | None = None) -> None:
+    """Every immediate subfolder under supporting/ must contain both AGENTS.md and README.md."""
+    base = ROOT if root is None else root
+    supporting = base / "supporting"
+    if not supporting.is_dir():
+        return
+    for child in sorted(supporting.iterdir()):
+        if not child.is_dir() or child.name.startswith((".", "_")):
+            continue
+        rel = child.relative_to(base).as_posix()
+        # Enforce exact case match even on Windows/macOS case-insensitive filesystems
+        names = {p.name for p in child.iterdir() if p.is_file()}
+        if "AGENTS.md" not in names:
+            err(errors, f"{rel}/: missing required AGENTS.md")
+        if "README.md" not in names:
+            err(errors, f"{rel}/: missing required README.md")
+
+
 def check_docs(errors: list[str]) -> None:
     docs = ROOT / "docs"
     for path in sorted(docs.rglob("*.md")):
@@ -120,7 +138,7 @@ def check_ops_docs_split(errors: list[str]) -> None:
 
 
 def check_scripts(errors: list[str]) -> None:
-    tag_re = re.compile(r"tags:\s*\[", re.IGNORECASE)
+    tag_re = re.compile(r"tags:\s*\[", re.I)
     scripts_root = ROOT / "scripts"
     for path in sorted(scripts_root.rglob("*.py")):
         rel_parts = path.relative_to(scripts_root).parts
@@ -210,7 +228,7 @@ def check_dispatch(errors: list[str]) -> None:
             err(errors, f"skill-dispatch.md missing {slug} (regenerate)")
 
 
-def check_memory(errors: list[str]) -> None:
+def check_memory(errors: list[str], warnings: list[str] | None = None) -> None:
     mem = ROOT / "ai-tooling" / "memory"
     user = mem / "user"
     agent = mem / "agent"
@@ -241,10 +259,38 @@ def check_memory(errors: list[str]) -> None:
         if "**Last updated:**" not in text:
             err(errors, f"{path.relative_to(ROOT).as_posix()}: missing Last updated")
 
+    # Catch model memory schema drift via model_memory.py validate
+    try:
+        scripts_ai = ROOT / "scripts" / "ai-tooling"
+        if str(scripts_ai) not in sys.path:
+            sys.path.insert(0, str(scripts_ai))
+        from model_memory import validate_tree
+        res = validate_tree(ROOT)
+        if not res.get("ok"):
+            for err_msg in res.get("errors", []):
+                if warnings is not None:
+                    warnings.append(f"model-memory: {err_msg}")
+                else:
+                    errors.append(f"model-memory: {err_msg}")
+    except Exception as exc:
+        if warnings is not None:
+            warnings.append(f"model-memory: {exc}")
+
 
 ALLOWED_RESULTS_FILES = frozenset({"AGENTS.md", "README.md", "results-conventions.md"})
 ALLOWED_RESULTS_FAMILIES = frozenset(
-    {"reports", "research", "diagrams", "threat-model", "as-code", "cost-layers", "benchmarks", "captures"}
+    {
+        "reports",
+        "research",
+        "diagrams",
+        "threat-model",
+        "as-code",
+        "cost-layers",
+        "benchmarks",
+        "captures",
+        "publication",
+        "qa",
+    }
 )
 RETIRED_REVIEWS_DIR = "reviews"
 GITKEEP_NAME = ".gitkeep"
@@ -321,24 +367,21 @@ def check_context_budget_limits(errors: list[str]) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    global ROOT
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--dry-run", action="store_true", help="Alias: validation never mutates")
-    parser.add_argument("--root", "--repo-root", dest="root", type=Path, default=None, help="Root path of the repository to validate")
     args = parser.parse_args(argv)
-    if args.root:
-        ROOT = args.root.resolve()
     errors: list[str] = []
     warnings: list[str] = []
     check_areas(errors)
+    check_supporting_subfolders(errors)
     check_docs(errors)
     check_ops_docs_split(errors)
     check_scripts(errors)
     check_skills_agents(errors, warnings=warnings)
     check_qmd_exclusions(errors, warnings=warnings)
     check_dispatch(errors)
-    check_memory(errors)
+    check_memory(errors, warnings=warnings)
     check_results_layout(errors)
     check_context_budget_limits(errors)
     payload = {"ok": not errors, "errors": errors, "warnings": warnings}

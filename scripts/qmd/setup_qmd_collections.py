@@ -44,9 +44,9 @@ from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from areas import AreasYamlError, load_area_records
-from paths import REPO_ROOT as ROOT
-from qmd_preflight import inspect_qmd_hooks
+from areas import AreasYamlError, load_area_records  # noqa: E402
+from paths import REPO_ROOT as ROOT  # noqa: E402
+from qmd_preflight import inspect_qmd_hooks  # noqa: E402
 
 UNINDEXED_AREAS = frozenset({"change-history", "scratch"})
 PREFERRED_README_IGNORE = ["**/README.md"]

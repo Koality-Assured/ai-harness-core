@@ -11,9 +11,9 @@ rag_keywords: [results, family, date layout, cost-layers, reports, finished-deli
 
 ## Purpose
 
-`results/` holds finished work a human might hand to someone else: reports, HTML pages, images, diagrams, threat-model packages, as-code packages, dated cost-layer measurement reports, and finished research dossiers.
+`results/` is the universal landing zone for finished work a human might hand to someone else: reports, interactive HTML dashboards, images, rendered charts, diagrams, structured analysis data exports, threat-model packages, as-code packages, dated cost-layer measurement reports, and finished research dossiers.
 
-Interim scaffolds, generator previews, experiments, and review working notes belong in `scratch/` (or back to the orchestrator). Reusable policy belongs in `docs/`, `supporting/`, skills, or `AGENT.md`. `results/` is not policy source of truth.
+Interim scaffolds, generator previews, experiments, and review working notes belong in `scratch/` (or back to the orchestrator). Reusable policy belongs in `docs/`, `supporting/`, skills, or `AGENT.md`. `results/` is not policy source of truth. Under NO circumstances should generated run artifacts remain in `supporting/`, `projects/`, or `scratch/`.
 
 ## Layout
 
@@ -29,8 +29,13 @@ Every run uses `results/<family>/<topic-or-slug>/<YYYY-MM-DD>/`. Typed families 
 | cost-layers | `results/cost-layers/<slug>/<date>/` |
 | benchmarks | `results/benchmarks/<suite>/<date>/` |
 | captures | `results/captures/<topic>/<date>/` — or beside the document or README they attach to |
+| publication | `results/publication/<topic>/<date>/` — corpus audits and release evidence for public publications |
 
 Report `<type>` values: `executive`, `proposal`, `corpus-draft`, `guidance-draft`, `code-review`, `framework-map`.
+
+### Adaptive Topics & Domains
+
+When working in specialized domains (e.g., personal interaction, data analytics, forensic investigations), if an existing topic or report type is not specific enough, agents MUST create a suitable `<family>/<topic-or-slug>/<YYYY-MM-DD>/` subfolder. Never dump artifacts into generic root folders or adjacent to raw input data in `supporting/`.
 
 Do not invent new top-level run shapes such as `results/headroom-dry-run`, `results/ast-grep-dry-run`, or `results/scaffolded-repos`. Cost-layer output goes under `results/cost-layers/<slug>/<YYYY-MM-DD>/`. Public-repo generator previews and other scaffolds go in `scratch/`.
 

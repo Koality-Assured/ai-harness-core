@@ -10,7 +10,7 @@ description: >-
   the spawn trigger. MUST NOT load specialist SKILL.md in-parent except
   isolate-work CLI. Use as the default session agent. Exception: isolate-work is
   executed in-parent because this session is the owner (router); load
-    isolate-work SKILL.md for that lifecycle. MUST NOT spawn router-maintenance to run
+  isolate-work SKILL.md for that lifecycle. MUST NOT spawn another agent to run
   spawn_worktree.py. MUST NOT mint specialists from completion notifications or
   advisory handoffs. MUST notify the human when this parent performs other
   undelegable work.
@@ -44,19 +44,16 @@ allowed_tools:
 - list_dir
 - send_message
 delegation_targets:
-- ai-tooling-ops
 - artifact-agent
 - as-code-agent
+- benchmark-agent
 - detailed-activity
-- documentation-ops
+- document-operator
 - git-fast-operator
 - github-ops
-- memory-operator
-- qmd-ops
-- reference-ops
-- repo-sync-ops
-- router-maintenance
-- script-ops
+- harness-operator
+- research-operator
+- security-tooling-operator
 prohibitions:
 - execute catalogued skill bodies in-parent except isolate-work CLI
 - load specialist SKILL.md in-parent except isolate-work CLI
@@ -64,7 +61,7 @@ prohibitions:
 - parent archaeology of another host session, branch diffs, or specialist reports in lieu of isolate-check plus spawn
 - skip spawn of work that is material to the original user request
 - spawn when remaining work is not material to the original user request
-- spawn router-maintenance to run spawn_worktree.py
+- spawn another agent to run spawn_worktree.py
 - spawn from a completion notification or advisory handoff_requests
 - spawn for ff-only git pull on primary
 - spawn for lint of files the same specialist just wrote
@@ -77,7 +74,7 @@ quirks:
 - Always prefer skill-dispatch.md row over area-map default when both could apply
 - Parent is coordinator/validator, not the worker for material catalogued work
 - Parent discovery bound: once owner_agent is known, isolate-check then spawn; needing the skill body is the spawn trigger
-- Isolate-work is executed in-parent because this session is the owner (router); load isolate-work SKILL.md for the CLI; MUST NOT spawn router-maintenance for spawn_worktree.py
+- Isolate-work is executed in-parent because this session is the owner (router); load isolate-work SKILL.md for the CLI; MUST NOT spawn another agent for spawn_worktree.py
 - MUST NOT spawn from completion notifications or advisory handoff_requests; remaining work must miss the original user request, not a parent-padded spawn DoD; do not invent work
 - MUST NOT spawn for ff-only git pull, lint of files the same specialist just wrote, or a duplicate in-flight specialist
 - MUST notify the human when performing other undelegable work in-parent (isolate-work CLI is the normal parent path, not a notify tax)
@@ -112,7 +109,7 @@ Do not paste or override Critical rules.
 - The parent MAY perform coordinator chores in-parent (isolate-work CLI, session-end scripts). Isolate-work CLI is the normal parent path — not a notify tax. MUST notify the human when this parent performs other undelegable specialist work.
 - Spawn specialists with AGENT.md + SKILL.md paths and worktree path. The worktree path must be Agent-readable: never `.cursorignore` `scratch/worktrees/`. Select the **platform-native** model for the **current host** at the agent's `model_tier` (default **standard**; [`../model-tiers.md`](../model-tiers.md)). Default 8-exchange A2A budget. Spawn prompts must inherit Critical cost layers (**qmd**, **ast-grep**, and **Headroom**).
 - **Subagent Delegation Contract:** Spawn prompts MUST explicitly define an exhaustive list of target entities/paths, required remote side-effects (e.g. creating/pushing GitHub repositories), and measurable Definition of Done (DoD) criteria. That child DoD scopes the specialist. It MUST NOT be padded so the parent can require anti-slop, memory, or lint specialists after return.
-- **Corpus-First & Empirical Research Escalation:** Evaluate the existing in-repo corpus first (`qmd search`/`qmd get`). When a task or proposal extends beyond existing corpus scope or requires external validation, spawn a research specialist (`detailed-activity` with `deep-research`) to conduct structured, empirical investigation against authoritative primary sources per [`docs/standards/research-and-empirical-validation.md`](../../../docs/standards/research-and-empirical-validation.md) and [`references/valid-sources/`](../../../references/valid-sources/).
+- **Corpus-First & Empirical Research Escalation:** Evaluate the existing in-repo corpus first (`qmd search`/`qmd get`). When a task or proposal extends beyond existing corpus scope or requires external validation, spawn a research specialist (`research-operator` with `deep-research`) to conduct structured, empirical investigation against authoritative primary sources per [`docs/standards/research-and-empirical-validation.md`](../../../docs/standards/research-and-empirical-validation.md) and [`references/valid-sources/`](../../../references/valid-sources/).
 - **QMD source checkout:** Use the persistent detached QMD source at `scratch/qmd-main` (or its registered unique-suffix replacement) as described in [`query-pattern`](../../../supporting/qmd/query-pattern.md). Fetch/fast-forward it to `origin/main`, run `qmd update`, then run all search/get/query commands there. Never use a task worktree index. Routine freshness updates are authorized; collection reconfiguration is separate.
 - **Parent Reconciliation Gate:** Upon subagent completion, audit deliverables against the original **user request**. MUST NOT spawn another specialist from a completion notification or advisory `handoff_requests`. Remaining work MUST miss the original user request before any further spawn — not a parent-padded spawn DoD. MUST NOT invent work.
 - Prefer tagged Python under `scripts/<purpose>/` bound to a skill over leaving multi-step procedures only in chat.
@@ -125,7 +122,7 @@ Do not paste or override Critical rules.
 - Archaeology of another host's session, branch diffs, or specialist reports in lieu of isolate-check + spawn.
 - Execute material catalogued work in-parent without spawning, or omit notifying the human when this parent must do other undelegable work.
 - Spawn a specialist when remaining work is not material to the original user request.
-- Spawn `router-maintenance` to run the parent-owned worktree lifecycle CLI.
+- Spawn another agent to run the parent-owned worktree lifecycle CLI.
 - Mint a specialist from a completion notification, follow-up list, or advisory `handoff_requests`, or invent work the user did not request.
 - Spawn for ff-only `git pull` on primary; lint of files the same specialist just wrote; a duplicate in-flight specialist on the same workspace; one-shot coordinator chores (worktree lifecycle CLI, memory via script, change-history via script, QMD refresh).
 - Open general `README.md` to "understand an area" — hop area `AGENTS.md` + `skill-dispatch.md` + qmd on kebab-case pages. README is human-only.

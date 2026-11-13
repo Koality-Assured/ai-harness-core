@@ -29,10 +29,12 @@ $$\text{Cost}_{\text{Turn } k} = \left(\frac{C_{k-1}}{10^6} \times P_{\text{cach
 
 | Model Tier | Uncached Input | Cached Input | Output | Reference Providers / Models |
 | --- | --- | --- | --- | --- |
-| `fast` | \$0.15 | \$0.0375 | \$0.60 | Composer 2.5, Gemini Flash Lite, Claude 3.5 Haiku, GPT-4o-mini |
-| `standard` | \$1.00 | \$0.20 | \$4.00 | Gemini 3.8 Flash, GPT 6.0 Luna, Claude 5.5 Sonnet, Grok 4.7 (256k) |
-| `high` | \$2.50 | \$0.25 | \$10.00 | Claude 5.5 Sonnet (Thinking), GPT Terra, Grok 4.7 (500k Fast) |
-| `max` | \$5.00 | \$1.25 | \$25.00 | Gemini 3.8 Pro, GPT Sol, Claude 5.5 Opus, Grok 4.7 (Extra High Fast) |
+| `fast` | \$0.15 | \$0.0375 | \$0.60 | Composer 2.5, Gemini 4 Hydrogen (Low), Claude 3.5 Haiku, GPT-4o-mini |
+| `standard` | \$1.50 | \$0.075 | \$7.50 | Gemini 4 Hydrogen (Medium), GPT 6.0 Luna, Claude 5.5 Sonnet, Grok 4.7 (256k) |
+| `high` | \$2.50 | \$0.25 | \$10.00 | Gemini 4 Hydrogen (High), Claude 5.5 Sonnet (Thinking), GPT Terra, Grok 4.7 (500k Fast) |
+| `max` | \$5.00 | \$1.25 | \$25.00 | Gemini 3.8 Pro, Gemini 4 Hydrogen (xhigh), GPT Sol, Claude 5.5 Opus, Grok 4.7 (Extra High Fast) |
+
+Note: Google `gemini-4-hydrogen` bills uniformly at \$1.50 / 1M uncached input, \$0.075 / 1M cached input, and \$7.50 / 1M output across its adjustable thinking levels (`Low`, `Medium`, `High`, `xhigh`); the `fast` and `high` rows above retain cross-vendor blended baselines.
 
 ---
 

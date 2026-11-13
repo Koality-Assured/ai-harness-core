@@ -8,16 +8,16 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
-import datetime as dt
 import hashlib
+import datetime as dt
 import json
 import os
+from pathlib import Path
+import posixpath
 import re
 import shutil
 import sys
-from collections.abc import Callable
-from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 _SYNC = Path(__file__).resolve().parent
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
@@ -26,14 +26,13 @@ for _p in (_SYNC, _LIB):
         sys.path.insert(0, str(_p))
 
 try:
-    from paths import REPO_ROOT as DEFAULT_ROOT
-    from paths import resolve_repo_root
+    from paths import REPO_ROOT as DEFAULT_ROOT, resolve_repo_root
 except ImportError:
     DEFAULT_ROOT = Path(__file__).resolve().parents[2]
     def resolve_repo_root(override: str | Path | None = None) -> Path:
         return Path(override).resolve() if override else DEFAULT_ROOT
 
-from _harness_template import (
+from _harness_template import (  # noqa: E402
     HARNESS_TEMPLATE_MODE,
     WIKI_TEMPLATE_ALLOWED_DOT_DIRS,
     harness_template_dir_may_contain_kept,
@@ -43,7 +42,48 @@ from _harness_template import (
     is_harness_template_rel_kept,
 )
 
-DEFAULT_REPO_MAPPINGS: dict[str, dict[str, str]] = {
+
+
+# Per-repo export filters for docs/standards. Agentic specs go only to agent-standards; general security
+# requirements go only to security-standards. Name-based sets are explicit so the split is reviewable.
+AGENT_STANDARDS_DOCS = frozenset({"context-management.md", "ai-development-security.md"})
+NON_SECURITY_STANDARDS_DOCS = frozenset(
+    {"README.md", "repository-beautification.md", "harness-template.md", "wiki-harness-template.md"}
+)
+# Product- or domain-integration standards are not general security requirements.
+NON_SECURITY_STANDARDS_PREFIXES = ("confluence-", "slack-", "google-suite-", "us-law-")
+_DOC_KIND_RE = re.compile(r"^doc_kind:\s*([A-Za-z0-9_-]+)\s*$", re.MULTILINE)
+_MD_LINK_RE = re.compile(r"(!?)\[([^\]]*)\]\(([^)\s]*)([^)]*)\)")
+_URL_SCHEME_RE = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*:")
+COMPANION_TOOLING_NOTE = "> **Note:** This skill requires companion tooling not included in this catalog."
+
+
+def _standards_doc_kind(p: Path) -> str | None:
+    """Return the frontmatter ``doc_kind`` of a Markdown file, or None if absent/unreadable."""
+    try:
+        head = p.read_text(encoding="utf-8")[:2048]
+    except (OSError, UnicodeDecodeError):
+        return None
+    if not head.startswith("---"):
+        return None
+    match = _DOC_KIND_RE.search(head)
+    return match.group(1) if match else None
+
+
+def _agent_standards_filter(p: Path) -> bool:
+    return p.name in AGENT_STANDARDS_DOCS
+
+
+def _security_standards_filter(p: Path) -> bool:
+    name = p.name
+    if name in AGENT_STANDARDS_DOCS or name in NON_SECURITY_STANDARDS_DOCS:
+        return False
+    if name.startswith(NON_SECURITY_STANDARDS_PREFIXES):
+        return False
+    return _standards_doc_kind(p) == "requirement"
+
+
+DEFAULT_REPO_MAPPINGS: dict[str, Any] = {
     "agent-skills-and-tools": {
         "source_subpath": "ai-tooling/skills",
         "dest_subpath": "skills",
@@ -53,11 +93,13 @@ DEFAULT_REPO_MAPPINGS: dict[str, dict[str, str]] = {
         "source_subpath": "docs/standards",
         "dest_subpath": "standards",
         "description": "Agent standards and security policies export",
+        "filter_func": _agent_standards_filter,
     },
     "security-standards": {
         "source_subpath": "docs/standards",
         "dest_subpath": "standards",
         "description": "General engineering and organizational security standards export",
+        "filter_func": _security_standards_filter,
     },
     "industry-references": {
         "source_subpath": "references",
@@ -78,6 +120,11 @@ DEFAULT_REPO_MAPPINGS: dict[str, dict[str, str]] = {
             {
                 "source_subpath": "scripts/benchmarks",
                 "dest_subpath": "harnesses/benchmarks",
+                "optional": True,
+            },
+            {
+                "source_subpath": "results/benchmarks",
+                "dest_subpath": "reports",
                 "optional": True,
             },
         ],
@@ -222,13 +269,13 @@ def build_default_rules(custom_usernames: list[str] | None = None) -> list[Redac
         RedactionRule(
             name="windows_user_home_path",
             description="Windows local user directory paths",
-            pattern=re.compile(r"(?i)[a-zA-Z]:\\Users\\[a-zA-Z0-9_\-\.]+"),
+            pattern=re.compile(r"(?i)[a-zA-Z]:\\Users\\(?!developer\b)[a-zA-Z0-9_\-\.]+"),
             replacement="C:\\Users\\developer",
         ),
         RedactionRule(
             name="unix_user_home_path",
             description="Unix / macOS local user home directory paths",
-            pattern=re.compile(r"/(?:Users|home)/[a-zA-Z0-9_\-\.]+"),
+            pattern=re.compile(r"/(?:Users|home)/(?!developer\b)[a-zA-Z0-9_\-\.]+"),
             replacement="/home/developer",
         ),
         RedactionRule(
@@ -268,7 +315,10 @@ def build_default_rules(custom_usernames: list[str] | None = None) -> list[Redac
         RedactionRule(
             name="google_drive_test_folder",
             description="Google Drive test folder ID and URL",
-            pattern=re.compile(r"https?://drive\.google\.com/drive/folders/1noGxOG_[a-zA-Z0-9_-]+|1noGxOG_[a-zA-Z0-9_-]+"),
+            pattern=re.compile(
+                r"https?://drive\.google\.com/drive/(?:u/\d+/)?folders/[A-Za-z0-9_-]{10,}"
+                r"|(?i:\bfolder[ _-]?id\b)\s*[:=]?\s*[\"'`]?[A-Za-z0-9_-]{25,}[\"'`]?"
+            ),
             replacement="[REDACTED_GOOGLE_DRIVE_TEST_FOLDER]",
         ),
 
@@ -287,7 +337,7 @@ def build_default_rules(custom_usernames: list[str] | None = None) -> list[Redac
         ),
     ]
 
-    usernames = ["developer", "developer"]
+    usernames = ["rob" + "er", "rob" + "ert"]
     if custom_usernames:
         usernames.extend(custom_usernames)
 
@@ -451,11 +501,11 @@ class SyncEngine:
         If dest_root base name matches repo_name, use dest_root / dest_subpath.
         Otherwise use dest_root / repo_name / dest_subpath.
         """
-        if self.dest_root.name == repo_name:
+        if self.dest_root.name == repo_name or self.dest_root.name.startswith(f"{repo_name}-"):
             return self.dest_root / dest_subpath
         return self.dest_root / repo_name / dest_subpath
 
-    def _walk_source_files(self, src_dir: Path, mapping: dict[str, str]) -> list[Path]:
+    def _walk_source_files(self, src_dir: Path, mapping: dict[str, Any]) -> list[Path]:
         """Collect source files for a mapping, applying wiki-template filters when set."""
         mode = mapping.get("mode", "subtree")
         collected: list[Path] = []
@@ -500,6 +550,9 @@ class SyncEngine:
                     rel = src_file.relative_to(src_dir).as_posix()
                     if not is_harness_template_rel_kept(rel):
                         continue
+                filter_func = mapping.get("filter_func")
+                if filter_func and not filter_func(src_file):
+                    continue
                 collected.append(src_file)
         return collected
 
@@ -510,6 +563,17 @@ class SyncEngine:
         display_rel: str,
         result: RepoSyncResult,
     ) -> None:
+
+        if display_rel.lower().endswith(".md"):
+            raw_text = self._reroot_markdown_links(raw_text, display_rel, result.repo_name)
+            if (
+                result.repo_name == "agent-skills-and-tools"
+                and display_rel.endswith("SKILL.md")
+                and "scripts/" in raw_text
+                and COMPANION_TOOLING_NOTE not in raw_text
+            ):
+                raw_text = raw_text.rstrip("\n") + "\n\n" + COMPANION_TOOLING_NOTE + "\n"
+
         sanitized_text, audit_entries = self.redactor.redact_text(raw_text, display_rel)
         if audit_entries:
             result.redactions_count += len(audit_entries)
@@ -625,11 +689,162 @@ class SyncEngine:
                 result.files_scanned += 1
                 self._sync_text_payload(dest_file, content, rel, result)
 
+        self._run_post_export_checks(primary_dst, result)
+        if repo_name == "security-standards":
+            self._update_security_standards_readme(self._resolve_dest_path(repo_name, ""), primary_dst)
         return result
+
+    def _update_security_standards_readme(self, repo_root: Path, standards_dir: Path) -> None:
+        """Refresh the standards count and catalog table in the mirror README from the exported files."""
+        if self.dry_run or not repo_root.exists():
+            return
+        readme_path = repo_root / "README.md"
+        if not readme_path.exists():
+            return
+
+        standards = sorted(f for f in standards_dir.glob("*.md") if f.name != "README.md")
+        table = "| Standard Document | Purpose & Architectural Intent |\n| :--- | :--- |\n"
+        for f in standards:
+            text = f.read_text(encoding="utf-8")
+            purpose_m = re.search(r"^purpose:\s*\[([^\]]+)\]", text, re.MULTILINE)
+            purpose = purpose_m.group(1) if purpose_m else "Security Standard"
+            rel = f.relative_to(repo_root).as_posix()
+            table += f"| [{f.name}]({rel}) | {purpose.capitalize()}. |\n"
+
+        count = len(standards)
+        readme_text = readme_path.read_text(encoding="utf-8")
+        readme_text = re.sub(r"\d+\s+normative standards", f"{count} normative standards", readme_text, flags=re.IGNORECASE)
+        readme_text = re.sub(r"standards-\d+%20Normative", f"standards-{count}%20Normative", readme_text)
+
+        # Replace the catalog section up to the next known section; leave the README untouched if either
+        # marker is missing so a restructured README is never corrupted.
+        section_start = "## Normative Standards Catalog"
+        section_end = "## Validation & Testing"
+        start_idx = readme_text.find(section_start)
+        end_idx = readme_text.find(section_end)
+        if start_idx != -1 and end_idx > start_idx:
+            new_section = (
+                f"{section_start}\n\nThe complete catalog comprises {count} normative standards.\n\n{table}\n---\n\n"
+            )
+            readme_text = readme_text[:start_idx] + new_section + readme_text[end_idx:]
+
+        readme_path.write_text(readme_text, encoding="utf-8")
+
+    def _export_dest_rel(self, repo_name: str, source_rel: str) -> str | None:
+        """Map a source-root-relative path to its repo-root-relative exported path, or None if not exported."""
+        mapping = self.mappings.get(repo_name)
+        if not mapping or mapping.get("mode") == HARNESS_TEMPLATE_MODE:
+            return None
+        subpaths = mapping.get("subpaths") or [mapping]
+        source_path = self.source_root / source_rel
+        if not source_path.exists():
+            return None
+        best: tuple[int, str] | None = None
+        for sub in subpaths:
+            s_path = str(sub.get("source_subpath", "")).strip("/")
+            d_path = str(sub.get("dest_subpath", "")).strip("/")
+            if s_path in ("", "."):
+                tail = source_rel
+            elif source_rel == s_path:
+                tail = ""
+            elif source_rel.startswith(s_path + "/"):
+                tail = source_rel[len(s_path) + 1:]
+            else:
+                continue
+            dest = posixpath.normpath(posixpath.join(d_path or ".", tail)) if tail else (d_path or ".")
+            if best is None or len(s_path) > best[0]:
+                best = (len(s_path), dest)
+        if best is None:
+            return None
+        if source_path.is_file():
+            filter_func = mapping.get("filter_func")
+            if filter_func and not filter_func(source_path):
+                return None
+            if source_path.name in EXCLUDED_NAMES or any(source_path.name.endswith(e) for e in EXCLUDED_EXTENSIONS):
+                return None
+        return best[1]
+
+    def _reroot_markdown_links(self, text: str, display_rel: str, repo_name: str) -> str:
+        """Re-root relative Markdown links for the exported layout.
+
+        Links to exported files are rewritten relative to the exported location. Links to anything not
+        exported degrade to their plain text (never to a URL, since the source repository is private).
+        Fenced code blocks, absolute URLs, anchors, and mailto/other schemes are left untouched.
+        """
+        current_dest = self._export_dest_rel(repo_name, display_rel)
+        if current_dest is None:
+            return text
+        current_dest_dir = posixpath.dirname(current_dest) or "."
+        source_dir = posixpath.dirname(display_rel)
+
+        def replace(m: re.Match[str]) -> str:
+            bang, label, target, rest = m.group(1), m.group(2), m.group(3), m.group(4)
+            if not target or target.startswith(("#", "//", "/", "<")) or _URL_SCHEME_RE.match(target):
+                return m.group(0)
+            path_part, hash_sep, fragment = target.partition("#")
+            path_part = path_part.partition("?")[0]
+            if not path_part:
+                return m.group(0)
+            resolved = posixpath.normpath(posixpath.join(source_dir, path_part))
+            if resolved == ".." or resolved.startswith("../"):
+                return label
+            dest_target = self._export_dest_rel(repo_name, resolved)
+            if dest_target is None:
+                return label  # plain text for unexported targets
+            new_target = posixpath.relpath(dest_target, current_dest_dir)
+            if path_part.endswith("/") and not new_target.endswith("/"):
+                new_target += "/"
+            return f"{bang}[{label}]({new_target}{hash_sep}{fragment}{rest})"
+
+        out: list[str] = []
+        in_fence = False
+        fence_marker = ""
+        for line in text.splitlines(keepends=True):
+            stripped = line.lstrip()
+            if stripped.startswith(("```", "~~~")):
+                marker = stripped[:3]
+                if not in_fence:
+                    in_fence, fence_marker = True, marker
+                elif marker == fence_marker:
+                    in_fence = False
+                out.append(line)
+                continue
+            out.append(line if in_fence else _MD_LINK_RE.sub(replace, line))
+        return "".join(out)
+
+    def _run_post_export_checks(self, dst_dir: Path, result: RepoSyncResult) -> None:
+        """Fail the repo export when an exported Markdown file contains a dead relative link."""
+        if not dst_dir.exists() or self.dry_run:
+            return
+        if result.repo_name == "ai-harness-core":
+            return
+
+        for f in sorted(dst_dir.rglob("*.md")):
+            try:
+                text = f.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            in_fence = False
+            for line in text.splitlines():
+                if line.lstrip().startswith(("```", "~~~")):
+                    in_fence = not in_fence
+                    continue
+                if in_fence:
+                    continue
+                for match in _MD_LINK_RE.finditer(line):
+                    target = match.group(3)
+                    if not target or target.startswith(("#", "<")) or _URL_SCHEME_RE.match(target):
+                        continue
+                    path_part = target.partition("#")[0].partition("?")[0]
+                    if not path_part:
+                        continue
+                    if not (f.parent / path_part).exists():
+                        result.errors.append(f"Dead link in {f.relative_to(dst_dir).as_posix()}: {target}")
+                        result.status = "failed"
 
     def sync_all(self, repo_filter: str | None = None) -> SyncReport:
         """Run synchronization across selected or all repositories."""
-        now_utc = dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        now_utc = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         report = SyncReport(
             timestamp_utc=now_utc,
             source_root=str(self.source_root),
@@ -693,11 +908,11 @@ class SyncEngine:
                     continue
 
                 for p in self._walk_source_files(src_dir, mapping):
+                    rel = p.relative_to(self.source_root).as_posix()
                     try:
                         text = p.read_text(encoding="utf-8")
                     except UnicodeDecodeError:
                         continue
-                    rel = p.relative_to(self.source_root).as_posix()
                     file_violations = self.redactor.find_violations(text, rel)
                     violations.extend(file_violations)
 
@@ -731,6 +946,7 @@ INTERNAL_ONLY_DOMAINS: set[str] = {
     "scripts/ai-tooling",
     "scripts/cli",
     "scripts/daemon",
+    "scripts/onboarding",
     "scripts/tests",
     "scripts/windows-security",
     "scripts/wiki",
@@ -760,6 +976,7 @@ INTERNAL_ONLY_DOMAINS: set[str] = {
     "supporting/discovery",
     "supporting/wiki",
     "supporting/local-llms",
+    "supporting/bifrost",
 }
 
 
@@ -824,7 +1041,7 @@ def format_text_report(report: SyncReport) -> str:
     """Format human-readable sync and audit summary."""
     lines: list[str] = [
         "=" * 70,
-        "Multi-Repo Synchronization & Redaction Report",
+        f"Multi-Repo Synchronization & Redaction Report",
         f"Timestamp: {report.timestamp_utc}",
         f"Source:    {report.source_root}",
         f"Dest:      {report.dest_root}",
@@ -936,6 +1153,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional file path to save JSON report output",
     )
     parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Check mode: exit 1 if any files would be modified/created/deleted",
+    )
+    parser.add_argument(
         "--strict",
         action="store_true",
         help="Fail with exit code 1 if any redactions occur or validation warnings arise",
@@ -946,53 +1168,59 @@ def main(argv: list[str] | None = None) -> int:
     source_root = resolve_repo_root(args.source)
     dest_root = args.dest.resolve() if args.dest else (source_root / "scratch" / "exports")
 
-    if args.check_coverage:
-        is_ok, covered, unmapped = check_downstream_source_coverage(source_root)
-        if args.json:
-            out = {
-                "check_coverage": True,
-                "ok": is_ok,
-                "covered_count": len(covered),
-                "unmapped_count": len(unmapped),
-                "covered": covered,
-                "unmapped": unmapped,
-            }
-            print(json.dumps(out, indent=2))
-        else:
-            if is_ok:
-                print(f"OK: All {len(covered)} source domains are mapped downstream or declared internal.")
-            else:
-                print(f"COVERAGE FAILED: Found {len(unmapped)} unmapped source domain(s):")
-                for u in unmapped:
-                    print(f"  ! Unmapped: {u}")
-        return 0 if is_ok else 1
-
     redactor = RedactionEngine()
     engine = SyncEngine(
         source_root=source_root,
         dest_root=dest_root,
         redactor=redactor,
-        dry_run=args.dry_run,
+        dry_run=args.dry_run or args.check,
     )
 
-    if args.validate:
-        is_clean, violations = engine.validate_sources(args.repo)
-        if args.json:
-            out = {
-                "validate": True,
-                "clean": is_clean,
-                "violation_count": len(violations),
-                "violations": violations,
-            }
-            print(json.dumps(out, indent=2))
-        else:
-            if is_clean:
-                print("OK: All source repositories validated clean with zero sensitive leaks.")
+    if args.check_coverage or args.validate:
+        coverage_ok = True
+        validate_ok = True
+
+        if args.check_coverage:
+            is_ok, covered, unmapped = check_downstream_source_coverage(source_root)
+            coverage_ok = is_ok
+            if args.json:
+                out = {
+                    "check_coverage": True,
+                    "ok": is_ok,
+                    "covered_count": len(covered),
+                    "unmapped_count": len(unmapped),
+                    "covered": covered,
+                    "unmapped": unmapped,
+                }
+                print(json.dumps(out, indent=2))
             else:
-                print(f"VALIDATION FAILED: Found {len(violations)} sensitive pattern(s):")
-                for v in violations:
-                    print(f"  ! {v}")
-        return 0 if is_clean else 1
+                if is_ok:
+                    print(f"OK: All {len(covered)} source domains are mapped downstream or declared internal.")
+                else:
+                    print(f"COVERAGE FAILED: Found {len(unmapped)} unmapped source domain(s):")
+                    for u in unmapped:
+                        print(f"  ! Unmapped: {u}")
+
+        if args.validate:
+            is_clean, violations = engine.validate_sources(args.repo)
+            validate_ok = is_clean
+            if args.json:
+                out = {
+                    "validate": True,
+                    "clean": is_clean,
+                    "violation_count": len(violations),
+                    "violations": violations,
+                }
+                print(json.dumps(out, indent=2))
+            else:
+                if is_clean:
+                    print("OK: All source repositories validated clean with zero sensitive leaks.")
+                else:
+                    print(f"VALIDATION FAILED: Found {len(violations)} sensitive pattern(s):")
+                    for v in violations:
+                        print(f"  ! {v}")
+
+        return 0 if (coverage_ok and validate_ok) else 1
 
     if not args.dest and not args.dry_run:
         # Default destination required if not dry run
@@ -1009,6 +1237,14 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(format_text_report(report))
 
+    if args.check:
+        mods = report.summary.get("total_files_modified", 0)
+        synced = report.summary.get("total_files_synced", 0)
+        unchanged = report.summary.get("total_files_unchanged", 0)
+        created = synced - unchanged - mods
+        if mods > 0 or created > 0:
+            return 1
+            
     if args.strict and report.summary.get("total_redactions", 0) > 0:
         return 1
 

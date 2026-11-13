@@ -8,14 +8,14 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
-import urllib.request
 from pathlib import Path
+import sys
 from typing import Any
+import urllib.request
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT
+from paths import REPO_ROOT as ROOT  # noqa: E402
 
 CACHE_DIR = ROOT / "scratch" / "cache"
 CACHE_FILE = CACHE_DIR / "benchlm_benchmarks.json"
@@ -84,6 +84,21 @@ SAMPLE_MODELS: list[dict[str, Any]] = [
         },
         "evidence_tier": "Supported",
         "last_updated": "2026-10-01",
+    },
+    {
+        "id": "gemini-4-hydrogen",
+        "name": "Gemini 4 Hydrogen",
+        "provider": "Google",
+        "context_window": 1048576,
+        "input_price_per_m": 1.50,
+        "output_price_per_m": 7.50,
+        "cached_input_price_per_m": 0.075,
+        "thinking_levels": ["Low", "Medium", "High", "xhigh"],
+        "default_thinking_level": "High",
+        "scores": {},
+        "benchmarks": {},
+        "evidence_tier": "Official Release (Benchmarks Pending)",
+        "last_updated": "2026-11-12",
     },
     {
         "id": "gemini-3-8-flash",
@@ -385,7 +400,7 @@ def fetch_or_load_benchmarks(force_refresh: bool = False) -> list[dict[str, Any]
                 BENCHLM_DATA_URL,
                 headers={"User-Agent": "Mozilla/5.0 (compatible; BenchLMFetcher/1.0)"},
             )
-            with urllib.request.urlopen(req, timeout=5) as resp:  # nosec B310 - fetching known API endpoints
+            with urllib.request.urlopen(req, timeout=5) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 models = data if isinstance(data, list) else data.get("models", SAMPLE_MODELS)
                 CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -404,9 +419,16 @@ def fetch_or_load_benchmarks(force_refresh: bool = False) -> list[dict[str, Any]
     return SAMPLE_MODELS
 
 
-def compute_value_score(model: dict[str, Any], category: str = "overall") -> float:
-    """Calculate price-performance efficiency (score / combined token price)."""
-    score = model.get("scores", {}).get(category, model.get("scores", {}).get("overall", 50.0))
+def _lookup_score(model: dict[str, Any], category: str) -> float | None:
+    scores = model.get("scores", {})
+    return scores.get(category, scores.get("overall"))
+
+
+def compute_value_score(model: dict[str, Any], category: str = "overall") -> float | None:
+    """Calculate price-performance efficiency (score / combined token price), or None when unbenchmarked."""
+    score = _lookup_score(model, category)
+    if score is None:
+        return None
     inp_price = model.get("input_price_per_m", 1.0)
     out_price = model.get("output_price_per_m", 1.0)
     blended_price = (inp_price * 0.75) + (out_price * 0.25)
@@ -433,26 +455,40 @@ def filter_and_rank_models(
             continue
         if max_output_price is not None and m.get("output_price_per_m", 0) > max_output_price:
             continue
-        if min_speed is not None and m.get("tokens_per_sec", 0) < min_speed:
-            continue
-        
+        if min_speed is not None:
+            speed = m.get("tokens_per_sec")
+            if speed is None or speed < min_speed:
+                continue
+
         m_copy = dict(m)
         m_copy["value_index"] = compute_value_score(m_copy, category)
         filtered.append(m_copy)
 
     if sort_by == "score":
         filtered.sort(
-            key=lambda x: x.get("scores", {}).get(category, x.get("scores", {}).get("overall", 0)),
-            reverse=True,
+            key=lambda x: (
+                (score := _lookup_score(x, category)) is None,
+                -(score if score is not None else 0.0),
+            )
         )
     elif sort_by == "price_asc":
         filtered.sort(key=lambda x: x.get("input_price_per_m", 999.0))
     elif sort_by == "price_desc":
         filtered.sort(key=lambda x: x.get("input_price_per_m", 0.0), reverse=True)
     elif sort_by == "speed":
-        filtered.sort(key=lambda x: x.get("tokens_per_sec", 0.0), reverse=True)
+        filtered.sort(
+            key=lambda x: (
+                (sp := x.get("tokens_per_sec")) is None,
+                -(sp if sp is not None else 0.0),
+            )
+        )
     elif sort_by == "value":
-        filtered.sort(key=lambda x: x.get("value_index", 0.0), reverse=True)
+        filtered.sort(
+            key=lambda x: (
+                (val := x.get("value_index")) is None,
+                -(val if val is not None else 0.0),
+            )
+        )
 
     return filtered[:limit]
 
@@ -466,12 +502,15 @@ def format_markdown_table(models: list[dict[str, Any]], category: str) -> str:
         "| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |",
     ]
     for idx, m in enumerate(models, 1):
-        score = m.get("scores", {}).get(category, m.get("scores", {}).get("overall", "N/A"))
+        score_val = _lookup_score(m, category)
+        score = f"{score_val}" if score_val is not None else "N/A"
         inp = f"${m.get('input_price_per_m', 0.0):.2f}"
         out = f"${m.get('output_price_per_m', 0.0):.2f}"
         cached = f"${m.get('cached_input_price_per_m', 0.0):.4f}" if "cached_input_price_per_m" in m else "N/A"
-        speed = f"{m.get('tokens_per_sec', 0.0):.1f}"
-        value = f"{m.get('value_index', 0.0):.1f}"
+        speed_val = m.get("tokens_per_sec")
+        speed = f"{speed_val:.1f}" if speed_val is not None else "N/A"
+        value_val = m.get("value_index")
+        value = f"{value_val:.1f}" if value_val is not None else "N/A"
         tier = m.get("evidence_tier", "Supported")
         lines.append(
             f"| {idx} | **{m.get('name')}** | {m.get('provider')} | **{score}** | {inp} / {out} | {cached} | {speed} | `{value}` | {tier} |"
@@ -576,4 +615,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

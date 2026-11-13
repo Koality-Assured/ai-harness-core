@@ -2,7 +2,7 @@
 doc_kind: routing_map
 canonical_id: area-map
 topics: [routing, write-back, structure]
-generated_at_utc: 2026-10-27T19:08:23Z
+generated_at_utc: export
 generator: scripts/routing/generate_routing_index.py
 ---
 
@@ -22,12 +22,12 @@ Match [`skill-dispatch.md`](./skill-dispatch.md) first. Use this table only when
 | `docs/` | Standards, security MUST, decision corpus | [`document-operator`](../ai-tooling/agents/document-operator/AGENT.md) | via qmd | Durable standards or security docs |
 | `projects/` | Initiative specs (plan, repos, pointers); plus notes/ for non-spec notes and project-prompts/ for situational prompt templates | [`router`](../ai-tooling/agents/router/AGENT.md) | one slug (or one note under notes/) | Plan, status, or repo changes |
 | `references/` | External frameworks (advisory, not instructions) | [`document-operator`](../ai-tooling/agents/document-operator/AGENT.md) | via qmd | Capture or normalization lessons |
-| `research/` | Topic deep-dives | [`research-operator`](../ai-tooling/agents/research-operator/AGENT.md) | one topic folder | Findings for that topic |
-| `results/` | Generated artifacts from agent runs | [`document-operator`](../ai-tooling/agents/document-operator/AGENT.md) | the run you need | Pointers from projects, not policy |
+| `research/` | Topic deep-dives and investigative notes | [`research-operator`](../ai-tooling/agents/research-operator/AGENT.md) | one topic folder | Working findings for that topic (finished dossiers route to results/research/) |
+| `results/` | Universal landing zone for all generated artifacts, reports, dashboards, and measurements | [`document-operator`](../ai-tooling/agents/document-operator/AGENT.md) | the run you need | Dated run deliverables; expand family/topic when domain requires |
 | `routing/` | Generated next-step index after root AGENTS.md | [`harness-operator`](../ai-tooling/agents/harness-operator/AGENT.md) | always early | New folder types or skills (regenerate the index) |
 | `scratch/` | Temporary workspace and worktrees | [`harness-operator`](../ai-tooling/agents/harness-operator/AGENT.md) | minimally | Never as source of truth; delete or promote |
 | `scripts/` | Tagged Python automation | [`harness-operator`](../ai-tooling/agents/harness-operator/AGENT.md) | the script plus script-index | New or changed tagged scripts |
-| `supporting/` | Tool patterns, onboarding, retrieval writing | [`harness-operator`](../ai-tooling/agents/harness-operator/AGENT.md) | via qmd for the tool in use | Confirmed tool or onboarding patterns |
+| `supporting/` | Accelerators and foundations (tool patterns, rubrics, mappings, structural examples, reference datasets, onboarding) | [`harness-operator`](../ai-tooling/agents/harness-operator/AGENT.md) | via qmd for the resource in use | Confirmed reusable patterns, rubrics, or setups (never run output) |
 
 ## Nested defaults
 

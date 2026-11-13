@@ -25,6 +25,8 @@ Human index (not agent SoT):
 | [`azure-logs/`](./azure/azure-logs/) | cloud-operator | mutate |
 | [`azure-read/`](./azure/azure-read/) | cloud-operator | mutate |
 | [`azure-write/`](./azure/azure-write/) | cloud-operator | mutate |
+| [`bifrost-admin/`](./admin/bifrost-admin/) | bifrost-operator | mutate |
+| [`bifrost-service/`](./admin/bifrost-service/) | bifrost-operator | mutate |
 | [`cloud-admin-provision/`](./admin/cloud-admin-provision/) | cloud-operator | mutate |
 | [`code-review-report/`](./reporting/code-review-report/) | document-operator | mutate |
 | [`corpus-draft/`](./reporting/corpus-draft/) | document-operator | mutate |
@@ -45,6 +47,7 @@ Human index (not agent SoT):
 | [`guidance-draft/`](./reporting/guidance-draft/) | document-operator | mutate |
 | [`headroom/`](./cost-layers/headroom/) | harness-operator | read-only |
 | [`harness-review/`](./harness-review/) | harness-operator | mutate |
+| [`harness-anti-rot/`](./meta/harness-anti-rot/) | harness-operator | read-only |
 | [`humanizer/`](./reporting/humanizer/) | document-operator | mutate |
 | [`isolate-work/`](./meta/isolate-work/) | router | mutate |
 | [`markdownlint/`](./meta/markdownlint/) | document-operator | mutate |
@@ -102,7 +105,3 @@ Human index (not agent SoT):
 | [`blog-candidate-discovery/`](./discovery/blog-candidate-discovery/) | public-publication | read-only |
 | [`whitepaper-candidate-discovery/`](./discovery/whitepaper-candidate-discovery/) | public-publication | read-only |
 | [`ad-windows-security-audit/`](./security/ad-windows-security-audit/) | security-tooling-operator | read-only |
-| [`us-law-reference-maintain/`](./legal/us-law-reference-maintain/) | document-operator | mutate |
-| [`us-law-reference-compare/`](./legal/us-law-reference-compare/) | document-operator | read-only |
-| [`us-law-interpretation-research/`](./legal/us-law-interpretation-research/) | research-operator | read-only |
-| [`us-law-court-document-draft/`](./legal/us-law-court-document-draft/) | document-operator | read-only |

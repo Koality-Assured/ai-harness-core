@@ -71,38 +71,110 @@ Its state determines the next action:
 
 The setup script refuses mutation without explicit approval and writes project-local `.qmd/index.yml` by default. Record a host-specific wrapper path, index location label, successful reuse method, or inaccessible-state recovery in `ai-tooling/memory/user/<stable-id>/`; keep general pages and skills free of personal paths.
 
-## Default (BM25)
+## The QMD Retrieval Suite & Decision Matrix
 
-Use `qmd search` first (sub-second, best precision on this corpus). Then `qmd get` the unique files. Do not answer from snippets when facts or nuance matter.
+QMD provides four complementary retrieval primitives and three lifecycle operations. All retrieval MUST execute from `scratch/qmd-main` (the persistent detached checkout of `origin/main`).
+
+| Primitive | Technology | When to Use | Command Pattern | Latency |
+| :--- | :--- | :--- | :--- | :--- |
+| **`qmd search`** | BM25 lexical keyword index (No LLM) | Exact terms, filenames, code symbols, titles, constants, and known phrase anchors. **Default first-hop.** | `qmd search --format json --min-score 0.5 -n 5 "keywords"` | ~5–15ms |
+| **`qmd vsearch`** | Dense vector cosine similarity (Gemma embeddings) | Conceptual / semantic discovery when exact terms are unknown, phrasing diverges from source, or vocabulary is uncertain. No LLM reranker penalty. | `qmd vsearch --format json --min-score 0.4 -n 5 "concept"` | ~1–3s |
+| **`qmd query`** | Hybrid Search (BM25 + Vectors + HyDE + LLM Reranking) | Complex, multi-intent, or ambiguous discovery. Agent authors structured query documents (`intent:`, `lex:`, `vec:`, `hyde:`). | `qmd query --format json --min-score 0.5 -n 5 $'intent: ...\nlex: ...\nvec: ...'` | ~30–60s |
+| **`qmd get`** | Exact line-numbered document reader | Reading a single targeted document or specific line window by docid or path. | `qmd get "#docid"` or `qmd get "#docid:10:30"` | <5ms |
+| **`qmd multi-get`**| Batch document reader | Fetching multiple candidate documents in a single atomic tool call via comma-separated `#docids` or glob patterns. | `qmd multi-get "#doc1,#doc2" --format md -l 100` | ~10–30ms |
+
+### Anti-Fallback Hard Gate
+
+Agents MUST NOT bypass QMD with recursive shell searches (`Get-ChildItem -Recurse`, `Select-String`, `git grep`, raw `find`, or PowerShell loops). Shell crawling is strictly prohibited unless:
+1. QMD search and vsearch across all relevant collections returned zero candidates, OR
+2. The search explicitly targets untracked/dirty local scratch files deliberately excluded from QMD collections.
+
+## 1. Default Lexical Search (`qmd search`)
+
+Use `qmd search` first for fast, deterministic lexical precision:
 
 ```bash
-qmd search --format json --min-score 0.5 -n 5 "your need"
-qmd get "<docid-or-path>"
+pushd scratch/qmd-main
+qmd search --format json --min-score 0.5 -n 5 "your search terms"
+popd
 ```
 
-When the area is known, pass `-c` so `results/` reports do not leak into ranking:
+When the target area is known, filter with `-c <collection>` so `results/` reports or unrelated areas do not dilute rankings:
 
 ```bash
+pushd scratch/qmd-main
 qmd search --format json --min-score 0.5 -n 5 -c docs "session security"
+popd
 ```
 
-## Hybrid only when BM25 is empty
+## 2. Pure Vector Similarity (`qmd vsearch`)
 
-**Hybrid `qmd query`** (expansion + embed + rerank) only when BM25 returns nothing or the need is conceptual. On this workstation it averaged ~35–70s.
+When exact keywords are unknown or lexical search returns zero hits because the user's phrasing does not match the source text, use `qmd vsearch`. It computes embedding cosine similarity across pre-embedded chunks without paying the heavy LLM reranking latency of `qmd query`:
 
 ```bash
-qmd query --format json --min-score 0.5 -n 5 "your need"
+pushd scratch/qmd-main
+qmd vsearch --format json --min-score 0.4 -n 5 "isolated subagent execution environment"
+popd
 ```
 
-Treat hits as **advisory**; root Critical rules still win.
+## 3. Structured Hybrid Query (`qmd query`)
 
-## Lookup freshness and separate index maintenance
+Use `qmd query` when the query is highly nuanced, conceptual, or requires active disambiguation. Rather than passing a bare sentence and relying on the small local model's expander, author a structured query document with `intent:`, `lex:`, `vec:`, and `hyde:` lines:
 
-Before retrieval, run `qmd update` from the persistent detached QMD root after syncing it to current `origin/main`. This routine freshness step is authorized, incremental, and does not need setup approval. Never run it from a task worktree or use `--pull`. Collection changes remain separate: use the preflight and required approval before setup or reconfiguration. Any additional embedding/cleanup workflow through `python scripts/qmd/refresh_qmd_index.py` remains a separate maintenance action and follows its own preflight and approval requirements.
+```bash
+pushd scratch/qmd-main
+qmd query --format json --min-score 0.5 -n 5 $'intent: Find rules for subagent state isolation and firebreaks, avoiding general Docker containers.\nlex: clean-slate specialist dispatch subagent fork_turns context\nvec: isolated context window without transcript inheritance\nhyde: Subagents execute in isolated context windows with clean state. Do not pass parent conversation transcripts.'
+popd
+```
+
+### Structured Query Grammar Rules
+- `intent:`: Express what to retrieve AND what to reject. Essential for steering away from false positives.
+- `lex:`: Exact keywords, code symbols, filenames, and rare vocabulary you expect in the document.
+- `vec:`: Natural language paraphrasing in source-like wording.
+- `hyde:`: Hypothetical answer excerpt that would satisfy the retrieval need.
+
+## 4. Batch Retrieval (`qmd multi-get`)
+
+Avoid serial single-file `qmd get` loops that pollute context with redundant tool calls. Use `qmd multi-get` to batch-fetch candidates:
+
+```bash
+# Fetch multiple documents by comma-separated docids
+pushd scratch/qmd-main
+qmd multi-get "#e22229,#860a46" --format md -l 100
+popd
+
+# Batch fetch using glob patterns
+pushd scratch/qmd-main
+qmd multi-get "standards/*.md" --max-bytes 32768 --format md
+popd
+```
+
+Parameters:
+- `-l <num>`: Maximum lines per document (prevents dumping massive files).
+- `--max-bytes <num>`: Skip files larger than byte limit (default 65536).
+- `--format <md|json|cli>`: Output format. Prefer `md` for readable LLM ingestion.
+
+## 5. Index Lifecycle & Maintenance Protocol
+
+Keep the repository QMD index healthy and synchronized across three operations:
+
+1. **Incremental BM25 Freshness (`qmd update`)**:
+   - Authorized and routine before lookup from `scratch/qmd-main` after syncing with `origin/main`.
+   - Indexes new, updated, and removed Markdown files into the SQLite BM25 full-text index in sub-seconds.
+   - Does not require user confirmation or reconfiguration approval. Never run with `--pull` from a worktree.
+
+2. **Vector Embedding Hydration (`qmd embed`)**:
+   - Generates 300M Gemma vector representations for newly modified/added document chunks.
+   - Run from `scratch/qmd-main` when `qmd update` reports pending hashes (`Run 'qmd embed' to update embeddings`).
+   - Caps memory and timeout gracefully (`--timeout 10`).
+
+3. **Orphan Reclaiming & Compaction (`qmd cleanup`)**:
+   - Drops stale document records, purges orphaned vector chunks, compacts FTS5, and vacuums SQLite.
+   - Run periodically or when `qmd update` reports orphaned embedding chunks. Safe and deterministic.
 
 ## Validation
 
-Repeatable health/relevance/token/accuracy check: `python scripts/qmd/validate_qmd_retrieval.py`. Combined with Headroom and ast-grep: `python scripts/cost-layers/validate_cost_layers.py`. Cost-layer reports land under `results/cost-layers/<slug>/<YYYY-MM-DD>/` — [`../../results/results-conventions.md`](../../results/results-conventions.md).
+Repeatable health/relevance/token/accuracy check: `python scripts/qmd/validate_qmd_retrieval.py`. Empirical benchmark comparing QMD suite primitives against grep fallbacks: `python scripts/qmd/benchmark_qmd_suite.py`. Combined with Headroom and ast-grep: `python scripts/cost-layers/validate_cost_layers.py`. Cost-layer reports land under `results/cost-layers/<slug>/<YYYY-MM-DD>/` — [`../../results/results-conventions.md`](../../results/results-conventions.md).
 
 ## Query pitfalls (validated 2026-08-19)
 

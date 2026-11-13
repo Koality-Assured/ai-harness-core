@@ -10,21 +10,18 @@ import json
 import os
 import sqlite3
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from cli.auth.keyring_vault import (
-    _enforce_private_dir_permissions,
-    _enforce_private_permissions,
-)
+from cli.auth.keyring_vault import _enforce_private_dir_permissions, _enforce_private_permissions
 
 BUSY_MODES = ("interrupt", "queue", "steer")
 
 
 def _utcnow_iso() -> str:
     # Include microseconds so same-second creates still order correctly.
-    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 def default_state_db_path() -> Path:
@@ -72,6 +69,7 @@ class SessionStore:
             CREATE TABLE IF NOT EXISTS messages (
                 id TEXT PRIMARY KEY,
                 session_id TEXT NOT NULL,
+                message_order INTEGER NOT NULL DEFAULT 0,
                 role TEXT NOT NULL,
                 content TEXT NOT NULL,
                 input_tokens INTEGER,
@@ -96,8 +94,10 @@ class SessionStore:
             """
         )
         # Keep databases created by slices 8-11 usable and make repeated startup safe.
+        message_order_added = False
         for table, column, declaration in (
             ("sessions", "busy_mode", "TEXT NOT NULL DEFAULT 'interrupt'"),
+            ("messages", "message_order", "INTEGER NOT NULL DEFAULT 0"),
             ("messages", "input_tokens", "INTEGER"),
             ("messages", "output_tokens", "INTEGER"),
             ("messages", "provider_data", "TEXT"),
@@ -108,6 +108,13 @@ class SessionStore:
             }
             if column not in existing:
                 self._conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {declaration}")
+                if table == "messages" and column == "message_order":
+                    message_order_added = True
+        if message_order_added:
+            self._conn.execute("UPDATE messages SET message_order = rowid")
+        self._conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_messages_session_order ON messages(session_id, message_order)"
+        )
         self._conn.commit()
 
     def get_adapter_session(
@@ -170,7 +177,7 @@ class SessionStore:
                     """,
                     (adapter, principal, route, handle, session_id, now, now),
                 )
-                for message in initial_messages or []:
+                for i, message in enumerate(initial_messages or []):
                     provider_data = message.get("provider_data")
                     provider_data_json = (
                         json.dumps(provider_data, ensure_ascii=False, allow_nan=False)
@@ -180,12 +187,13 @@ class SessionStore:
                     self._conn.execute(
                         """
                         INSERT INTO messages
-                            (id, session_id, role, content, input_tokens, output_tokens, provider_data, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                            (id, session_id, message_order, role, content, input_tokens, output_tokens, provider_data, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
                             str(uuid.uuid4()),
                             session_id,
+                            i + 1,
                             message["role"],
                             str(message.get("content", "")),
                             message.get("input_tokens"),
@@ -275,7 +283,7 @@ class SessionStore:
                 """,
                 (sid, title or "", cwd or "", provider or "", model or "", busy_mode, now, now),
             )
-            for message in messages:
+            for i, message in enumerate(messages):
                 provider_data = message.get("provider_data")
                 provider_data_json = (
                     json.dumps(provider_data, ensure_ascii=False, allow_nan=False)
@@ -285,12 +293,13 @@ class SessionStore:
                 self._conn.execute(
                     """
                     INSERT INTO messages
-                        (id, session_id, role, content, input_tokens, output_tokens, provider_data, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        (id, session_id, message_order, role, content, input_tokens, output_tokens, provider_data, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         str(uuid.uuid4()),
                         sid,
+                        i + 1,
                         message["role"],
                         message["content"],
                         message.get("input_tokens"),
@@ -320,18 +329,22 @@ class SessionStore:
             if provider_data is not None
             else None
         )
-        self._conn.execute(
-            """
-            INSERT INTO messages (id, session_id, role, content, input_tokens, output_tokens, provider_data, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (mid, session_id, role, content, input_tokens, output_tokens, provider_data_json, now),
-        )
-        self._conn.execute(
-            "UPDATE sessions SET updated_at = ? WHERE id = ?",
-            (now, session_id),
-        )
-        self._conn.commit()
+        with self._conn:
+            self._conn.execute(
+                """
+                INSERT INTO messages (id, session_id, message_order, role, content, input_tokens, output_tokens, provider_data, created_at)
+                VALUES (
+                    ?, ?,
+                    (SELECT COALESCE(MAX(message_order), 0) + 1 FROM messages WHERE session_id = ?),
+                    ?, ?, ?, ?, ?, ?
+                )
+                """,
+                (mid, session_id, session_id, role, content, input_tokens, output_tokens, provider_data_json, now),
+            )
+            self._conn.execute(
+                "UPDATE sessions SET updated_at = ? WHERE id = ?",
+                (now, session_id),
+            )
         return {
             "id": mid,
             "session_id": session_id,
@@ -369,16 +382,20 @@ class SessionStore:
                 mid = str(uuid.uuid4())
                 self._conn.execute(
                     """
-                    INSERT INTO messages (id, session_id, role, content, created_at)
-                    VALUES (?, ?, 'system', ?, ?)
+                    INSERT INTO messages (id, session_id, message_order, role, content, created_at)
+                    VALUES (
+                        ?, ?,
+                        (SELECT COALESCE(MAX(message_order), 0) + 1 FROM messages WHERE session_id = ?),
+                        'system', ?, ?
+                    )
                     """,
-                    (mid, session_id, content, created_at),
+                    (mid, session_id, session_id, content, created_at),
                 )
 
     def get_system_prompt(self, session_id: str) -> str | None:
         """Get the active system prompt for a session, if any."""
         row = self._conn.execute(
-            "SELECT content FROM messages WHERE session_id = ? AND role = 'system' ORDER BY created_at DESC LIMIT 1",
+            "SELECT content FROM messages WHERE session_id = ? AND role = 'system' ORDER BY message_order DESC, created_at DESC LIMIT 1",
             (session_id,),
         ).fetchone()
         return str(row["content"]) if row else None
@@ -393,9 +410,15 @@ class SessionStore:
             return []
         inserted: list[dict[str, Any]] = []
         with self._conn:
-            for message in messages:
+            row = self._conn.execute(
+                "SELECT COALESCE(MAX(message_order), 0) AS max_order FROM messages WHERE session_id = ?",
+                (session_id,),
+            ).fetchone()
+            base_order = int(row["max_order"]) if row else 0
+            for i, message in enumerate(messages):
                 message_id = str(uuid.uuid4())
                 created_at = _utcnow_iso()
+                order = base_order + i + 1
                 provider_data = message.get("provider_data")
                 provider_data_json = (
                     json.dumps(provider_data, ensure_ascii=False, allow_nan=False)
@@ -405,12 +428,13 @@ class SessionStore:
                 self._conn.execute(
                     """
                     INSERT INTO messages
-                        (id, session_id, role, content, input_tokens, output_tokens, provider_data, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        (id, session_id, message_order, role, content, input_tokens, output_tokens, provider_data, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         message_id,
                         session_id,
+                        order,
                         message["role"],
                         message["content"],
                         message.get("input_tokens"),
@@ -423,6 +447,7 @@ class SessionStore:
                     {
                         "id": message_id,
                         "session_id": session_id,
+                        "message_order": order,
                         "role": message["role"],
                         "content": message["content"],
                         "input_tokens": message.get("input_tokens"),
@@ -442,7 +467,7 @@ class SessionStore:
             """
             SELECT * FROM messages
             WHERE session_id = ?
-            ORDER BY created_at ASC, rowid ASC
+            ORDER BY message_order ASC, rowid ASC
             """,
             (session_id,),
         ).fetchall()

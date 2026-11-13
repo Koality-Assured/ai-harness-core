@@ -9,7 +9,8 @@ $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 $env:PYTHONUTF8 = "1"
 $env:PYTHONIOENCODING = "utf-8"
 $NativeExe = Get-Command "harness.exe" -ErrorAction SilentlyContinue
-if ($NativeExe) {
+$HasSpokeSubcommand = ($Args -contains "video" -or $Args -contains "prompt")
+if ($NativeExe -and $Args.Count -gt 0 -and -not $HasSpokeSubcommand) {
     & $NativeExe.Source @Args
     exit $LASTEXITCODE
 }

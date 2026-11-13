@@ -10,10 +10,13 @@ import json
 import os
 import queue
 import re
+import shutil
 import subprocess
+import sys
 import threading
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from cli.tool_registry import ToolOutcome, ToolRegistry
@@ -124,13 +127,177 @@ def validate_mcp_servers(value: Any) -> list[dict[str, Any]]:
     return validated
 
 
+def discover_mcp_config(
+    workspace_root: str | Path | None = None,
+    explicit_path: str | Path | None = None,
+) -> dict[str, dict[str, Any]]:
+    """Discover and parse MCP server configurations according to priority rules.
+
+    Priority:
+    1. Explicit path (e.g. from --mcp-config)
+    2. <workspace_root>/.mcp.json (or repo root / cwd)
+    3. ~/.harness/mcp.json
+
+    Supports:
+    - {"mcpServers": {...}} (standard Claude/Cursor format)
+    - {"servers": {...}}
+    - Direct server map ({<name>: {...}})
+    """
+    target: Path | None = None
+    if explicit_path:
+        candidate = Path(explicit_path).expanduser().resolve()
+        if candidate.is_file():
+            target = candidate
+        else:
+            return {}
+    else:
+        root: Path
+        if workspace_root is not None:
+            root = Path(workspace_root).expanduser().resolve()
+        else:
+            try:
+                from paths import resolve_repo_root
+
+                root = resolve_repo_root()
+            except ImportError:
+                root = Path.cwd().resolve()
+        if (root / ".mcp.json").is_file():
+            target = root / ".mcp.json"
+        elif Path.cwd().resolve() != root and (Path.cwd().resolve() / ".mcp.json").is_file():
+            target = Path.cwd().resolve() / ".mcp.json"
+        elif (Path.home() / ".harness" / "mcp.json").is_file():
+            target = Path.home() / ".harness" / "mcp.json"
+
+    if target is None:
+        return {}
+
+    try:
+        with open(target, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as exc:
+        print(f"warning: failed to parse MCP config '{target}': {exc}", file=sys.stderr)
+        return {}
+    except OSError as exc:
+        print(f"warning: failed to read MCP config '{target}': {exc}", file=sys.stderr)
+        return {}
+
+    if not isinstance(data, dict):
+        print(f"warning: MCP config '{target}' is not a JSON object", file=sys.stderr)
+        return {}
+
+    raw: Any = None
+    if "mcpServers" in data:
+        raw = data["mcpServers"]
+    elif "servers" in data:
+        raw = data["servers"]
+    elif all(isinstance(v, dict) for v in data.values()) and data:
+        raw = data
+
+    result: dict[str, dict[str, Any]] = {}
+    if isinstance(raw, dict):
+        for k, v in raw.items():
+            if isinstance(v, dict):
+                cfg = dict(v)
+                cfg.setdefault("name", str(k))
+                result[str(k)] = cfg
+    elif isinstance(raw, list):
+        for idx, item in enumerate(raw):
+            if isinstance(item, dict):
+                name = str(item.get("name") or f"server_{idx}")
+                cfg = dict(item)
+                cfg.setdefault("name", name)
+                result[name] = cfg
+
+    return result
+
+
 def _process_environment(extra: dict[str, str]) -> dict[str, str]:
     """Pass only platform essentials plus explicitly configured server values."""
     inherited = os.environ
-    allowlisted = ("SystemRoot", "WINDIR", "TEMP", "TMP", "PATH")
+    allowlisted = ["SystemRoot", "WINDIR", "TEMP", "TMP", "PATH"]
+    if sys.platform == "win32":
+        allowlisted.append("PATHEXT")
     environment = {key: inherited[key] for key in allowlisted if key in inherited}
     environment.update(extra)
     return environment
+
+
+def _resolve_safe_command(cmd: str, cwd: str) -> str:
+    """Resolve an MCP command safely, preventing CWE-426 binary planting."""
+    if not isinstance(cmd, str) or not cmd.strip():
+        raise MCPStdioError("MCP server command must be a non-empty string")
+    cmd = cmd.strip()
+
+    cwd_path = Path(cwd).resolve()
+    workspace_root: Path | None = None
+    try:
+        from paths import resolve_repo_root
+
+        workspace_root = resolve_repo_root().resolve()
+    except Exception:
+        workspace_root = None
+
+    if os.path.isabs(cmd):
+        resolved = shutil.which(cmd) or (cmd if (os.path.isfile(cmd) and os.access(cmd, os.X_OK)) else None)
+        if not resolved or not os.path.isfile(resolved):
+            raise MCPStdioError(f"Command '{cmd}' does not exist or is not executable")
+        resolved_path = Path(resolved).resolve()
+    else:
+        # Reject relative paths with path separators (e.g. ./foo, bar/baz, .\foo)
+        if os.path.dirname(cmd):
+            raise MCPStdioError(f"Relative command path '{cmd}' with directory separators is not permitted")
+
+        # Filter system PATH directories to absolute paths only and exclude cwd and workspace_root
+        raw_path = os.environ.get("PATH", "")
+        clean_dirs: list[str] = []
+        for d in raw_path.split(os.pathsep):
+            d = d.strip()
+            if not d or not os.path.isabs(d):
+                continue
+            try:
+                dp = Path(d).resolve()
+            except (OSError, RuntimeError):
+                continue
+            if dp == cwd_path or dp.is_relative_to(cwd_path):
+                continue
+            if workspace_root is not None and (dp == workspace_root or dp.is_relative_to(workspace_root)):
+                continue
+            clean_dirs.append(str(dp))
+
+        clean_path = os.pathsep.join(clean_dirs)
+
+        # On Windows, shutil.which() prepends os.curdir to path. Search clean_dirs directly.
+        resolved: str | None = None
+        if sys.platform == "win32":
+            pathext_source = os.getenv("PATHEXT") or ".COM;.EXE;.BAT;.CMD;.VBS;.JS;.WS;.MSC"
+            pathext = [ext for ext in pathext_source.split(os.pathsep) if ext]
+            if any(cmd.lower().endswith(ext.lower()) for ext in pathext):
+                candidate_names = [cmd]
+            else:
+                candidate_names = [cmd + ext for ext in pathext]
+
+            for d in clean_dirs:
+                for name in candidate_names:
+                    candidate_file = os.path.join(d, name)
+                    if os.path.isfile(candidate_file) and os.access(candidate_file, os.X_OK):
+                        resolved = candidate_file
+                        break
+                if resolved:
+                    break
+        else:
+            resolved = shutil.which(cmd, path=clean_path)
+
+        if not resolved:
+            raise MCPStdioError(f"Command '{cmd}' could not be safely resolved from system PATH")
+        resolved_path = Path(resolved).resolve()
+
+    # Verify resolved executable does NOT reside inside cwd or workspace root
+    if resolved_path == cwd_path or resolved_path.is_relative_to(cwd_path):
+        raise MCPStdioError(f"Refusing to execute command residing inside working directory: {resolved_path}")
+    if workspace_root is not None and (resolved_path == workspace_root or resolved_path.is_relative_to(workspace_root)):
+        raise MCPStdioError(f"Refusing to execute command residing inside workspace root: {resolved_path}")
+
+    return str(resolved_path)
 
 
 class MCPStdioClient:
@@ -174,9 +341,11 @@ class MCPStdioClient:
     def _spawn(self) -> None:
         self._closing.clear()
         self._messages = queue.Queue(maxsize=MCP_MAX_PENDING_MESSAGES)
+        cmd = self.config["command"]
+        resolved_cmd = _resolve_safe_command(cmd, cwd=self.cwd)
         try:
             self._proc = subprocess.Popen(
-                [self.config["command"], *self.config["args"]],
+                [resolved_cmd, *self.config["args"]],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
@@ -524,24 +693,43 @@ class MCPStdioClient:
         try:
             proc.wait(timeout=MCP_SHUTDOWN_GRACE_SEC)
         except subprocess.TimeoutExpired:
-            try:
-                proc.terminate()
-            except OSError:
-                pass
-            try:
-                proc.wait(timeout=MCP_SHUTDOWN_GRACE_SEC)
-            except subprocess.TimeoutExpired:
+            if sys.platform == "win32":
                 try:
-                    proc.kill()
+                    subprocess.run(
+                        ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        check=False,
+                    )
+                except OSError:
+                    try:
+                        proc.kill()
+                    except OSError:
+                        pass
+            else:
+                try:
+                    proc.terminate()
                 except OSError:
                     pass
                 try:
                     proc.wait(timeout=MCP_SHUTDOWN_GRACE_SEC)
                 except subprocess.TimeoutExpired:
-                    pass
+                    try:
+                        proc.kill()
+                    except OSError:
+                        pass
+            try:
+                proc.wait(timeout=MCP_SHUTDOWN_GRACE_SEC)
+            except subprocess.TimeoutExpired:
+                pass
         reader = self._reader
         if reader is not None and reader.is_alive():
             reader.join(timeout=MCP_SHUTDOWN_GRACE_SEC)
+        if proc.stdout is not None:
+            try:
+                proc.stdout.close()
+            except (OSError, ValueError):
+                pass
         self._put_message(_STOP)
 
 
@@ -557,13 +745,54 @@ class _ExposedTool:
 class ACPSessionMCP:
     """Own server subprocesses and provider tools for one active ACP session."""
 
-    def __init__(self, configs: list[dict[str, Any]], *, cwd: str) -> None:
-        self.configs = configs
+    def __init__(self, configs: list[dict[str, Any]] | dict[str, dict[str, Any]], *, cwd: str) -> None:
         self.cwd = cwd
         self._lock = threading.RLock()
         self._clients: list[MCPStdioClient] = []
+        self._exposed: dict[str, _ExposedTool] = {}
         self._ended = False
+        self.configs = self._normalize_configs(configs)
         self._start()
+
+    @staticmethod
+    def _normalize_configs(configs: Any) -> list[dict[str, Any]]:
+        normalized: list[dict[str, Any]] = []
+        if isinstance(configs, dict):
+            for name, item in configs.items():
+                if isinstance(item, dict):
+                    cfg = dict(item)
+                    cfg.setdefault("name", str(name))
+                    cfg.setdefault("args", [])
+                    env = cfg.get("env")
+                    if isinstance(env, dict):
+                        cfg["env"] = {str(k): str(v) for k, v in env.items()}
+                    elif isinstance(env, list):
+                        cfg["env"] = {
+                            str(x["name"]): str(x["value"])
+                            for x in env
+                            if isinstance(x, dict) and "name" in x and "value" in x
+                        }
+                    else:
+                        cfg["env"] = {}
+                    normalized.append(cfg)
+        elif isinstance(configs, list):
+            for item in configs:
+                if isinstance(item, dict):
+                    cfg = dict(item)
+                    cfg.setdefault("args", [])
+                    env = cfg.get("env")
+                    if isinstance(env, dict):
+                        cfg["env"] = {str(k): str(v) for k, v in env.items()}
+                    elif isinstance(env, list):
+                        cfg["env"] = {
+                            str(x["name"]): str(x["value"])
+                            for x in env
+                            if isinstance(x, dict) and "name" in x and "value" in x
+                        }
+                    else:
+                        cfg["env"] = {}
+                    normalized.append(cfg)
+        return normalized
 
     def _start(self) -> None:
         clients: list[MCPStdioClient] = []
@@ -576,7 +805,7 @@ class ACPSessionMCP:
             raise
         self._clients = clients
 
-    def tool_registry(self, base: ToolRegistry, cancel_event: threading.Event) -> Any:
+    def tool_registry(self, base: ToolRegistry, cancel_event: threading.Event | None = None) -> Any:
         with self._lock:
             if self._ended:
                 raise MCPStdioError("ACP session is closed")
@@ -584,9 +813,10 @@ class ACPSessionMCP:
                 self._close_processes()
             if not self._clients and self.configs:
                 self._start()
+            cancel = cancel_event if cancel_event is not None else threading.Event()
             exposed: dict[str, _ExposedTool] = {}
             for server_index, client in enumerate(self._clients):
-                for tool_index, tool in enumerate(client.refresh_tools(cancel_event=cancel_event)):
+                for tool_index, tool in enumerate(client.refresh_tools(cancel_event=cancel)):
                     source_name = tool["name"]
                     safe_tool_name = _TOOL_ALIAS_CHARS.sub("_", source_name).strip("_-") or "tool"
                     alias = f"mcp{server_index}_{tool_index}_{safe_tool_name}"[:64]
@@ -600,7 +830,48 @@ class ACPSessionMCP:
                     exposed[alias] = _ExposedTool(alias, client, source_name, full_description[:8000], tool["inputSchema"])
             if len(exposed) + len(base.definitions) > MCP_MAX_TOOLS_TOTAL:
                 raise MCPStdioError("ACP session exposed too many total tools")
-            return _ACPSessionToolRegistry(base, exposed, cancel_event)
+            self._exposed = exposed
+            return _ACPSessionToolRegistry(base, exposed, cancel)
+
+    def list_servers(self) -> list[dict[str, Any]]:
+        with self._lock:
+            result = []
+            for client in self._clients:
+                if client.returncode is not None:
+                    status = f"stopped ({client.returncode})"
+                elif client._proc is not None and client._proc.poll() is None:
+                    status = "running"
+                else:
+                    status = "stopped"
+                result.append({
+                    "name": client.name,
+                    "command": client.config.get("command"),
+                    "status": status,
+                })
+            return result
+
+    def list_tools(self) -> list[dict[str, Any]]:
+        with self._lock:
+            if self._exposed:
+                return [
+                    {
+                        "name": tool.alias,
+                        "source_name": tool.source_name,
+                        "server": tool.client.name,
+                        "description": tool.description,
+                    }
+                    for tool in self._exposed.values()
+                ]
+            tools = []
+            for client in self._clients:
+                for tool in client.tools:
+                    tools.append({
+                        "name": tool.get("name", ""),
+                        "source_name": tool.get("name", ""),
+                        "server": client.name,
+                        "description": tool.get("description", ""),
+                    })
+            return tools
 
     def cancel(self) -> None:
         with self._lock:
@@ -652,3 +923,31 @@ class _ACPSessionToolRegistry:
         if not isinstance(arguments, dict):
             return ToolOutcome(error="MCP tool arguments must be a JSON object.")
         return remote.client.call_tool(remote.source_name, arguments, cancel_event=self.cancel_event)
+
+    @property
+    def definitions(self) -> tuple[Any, ...]:
+        base_defs = self.base.definitions if hasattr(self.base, "definitions") else ()
+        from cli.tool_registry import ToolDefinition
+
+        def _make_handler(t: _ExposedTool) -> Any:
+            def handler(args: dict[str, Any]) -> Any:
+                outcome = t.client.call_tool(t.source_name, args, cancel_event=self.cancel_event)
+                if outcome.error:
+                    raise RuntimeError(outcome.error)
+                return outcome.result
+
+            return handler
+
+        remote_defs = tuple(
+            ToolDefinition(
+                tool.alias,
+                tool.description,
+                tool.input_schema,
+                _make_handler(tool),
+            )
+            for tool in self.mcp_tools.values()
+        )
+        return tuple(base_defs) + remote_defs
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.base, name)

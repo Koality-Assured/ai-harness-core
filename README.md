@@ -12,7 +12,7 @@
 
 [![CI](https://github.com/Koality-Assured/ai-harness-core/actions/workflows/ci.yml/badge.svg)](https://github.com/Koality-Assured/ai-harness-core/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)]()
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](pyproject.toml)
 [![Architecture: Decoupled Harness](https://img.shields.io/badge/architecture-decoupled%20harness-blueviolet.svg)]()
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
@@ -46,7 +46,7 @@ Clone this repository as a clean base to create a specialized domain harness (e.
 Embed the core engine directly into an existing software project to give AI coding agents isolation, caching, and retrieval capabilities:
 1. Scaffold configuration and skeleton directories via CLI:
    ```bash
-   python .harness/cli/harness_init.py --target /path/to/target-repo
+   python scripts/harness_init.py --target /path/to/target-repo
    ```
 2. Configure provider thresholds and adapter paths in `config/harness.config.json`.
 3. Use Git worktrees for task isolation as documented by the destination repository; leverage `.harness/` adapters for prompt-cache planning, Headroom compression, and tool integrations.
@@ -96,35 +96,6 @@ ai-harness-core/
 │   └── standards/            # context-management.md, harness-template.md
 ├── references/               # Universal tooling families (conventional-commits, markdown, prompt-engineering, valid-sources)
 └── actionable/ projects/ research/ results/ scratch/ change-history/ # Managed lifecycle zones
-```
-
-### Repository Taxonomy & Operational Boundaries
-
-| Directory | Purpose & Operational Role |
-| --- | --- |
-| [`actionable/`](./actionable/) | **Human drop zone** — intake zone for human notes and tasks before an agent claims them. |
-| [`ai-tooling/`](./ai-tooling/) | **Agent enablement** — Schema V2 skills, specialist agents, A2A interaction cards, and project memory. |
-| [`change-history/`](./change-history/) | **Provenance log** — quarterly audit logs updated strictly via script. |
-| [`docs/`](./docs/) | **Authoritative knowledge** — engineering standards, session security MUSTs, and architecture. |
-| [`projects/`](./projects/) | **Initiative specifications** — initiative specs and project plans. |
-| [`references/`](./references/) | **External frameworks** — reference copies of standards (Conventional Commits, valid sources). |
-| [`research/`](./research/) | **Investigative notes** — working research notes and technical spikes. |
-| [`results/`](./results/) | **Run outputs** — benchmark measurements, reports, and generated evaluation artifacts. |
-| [`routing/`](./routing/) | **Navigation & dispatch** — area-map, 3-tier hybrid dispatch, and generated skill dispatch. |
-| [`scratch/`](./scratch/) | **Ephemeral workspace** — scratch files and detached worktrees. |
-| [`scripts/`](./scripts/) | **Automation suite** — routing generators, cost-layer benchmarks, and sync utilities. |
-| [`supporting/`](./supporting/) | **Runtime tool patterns** — QMD patterns, ast-grep rules, Headroom compression adapters. |
-
-### Quickstart & Verification
-
-Verify the harness core environment and execute the full regression suite:
-
-```bash
-# Run the complete test suite (278+ tests)
-pytest scripts/tests
-
-# Validate repository structure, frontmatter schemas, and area taxonomy
-python scripts/docs/validate_router_structure.py
 ```
 
 ---

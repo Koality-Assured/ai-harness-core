@@ -16,9 +16,8 @@ import threading
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable, Iterable, Iterator
 
 # Injectable transport: (url, headers, body_bytes) -> (status, body_bytes)
 Transport = Callable[[str, dict[str, str], bytes], tuple[int, bytes]]
@@ -32,7 +31,10 @@ ANTHROPIC_MESSAGES_PATH = "/v1/messages"
 HARNESS_LOCAL_BASE_URL_ENV = "HARNESS_LOCAL_BASE_URL"
 DEFAULT_LOCAL_BASE_URL = "http://127.0.0.1:11434/v1"
 LOCAL_DEFAULT_MODEL = "qwen2.5-coder:14b"
-SUPPORTED_PROVIDERS: tuple[str, ...] = ("anthropic", "openai", "gemini", "cursor", "local")
+HARNESS_BIFROST_BASE_URL_ENV = "HARNESS_BIFROST_BASE_URL"
+DEFAULT_BIFROST_BASE_URL = "http://127.0.0.1:8080/v1"
+BIFROST_DEFAULT_MODEL = "openai/gpt-4o"
+SUPPORTED_PROVIDERS: tuple[str, ...] = ("anthropic", "openai", "gemini", "cursor", "local", "bifrost")
 
 
 def _anthropic_messages_url() -> str:
@@ -86,6 +88,28 @@ def _openai_chat_url(provider: str = "openai") -> str:
                 f"invalid {HARNESS_LOCAL_BASE_URL_ENV}; expected a loopback HTTP(S) origin (127.0.0.1, localhost, or ::1)"
             )
         return base.rstrip("/") + "/chat/completions"
+    if provider == "bifrost":
+        base = os.environ.get(HARNESS_BIFROST_BASE_URL_ENV, "").strip() or DEFAULT_BIFROST_BASE_URL
+        try:
+            parsed = urllib.parse.urlsplit(base)
+            parsed.port
+        except ValueError as exc:
+            raise ProviderError(
+                f"invalid {HARNESS_BIFROST_BASE_URL_ENV}; expected an HTTP(S) origin"
+            ) from exc
+        if (
+            parsed.scheme not in {"http", "https"}
+            or not parsed.netloc
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.query
+            or "?" in base
+            or parsed.fragment
+        ):
+            raise ProviderError(
+                f"invalid {HARNESS_BIFROST_BASE_URL_ENV}; expected an HTTP(S) origin"
+            )
+        return base.rstrip("/") + "/chat/completions"
     base = os.environ.get("HARNESS_OPENAI_BASE_URL", "").strip()
     if base:
         return base.rstrip("/") + "/chat/completions"
@@ -114,6 +138,7 @@ PROVIDER_ALIASES: dict[str, str] = {
     "ollama": "local",
     "llamacpp": "local",
     "llama-server": "local",
+    "bifrost": "bifrost",
 }
 
 
@@ -154,7 +179,7 @@ class CompletionResult:
 
 def _validate_required_tool_call_ids(provider: str, tool_calls: list[ToolCall]) -> None:
     """Reject native calls that cannot receive a valid paired result message."""
-    if provider not in ("anthropic", "openai", "local"):
+    if provider not in ("anthropic", "openai", "local", "bifrost"):
         return
     if any(not isinstance(call.id, str) or not call.id.strip() for call in tool_calls):
         raise ProviderError(f"{provider} returned a tool call without a required call ID")
@@ -179,7 +204,7 @@ def _excerpt(body: bytes | str, limit: int = 240) -> str:
 def _default_transport(url: str, headers: dict[str, str], body: bytes) -> tuple[int, bytes]:
     req = urllib.request.Request(url, data=body, headers=headers, method="POST")
     try:
-        with urllib.request.urlopen(req, timeout=DEFAULT_TIMEOUT_SEC) as resp:  # nosec B310 - expected API schemes only
+        with urllib.request.urlopen(req, timeout=DEFAULT_TIMEOUT_SEC) as resp:
             return int(resp.status), resp.read()
     except urllib.error.HTTPError as exc:
         raw = exc.read() if hasattr(exc, "read") else b""
@@ -267,7 +292,7 @@ class _CancellableHTTPStream:
         if self._monitor is not None and self._monitor is not threading.current_thread():
             self._monitor.join(timeout=0.2)
 
-    def __iter__(self) -> _CancellableHTTPStream:
+    def __iter__(self) -> "_CancellableHTTPStream":
         return self
 
     def __next__(self) -> bytes:
@@ -451,6 +476,8 @@ def _resolve_model(provider: str, model: str | None) -> str:
         return (model or "").strip() or ANTHROPIC_DEFAULT_MODEL
     if provider == "local":
         return (model or "").strip() or LOCAL_DEFAULT_MODEL
+    if provider == "bifrost":
+        return (model or "").strip() or BIFROST_DEFAULT_MODEL
     return _require_model(provider, model)
 
 
@@ -511,18 +538,118 @@ def _system_from_messages(messages: list[dict[str, Any]]) -> str | None:
     return text or None
 
 
+def _is_openai_reasoning_model(model: str | None) -> bool:
+    """Return True if model is an OpenAI reasoning model (o1, o3 series)."""
+    mod = (model or "").lower().strip()
+    return mod.startswith(("o1", "o3"))
+
+
+def _is_gemini_budget_thinking_model(model: str | None) -> bool:
+    """Return True if Gemini model uses integer thinkingBudget (2.5 series or 2.0-flash-thinking)."""
+    mod = (model or "").lower().strip()
+    return "2.5" in mod or "2.0-flash-thinking" in mod
+
+
+def _is_gemini_level_thinking_model(model: str | None) -> bool:
+    """Return True if Gemini model uses categorical thinkingLevel (Gemini 3 / 4 / Hydrogen)."""
+    mod = (model or "").lower().strip()
+    return "gemini-3" in mod or "gemini-4" in mod or "hydrogen" in mod
+
+
+def _is_gemini_thinking_supported(model: str | None) -> bool:
+    """Return True if Gemini model supports thinkingConfig."""
+    return _is_gemini_budget_thinking_model(model) or _is_gemini_level_thinking_model(model)
+
+
+def _gemini_thinking_config(
+    model: str | None,
+    thinking_budget: int | None = None,
+    reasoning_effort: str | None = None,
+) -> dict[str, str | int] | None:
+    """Build Gemini thinkingConfig dict using thinkingLevel (3/4/Hydrogen) or thinkingBudget (2.5)."""
+    if _is_gemini_level_thinking_model(model):
+        if thinking_budget is not None and thinking_budget <= 0:
+            return None
+        effort = (reasoning_effort or "").lower().strip()
+        if effort in ("low", "medium", "high", "xhigh"):
+            return {"thinkingLevel": effort.upper()}
+        if thinking_budget is not None and thinking_budget > 0:
+            if thinking_budget <= 2048:
+                return {"thinkingLevel": "LOW"}
+            if thinking_budget <= 8192:
+                return {"thinkingLevel": "MEDIUM"}
+            if thinking_budget <= 16384:
+                return {"thinkingLevel": "HIGH"}
+            return {"thinkingLevel": "XHIGH"}
+        return None
+    if _is_gemini_budget_thinking_model(model) and thinking_budget is not None and thinking_budget >= 0:
+        return {"thinkingBudget": thinking_budget}
+    return None
+
+
+def _resolve_thinking(
+    thinking_budget: int | None = None,
+    reasoning_effort: str | None = None,
+    thinking: str | int | None = None,
+) -> tuple[int | None, str | None]:
+    budget = thinking_budget
+    effort = reasoning_effort
+    if thinking is not None:
+        if isinstance(thinking, int):
+            budget = thinking
+        elif isinstance(thinking, str):
+            val = thinking.strip()
+            if val.isdigit():
+                budget = int(val)
+            elif val.lower() in ("off", "none", "false", "0"):
+                return 0, None
+            elif val.lower() in ("low", "medium", "high", "xhigh"):
+                effort = val.lower()
+
+    if effort is not None:
+        effort = effort.lower().strip()
+        if effort in ("off", "none", "false", "0"):
+            return 0, None
+
+    if budget is not None and budget <= 0:
+        return 0, None
+
+    if effort is not None and budget is None:
+        effort_budget_map = {"low": 2048, "medium": 8192, "high": 16384, "xhigh": 32768}
+        budget = effort_budget_map.get(effort)
+
+    if budget is not None and effort is None:
+        if budget <= 2048:
+            effort = "low"
+        elif budget <= 8192:
+            effort = "medium"
+        elif budget <= 16384:
+            effort = "high"
+        else:
+            effort = "xhigh"
+
+    return budget, effort
+
+
 def _complete_anthropic(
     model: str,
     messages: list[dict[str, Any]],
     api_key: str,
     transport: Transport,
     tools: list[dict[str, Any]] | None = None,
+    thinking_budget: int | None = None,
 ) -> CompletionResult:
     payload: dict[str, Any] = {
         "model": model,
         "max_tokens": 4096,
         "messages": _messages_for_anthropic(messages),
     }
+    if thinking_budget is not None and thinking_budget > 0:
+        effective_budget = max(1024, int(thinking_budget))
+        payload["thinking"] = {"type": "enabled", "budget_tokens": effective_budget}
+        payload["max_tokens"] = max(payload.get("max_tokens", 4096), effective_budget + 1024)
+        if "temperature" in payload and payload["temperature"] != 1.0:
+            payload.pop("temperature", None)
     system = _system_from_messages(messages)
     if system:
         payload["system"] = system
@@ -578,8 +705,15 @@ def _complete_openai(
     transport: Transport,
     tools: list[dict[str, Any]] | None = None,
     provider: str = "openai",
+    reasoning_effort: str | None = None,
 ) -> CompletionResult:
     payload: dict[str, Any] = {"model": model, "messages": _messages_for_openai(messages)}
+    if (
+        provider == "openai"
+        and reasoning_effort in ("low", "medium", "high")
+        and _is_openai_reasoning_model(model)
+    ):
+        payload["reasoning_effort"] = reasoning_effort
     if tools:
         payload["tools"] = [
             {
@@ -593,11 +727,13 @@ def _complete_openai(
             for tool in tools
         ]
     body = json.dumps(payload).encode("utf-8")
-    auth_token = "local" if provider == "local" else (api_key or "local")
+    auth_token = "local" if provider == "local" else ("bifrost-local" if provider == "bifrost" and not api_key else (api_key or "local"))
     headers = {
         "content-type": "application/json",
         "authorization": f"Bearer {auth_token}",
     }
+    if provider == "bifrost" and api_key and api_key.startswith("sk-bf-"):
+        headers["x-bf-vk"] = api_key
     url = _openai_chat_url(provider)
     status, raw = transport(url, headers, body)
     if status != 200:
@@ -722,8 +858,13 @@ def _complete_gemini(
     api_key: str,
     transport: Transport,
     tools: list[dict[str, Any]] | None = None,
+    thinking_budget: int | None = None,
+    reasoning_effort: str | None = None,
 ) -> CompletionResult:
     payload: dict[str, Any] = {"contents": _gemini_contents(messages)}
+    thinking_cfg = _gemini_thinking_config(model, thinking_budget, reasoning_effort)
+    if thinking_cfg is not None:
+        payload["generationConfig"] = {"thinkingConfig": thinking_cfg}
     system = _system_from_messages(messages)
     if system:
         payload["systemInstruction"] = {"parts": [{"text": system}]}
@@ -822,13 +963,13 @@ def _iter_sse_events(chunks: Iterable[bytes]) -> Iterator[tuple[str, str]]:
         buffer += decoder.decode(bytes(chunk), final=False)
         while "\n" in buffer:
             line, buffer = buffer.split("\n", 1)
-            result = consume_line(line.removesuffix("\r"))
+            result = consume_line(line[:-1] if line.endswith("\r") else line)
             if result is not None:
                 yield result
 
     buffer += decoder.decode(b"", final=True)
     if buffer:
-        result = consume_line(buffer.removesuffix("\r"))
+        result = consume_line(buffer[:-1] if buffer.endswith("\r") else buffer)
         if result is not None:
             yield result
     result = consume_line("")
@@ -842,6 +983,8 @@ def _stream_request(
     messages: list[dict[str, Any]],
     api_key: str,
     tools: list[dict[str, Any]] | None = None,
+    thinking_budget: int | None = None,
+    reasoning_effort: str | None = None,
 ) -> tuple[str, dict[str, str], bytes]:
     headers = {"content-type": "application/json"}
     if provider == "anthropic":
@@ -851,6 +994,12 @@ def _stream_request(
             "messages": _messages_for_anthropic(messages),
             "stream": True,
         }
+        if thinking_budget is not None and thinking_budget > 0:
+            effective_budget = max(1024, int(thinking_budget))
+            payload["thinking"] = {"type": "enabled", "budget_tokens": effective_budget}
+            payload["max_tokens"] = max(payload.get("max_tokens", 4096), effective_budget + 1024)
+            if "temperature" in payload and payload["temperature"] != 1.0:
+                payload.pop("temperature", None)
         system = _system_from_messages(messages)
         if system:
             payload["system"] = system
@@ -865,13 +1014,19 @@ def _stream_request(
             ]
         headers.update({"x-api-key": api_key, "anthropic-version": "2023-06-01"})
         return _anthropic_messages_url(), headers, json.dumps(payload).encode("utf-8")
-    if provider in ("openai", "local"):
+    if provider in ("openai", "local", "bifrost"):
         payload = {
             "model": model,
             "messages": _messages_for_openai(messages),
             "stream": True,
             "stream_options": {"include_usage": True},
         }
+        if (
+            provider == "openai"
+            and reasoning_effort in ("low", "medium", "high")
+            and _is_openai_reasoning_model(model)
+        ):
+            payload["reasoning_effort"] = reasoning_effort
         if tools:
             payload["tools"] = [
                 {
@@ -884,10 +1039,15 @@ def _stream_request(
                 }
                 for tool in tools
             ]
-        auth_token = "local" if provider == "local" else (api_key or "local")
+        auth_token = "local" if provider == "local" else ("bifrost-local" if provider == "bifrost" and not api_key else (api_key or "local"))
         headers["authorization"] = f"Bearer {auth_token}"
+        if provider == "bifrost" and api_key and api_key.startswith("sk-bf-"):
+            headers["x-bf-vk"] = api_key
         return _openai_chat_url(provider), headers, json.dumps(payload).encode("utf-8")
     payload = {"contents": _gemini_contents(messages)}
+    thinking_cfg = _gemini_thinking_config(model, thinking_budget, reasoning_effort)
+    if thinking_cfg is not None:
+        payload["generationConfig"] = {"thinkingConfig": thinking_cfg}
     system = _system_from_messages(messages)
     if system:
         payload["systemInstruction"] = {"parts": [{"text": system}]}
@@ -917,6 +1077,9 @@ def stream_complete(
     transport: StreamTransport | None = None,
     tools: list[dict[str, Any]] | None = None,
     cancel_event: threading.Event | None = None,
+    thinking_budget: int | None = None,
+    reasoning_effort: str | None = None,
+    thinking: str | int | None = None,
 ) -> Iterator[str | CompletionResult]:
     """Yield text deltas and a completion with assembled native tool calls."""
     canonical = normalize_provider(provider) or (provider or "").lower().strip()
@@ -926,7 +1089,16 @@ def stream_complete(
         raise ProviderError(f"unsupported provider '{provider}'")
 
     resolved = _resolve_model(canonical, model)
-    url, headers, body = _stream_request(canonical, resolved, messages, api_key, tools)
+    budget, effort = _resolve_thinking(thinking_budget, reasoning_effort, thinking)
+    url, headers, body = _stream_request(
+        canonical,
+        resolved,
+        messages,
+        api_key,
+        tools,
+        thinking_budget=budget,
+        reasoning_effort=effort,
+    )
     if transport is None:
         status, response_body = _default_stream_transport(
             url, headers, body, cancel_event=cancel_event
@@ -1148,7 +1320,7 @@ def stream_complete(
                 )
             blocks.append(block)
         provider_message = {"role": "assistant", "content": blocks}
-    elif canonical in ("openai", "local"):
+    elif canonical in ("openai", "local", "bifrost"):
         native_calls = [openai_calls[index] for index in sorted(openai_calls)]
         for call in native_calls:
             function = call["function"]
@@ -1204,9 +1376,22 @@ def complete(
     api_key: str,
     transport: Transport | None = None,
     tools: list[dict[str, Any]] | None = None,
+    thinking_budget: int | None = None,
+    reasoning_effort: str | None = None,
+    thinking: str | int | None = None,
 ) -> str:
     """Run one provider completion. Does not print or log the API key."""
-    return complete_result(provider, model, messages, api_key, transport, tools).text
+    return complete_result(
+        provider,
+        model,
+        messages,
+        api_key,
+        transport,
+        tools,
+        thinking_budget=thinking_budget,
+        reasoning_effort=reasoning_effort,
+        thinking=thinking,
+    ).text
 
 
 def complete_result(
@@ -1216,6 +1401,9 @@ def complete_result(
     api_key: str,
     transport: Transport | None = None,
     tools: list[dict[str, Any]] | None = None,
+    thinking_budget: int | None = None,
+    reasoning_effort: str | None = None,
+    thinking: str | int | None = None,
 ) -> CompletionResult:
     """Run one non-streaming completion and retain provider usage when present."""
     canonical = normalize_provider(provider) or (provider or "").lower().strip()
@@ -1223,15 +1411,25 @@ def complete_result(
         raise ProviderError(
             "provider 'cursor' chat is not wired: no documented public chat endpoint to call"
         )
-    if canonical not in ("anthropic", "openai", "gemini", "local"):
+    if canonical not in ("anthropic", "openai", "gemini", "local", "bifrost"):
         raise ProviderError(f"unsupported provider '{provider}'")
 
     resolved = _resolve_model(canonical, model)
     xport = transport or _default_transport
+    budget, effort = _resolve_thinking(thinking_budget, reasoning_effort, thinking)
 
     if canonical == "anthropic":
-        return _complete_anthropic(resolved, messages, api_key, xport, tools)
-    if canonical in ("openai", "local"):
-        return _complete_openai(resolved, messages, api_key, xport, tools, provider=canonical)
-    return _complete_gemini(resolved, messages, api_key, xport, tools)
-
+        return _complete_anthropic(resolved, messages, api_key, xport, tools, thinking_budget=budget)
+    if canonical in ("openai", "local", "bifrost"):
+        return _complete_openai(
+            resolved, messages, api_key, xport, tools, provider=canonical, reasoning_effort=effort
+        )
+    return _complete_gemini(
+        resolved,
+        messages,
+        api_key,
+        xport,
+        tools,
+        thinking_budget=budget,
+        reasoning_effort=effort,
+    )

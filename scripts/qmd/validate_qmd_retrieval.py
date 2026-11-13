@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import shutil
 import statistics
@@ -15,13 +16,13 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT
-from setup_qmd_collections import resolve_collections
+from paths import REPO_ROOT as ROOT  # noqa: E402
+from setup_qmd_collections import resolve_collections  # noqa: E402
 
 EXPECTED_COLLECTIONS = [c[0] for c in resolve_collections(ROOT)]
 EXCLUDED_DIRS = ("change-history", "scratch")
@@ -294,7 +295,8 @@ def parse_json_stdout(stdout: str) -> object:
 
 def virt_to_rel(file_uri: str) -> str:
     path = file_uri.strip()
-    path = path.removeprefix("qmd://")
+    if path.startswith("qmd://"):
+        path = path[len("qmd://") :]
     return path.replace("\\", "/")
 
 
@@ -401,6 +403,8 @@ def run_search_mode(
     q = query_text or fixture.need
     if mode == "bm25":
         args = ["search", "--format", "json", "--min-score", str(min_score), "-n", str(n), q]
+    elif mode == "vsearch":
+        args = ["vsearch", "--format", "json", "--min-score", str(min_score), "-n", str(n), q]
     elif mode == "structured":
         qdoc = f"lex: {fixture.lex}\nvec: {fixture.vec}"
         args = [
@@ -594,9 +598,10 @@ def health_checks(qmd: list[str], indexed_files: list[str]) -> list[dict]:
     amb_list = amb_hits if isinstance(amb_hits, list) else []
     allowed_cites = (
         "routing/AGENTS.md",
-        "ai-tooling/skills/isolate-work/",
+        "ai-tooling/skills/",
         "ai-tooling/agents/",
-        "research/agent-harnesses/",
+        "research/",
+        "supporting/",
         "ai-tooling/memory/",
         "docs/",
     )
@@ -638,6 +643,16 @@ def health_checks(qmd: list[str], indexed_files: list[str]) -> list[dict]:
         "docs_index_current",
         docs_on_disk <= docs_indexed or docs_on_disk == docs_indexed,
         f"on_disk={sorted(docs_on_disk)} indexed={sorted(docs_indexed)} missing={sorted(docs_on_disk - docs_indexed)} extra={sorted(docs_indexed - docs_on_disk)}",
+    )
+    mg_code, mg_out, mg_err, _ = run_qmd(
+        qmd,
+        ["multi-get", "supporting/qmd/query-pattern.md,ai-tooling/skills/meta/isolate-work/SKILL.md", "--format", "json"],
+        timeout=30,
+    )
+    add(
+        "multi_get_functional",
+        mg_code == 0 and "supporting/qmd/query-pattern.md" in mg_out,
+        f"multi-get batch retrieval returned exit={mg_code}, response_bytes={len(mg_out)}",
     )
     return checks
 
@@ -737,6 +752,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--hybrid", action="store_true", help="Run slow hybrid queries")
     parser.add_argument("--skip-structured", action="store_true", default=True)
     parser.add_argument("--structured", action="store_true", help="Run slow structured queries")
+    parser.add_argument("--vsearch", action="store_true", help="Also evaluate vector search queries (qmd vsearch)")
     args = parser.parse_args(argv)
 
     qmd = resolve_qmd()
@@ -785,6 +801,20 @@ def main(argv: list[str] | None = None) -> int:
                     min_score=args.min_score,
                     n=args.n,
                     timeout=90,
+                )
+            )
+
+        if args.vsearch:
+            print(f"running {fixture.id}/vsearch...", flush=True)
+            runs.append(
+                run_search_mode(
+                    qmd,
+                    mode="vsearch",
+                    fixture=fixture,
+                    query_text=fixture.vec or fixture.need,
+                    min_score=args.min_score,
+                    n=args.n,
+                    timeout=30,
                 )
             )
 
@@ -908,9 +938,9 @@ def main(argv: list[str] | None = None) -> int:
     }
 
     payload = {
-        "generated_at_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "qmd": qmd if isinstance(qmd, str) else " ".join(qmd),
-        "index": "C:/home/developer/.cache/qmd/index.sqlite",
+        "index": str(Path.home() / ".cache" / "qmd" / "index.sqlite"),
         "min_score": args.min_score,
         "n": args.n,
         "trials": args.trials,

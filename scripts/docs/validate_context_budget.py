@@ -17,8 +17,8 @@ from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT
-from tool_output import estimate_tokens
+from paths import REPO_ROOT as ROOT  # noqa: E402
+from tool_output import estimate_tokens  # noqa: E402
 
 # Budget ceilings in characters (chars / 4 ~= tokens)
 BUDGET_CEILINGS: dict[str, int] = {

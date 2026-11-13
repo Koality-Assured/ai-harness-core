@@ -17,8 +17,8 @@ _SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_SCRIPTS / "docs"))
 sys.path.insert(0, str(_SCRIPTS / "_lib"))
 
-from paths import REPO_ROOT
-from validate_context_budget import (
+from paths import REPO_ROOT  # noqa: E402
+from validate_context_budget import (  # noqa: E402
     BUDGET_CEILINGS,
     NESTED_AGENTS_MAX_CHARS,
     check_context_budgets,

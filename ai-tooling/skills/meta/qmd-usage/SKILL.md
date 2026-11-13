@@ -2,7 +2,7 @@
 schema_version: "2.0.0"
 name: qmd-usage
 description: >-
-  Query this repo with qmd (BM25 search then get; hybrid query only when empty).
+  Query this repo with qmd (BM25 search, dense vsearch, structured query, and multi-get).
   Use when discovering docs, routing content, or the user mentions qmd search,
   collections, or retrieval. Do not use for embedding-cost experiments
   (qmd-efficiency) or rewriting corpus style (doc-builder).
@@ -47,11 +47,16 @@ High for discovery in this repo. **Use is Critical** in root `AGENTS.md` (all ag
 2. Before each retrieval, fetch `origin/main` from the repository root. Confirm the selected QMD checkout has no tracked or untracked changes; its ignored `.qmd/index.sqlite` is expected and must be preserved. If `HEAD` is behind, verify it is an ancestor of `origin/main` and advance the selected checkout with `git -C "<qmd-path>" merge --ff-only origin/main`. If dirty, diverged, or unable to fast-forward, leave it untouched, create another dedicated QMD path, and explicitly update the repository-common selector so every task worktree uses the same path. Never auto-select another candidate, reset/remove another checkout, or fall back to a task worktree.
 3. The tracked `.qmd/index.yml` is present in a fresh worktree; QMD creates the ignored SQLite index there. Do not copy/overwrite the database or change collection configuration. If the tracked config is unavailable, report the setup gap. Do not remove the QMD checkout while ignored index data remains.
 4. Run `qmd update` from the persistent QMD root before retrieval. This incrementally indexes changed or removed corpus pages; it is routine local freshness maintenance and needs no approval. Do not use `qmd update --pull`.
-5. Run `qmd search --format json --min-score 0.5 -n 5 "<need>"` then `qmd get` for unique files, from that same root.
-6. Known area: add `-c docs` (or other collection) so `results/` does not leak.
-7. Use `qmd query` only when BM25 is empty or the need is conceptual (slow).
-8. Avoid `&` in queries (`mitre attack` not `MITRE ATT&CK`).
-9. Collection setup or reconfiguration is separate from `qmd update`: use its preflight and obtain the required explicit approval before `python scripts/qmd/setup_qmd_collections.py --apply`. Never reconfigure collections just to refresh retrieval.
+5. Select the right retrieval primitive from the QMD suite:
+   - `qmd search`: BM25 lexical keyword search (default first-hop for exact terms, symbols, filenames).
+   - `qmd vsearch`: Dense vector similarity search (conceptual/semantic search without LLM reranker penalty).
+   - `qmd query`: Hybrid search with structured query document (`intent:`, `lex:`, `vec:`, `hyde:`) for complex or ambiguous intent.
+   - `qmd multi-get`: Batch fetch candidate documents (`#doc1,#doc2` or globs) in a single atomic call with `-l` line capping.
+6. Known area: add `-c <collection>` (e.g. `-c docs`) so `results/` does not leak into ranking.
+7. Avoid `&` in queries (`mitre attack` not `MITRE ATT&CK`).
+8. Anti-Fallback Mandate: Never fall back to recursive shell greps (`Get-ChildItem -Recurse`, `Select-String`, `git grep`) unless QMD returns zero candidates or unindexed scratch files are targeted.
+9. Lifecycle Maintenance: Run `qmd update` before lookup; run `qmd embed` and `qmd cleanup` when corpus additions/modifications land on `main`.
+10. Collection setup or reconfiguration is separate from `qmd update`: use its preflight and obtain the required explicit approval before `python scripts/qmd/setup_qmd_collections.py --apply`. Never reconfigure collections just to refresh retrieval.
 
 ## Dry run
 

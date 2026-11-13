@@ -8,6 +8,7 @@ Run: python -m unittest scripts.tests.test_benchmarks -v
 
 from __future__ import annotations
 
+import shutil
 import sys
 import unittest
 from pathlib import Path
@@ -17,17 +18,20 @@ sys.path.insert(0, str(_SCRIPTS))
 sys.path.insert(0, str(_SCRIPTS / "benchmarks"))
 sys.path.insert(0, str(_SCRIPTS / "_lib"))
 
-from benchmark_agent_fleet import benchmark_single_agent
-from benchmark_retrieval import evaluate_retrieval
-from benchmark_task_eval import evaluate_task, load_task_suite
-from benchmark_tool_efficiency import TOOL_FIXTURES, benchmark_fixture
-from estimate_agent_costs import (
+from paths import REPO_ROOT as ROOT  # noqa: E402
+from estimate_agent_costs import (  # noqa: E402
     DEFAULT_PRICING_TABLE,
+    PROVIDER_PRICING,
     compute_trajectory_cost,
     estimate_agent_and_skill,
     estimate_tokens,
+    inspect_agent_tokens,
 )
-from paths import REPO_ROOT as ROOT
+from benchmark_agent_fleet import benchmark_single_agent  # noqa: E402
+from benchmark_retrieval import evaluate_retrieval, fallback_search  # noqa: E402
+from benchmark_tool_efficiency import benchmark_fixture, TOOL_FIXTURES  # noqa: E402
+from benchmark_task_eval import evaluate_task, load_task_suite  # noqa: E402
+from run_benchmark_suite import run_benchmark_script  # noqa: E402
 
 
 class BenchmarkSuiteUnitTests(unittest.TestCase):
@@ -36,6 +40,14 @@ class BenchmarkSuiteUnitTests(unittest.TestCase):
         tokens = estimate_tokens(text)
         self.assertGreater(tokens, 0)
         self.assertLessEqual(tokens, len(text))
+
+    def test_hydrogen_pricing_presets(self) -> None:
+        h = PROVIDER_PRICING["google"]["gemini-4-hydrogen"]
+        self.assertEqual(h["input_per_m"], 1.50)
+        self.assertEqual(h["cached_input_per_m"], 0.075)
+        self.assertEqual(h["output_per_m"], 7.50)
+        self.assertIn("Gemini 4 Hydrogen", DEFAULT_PRICING_TABLE["standard"]["description"])
+        self.assertEqual(DEFAULT_PRICING_TABLE["standard"]["input_per_m"], 1.50)
 
     def test_trajectory_cost_and_kv_caching_savings(self) -> None:
         traj = compute_trajectory_cost(
@@ -68,7 +80,7 @@ class BenchmarkSuiteUnitTests(unittest.TestCase):
         all_skills = list((ROOT / "ai-tooling" / "skills").rglob("SKILL.md"))
         res = benchmark_single_agent(
             agent_path=agent_path,
-            known_agent_ids={"benchmark-agent", "router", "script-ops", "artifact-agent", "router-maintenance"},
+            known_agent_ids={"benchmark-agent", "router", "harness-operator", "artifact-agent"},
             all_skills=all_skills,
             turns_to_simulate=5,
         )
@@ -77,6 +89,10 @@ class BenchmarkSuiteUnitTests(unittest.TestCase):
         self.assertTrue(res["delegation_targets_valid"])
         self.assertGreaterEqual(res["owned_skills_count"], 1)
 
+    @unittest.skipIf(
+        shutil.which("qmd") is None,
+        "requires the qmd CLI and an indexed corpus (not installed on CI runners)",
+    )
     def test_retrieval_benchmark_precision_and_mrr(self) -> None:
         queries = [
             {

@@ -25,7 +25,7 @@ allowed_tools:
 - read_file
 delegation_targets:
 - github-ops
-- router-maintenance
+- harness-operator
 prohibitions:
 - create commits
 - create PRs

@@ -69,6 +69,13 @@ class DomainBrandingSpec:
     chips: list[str] = field(default_factory=list)
     ci_workflow: str = "ci.yml"
     python_version: str | None = "3.11+"
+    go_version: str | None = None
+    node_version: str | None = None
+    typescript_version: str | None = None
+    powershell_version: str | None = None
+    action_type: str | None = None
+    protocol: str | None = None
+    security_badge: str | None = None
     license_type: str = "MIT"
     visibility: str = "public"
 
@@ -342,6 +349,171 @@ DOMAIN_PRESETS: dict[str, dict[str, Any]] = {
         "ci_workflow": "ci.yml",
         "python_version": None,
     },
+    "llm-vault-mcp": {
+        "title": "LLM Vault MCP",
+        "tagline": "Model Context Protocol Server for Zero-Context Secret Injection & Local Envelope Decryption",
+        "primary_color": "#14B8A6",
+        "secondary_color": "#6366F1",
+        "accent_color": "#F59E0B",
+        "motif": "socket",
+        "category_label": "KOALITY-ASSURED • PROTOCOL SERVER",
+        "chips": ["Model Context Protocol", "Zero-Context Injection", "Stream Scrubber", "Ephemeral Leasing"],
+        "ci_workflow": "ci.yml",
+        "python_version": None,
+        "node_version": "22+",
+        "typescript_version": "5.x",
+        "protocol": "MCP",
+        "domain": "mcp",
+    },
+    "llm-vault": {
+        "title": "LLM Vault",
+        "tagline": "Zero-Knowledge Secrets Management Platform for Autonomous AI Agents and Human Operators",
+        "primary_color": "#00F0FF",
+        "secondary_color": "#7C3AED",
+        "accent_color": "#10B981",
+        "motif": "vault",
+        "category_label": "KOALITY-ASSURED • ZERO-KNOWLEDGE PLATFORM",
+        "chips": ["W3C WebCrypto", "Zero-Context MCP", "Workload Identity", "SSH Agent & ESO"],
+        "ci_workflow": "ci.yml",
+        "python_version": None,
+        "node_version": "22+",
+        "typescript_version": "5.x",
+        "security_badge": "Zero--Knowledge",
+        "domain": "security",
+    },
+    "krabs-against-security-cards": {
+        "title": "Krabs Against Security Cards",
+        "tagline": "Canonical Schemas, 80-Card Incident Response Catalog and Headless Art Manifest",
+        "primary_color": "#EF4444",
+        "secondary_color": "#00F0FF",
+        "accent_color": "#F59E0B",
+        "motif": "cards",
+        "category_label": "KOALITY-ASSURED • TABLETOP SECURITY",
+        "chips": ["80 Canonical Cards", "MITRE ATT&CK & NIST", "300 DPI Print Assets", "Draft-07 Schemas"],
+        "license_type": "CC-BY-SA-4.0",
+        "python_version": "3.11+",
+        "ci_workflow": "ci.yml",
+        "domain": "tabletop-security",
+    },
+        "koality-image-find": {
+        "title": "Koality Image Find",
+        "tagline": "Ultra-Fast Full-Drive Graphics Image and Video Thumbnail Viewer & Visual Deduplication Engine",
+        "primary_color": "#00F0FF",
+        "secondary_color": "#7C3AED",
+        "accent_color": "#10B981",
+        "motif": "aperture",
+        "category_label": "KOALITY-ASSURED • MEDIA ENGINE",
+        "chips": ["Multi-Threaded Win32", "In-Memory Columnar Index", "Visual dHash & MIH", "Split Curtain Inspector"],
+        "ci_workflow": "ci.yml",
+        "python_version": None,
+        "go_version": "1.23+ (CGO=0)",
+        "license_type": "MIT",
+        "domain": "desktop-media",
+    },
+    "krabs-against-security-web": {
+        "title": "Krabs Against Security",
+        "tagline": "Web-Native Cybersecurity Incident Response Card Game & Print-and-Play Studio",
+        "primary_color": "#00F0FF",
+        "secondary_color": "#EF4444",
+        "accent_color": "#F59E0B",
+        "motif": "cards",
+        "category_label": "KOALITY-ASSURED • WEB APPLICATION",
+        "chips": ["Tabletop Simulator", "Print-and-Play Studio", "80 Illustrated Cards", "Vite + React 18"],
+        "license_type": "MIT",
+        "python_version": None,
+        "node_version": "20+",
+        "typescript_version": "5.x",
+        "ci_workflow": "deploy.yml",
+        "domain": "web-game",
+    },
+    "secops-log-collector": {
+        "title": "SecOps Log Collector",
+        "tagline": "Serverless Event-Driven Telemetry Ingest Engine: Okta, CrowdStrike, Datadog & GitHub to LogScale, S3 & OS",
+        "primary_color": "#0284C7",
+        "secondary_color": "#10B981",
+        "accent_color": "#F59E0B",
+        "motif": "telemetry",
+        "category_label": "KOALITY-ASSURED • TELEMETRY INGESTION",
+        "chips": ["EventBridge Ingest", "Multi-SaaS Logs", "LogScale & S3", "Pulumi & OpenTofu"],
+        "ci_workflow": "ci.yml",
+        "python_version": "3.11+",
+        "license_type": "Apache-2.0",
+        "domain": "telemetry-ingest",
+    },
+    "PowerShell-PKI-Tools": {
+        "title": "PowerShell PKI Tools",
+        "tagline": "Declarative Multi-Tier ADCS PKI as Code, NDES with gMSA, CSR Validation & Trust Distribution",
+        "primary_color": "#0284C7",
+        "secondary_color": "#10B981",
+        "accent_color": "#F59E0B",
+        "motif": "certificate",
+        "category_label": "KOALITY-ASSURED • PKI AS CODE",
+        "chips": ["Multi-Tier DSC CAs", "Offline Root CA", "NDES with gMSA", "PKCS#10 & TLS Probe"],
+        "ci_workflow": "ci.yml",
+        "python_version": None,
+        "powershell_version": "7.4+",
+        "license_type": "Apache-2.0",
+        "domain": "pki-tools",
+    },
+    "powershell-pki-tools": {
+        "title": "PowerShell PKI Tools",
+        "tagline": "Declarative Multi-Tier ADCS PKI as Code, NDES with gMSA, CSR Validation & Trust Distribution",
+        "primary_color": "#0284C7",
+        "secondary_color": "#10B981",
+        "accent_color": "#F59E0B",
+        "motif": "certificate",
+        "category_label": "KOALITY-ASSURED • PKI AS CODE",
+        "chips": ["Multi-Tier DSC CAs", "Offline Root CA", "NDES with gMSA", "PKCS#10 & TLS Probe"],
+        "ci_workflow": "ci.yml",
+        "python_version": None,
+        "powershell_version": "7.4+",
+        "license_type": "Apache-2.0",
+        "domain": "pki-tools",
+    },
+    "trusted-signing-action": {
+        "title": "Trusted Signing Action",
+        "tagline": "Reusable GitHub Composite Action for Microsoft Azure Trusted Signing with Passwordless OIDC",
+        "primary_color": "#0284C7",
+        "secondary_color": "#10B981",
+        "accent_color": "#38BDF8",
+        "motif": "shield",
+        "category_label": "KOALITY-ASSURED • ZERO-CREDENTIAL CODE SIGNING",
+        "chips": ["Passwordless OIDC", "Azure Trusted Sign", "Authenticode CI", "Zero Credentials"],
+        "ci_workflow": "ci.yml",
+        "python_version": None,
+        "action_type": "Composite",
+        "license_type": "Apache-2.0",
+        "domain": "trusted-signing",
+    },
+    "powershell-scripts": {
+        "title": "PowerShell Scripts",
+        "tagline": "Production-Grade PowerShell 7+ Automation for Active Directory Threat Hunting & Security Hardening",
+        "primary_color": "#00ADD8",
+        "secondary_color": "#10B981",
+        "accent_color": "#F59E0B",
+        "motif": "terminal",
+        "category_label": "KOALITY-ASSURED • WINDOWS & AD AUTOMATION",
+        "chips": ["AD DCSync Audit", "SCHANNEL Hardening", "Local Admin Audit", "PowerShell 7+"],
+        "ci_workflow": "ci.yml",
+        "python_version": None,
+        "powershell_version": "7.4+",
+        "license_type": "Apache-2.0",
+        "domain": "powershell-scripts",
+    },
+    "backdoors-and-breaches-bot": {
+        "title": "Backdoors & Breaches Discord Bot",
+        "tagline": "Interactive Incident Response Tabletop Simulator & Card Game Bot for Discord",
+        "primary_color": "#8B5CF6",
+        "secondary_color": "#EC4899",
+        "accent_color": "#F59E0B",
+        "motif": "cards",
+        "category_label": "KOALITY-ASSURED • DISCORD BOT",
+        "chips": ["Incident Response", "B&B Tabletop", "571 Cards Indexed", "Dockerized"],
+        "ci_workflow": "ci.yml",
+        "python_version": "3.10+",
+        "license_type": "MIT",
+        "domain": "tabletop-security",
+    },
 }
 
 
@@ -357,6 +529,9 @@ def _title_from_name(name: str) -> str:
         "Iac": "IaC",
         "Wcag": "WCAG",
         "Api": "API",
+        "Pki": "PKI",
+        "Powershell": "PowerShell",
+        "Secops": "SecOps",
     }
     for old, new in replacements.items():
         titled = re.sub(rf"\b{old}\b", new, titled)
@@ -379,7 +554,7 @@ def get_domain_spec(
                 break
 
     base = DOMAIN_PRESETS.get(preset_key, {})
-    resolved_domain = domain if domain != "none" else (preset_key if preset_key in DOMAIN_PRESETS else "none")
+    resolved_domain = domain if domain != "none" else base.get("domain", preset_key if preset_key in DOMAIN_PRESETS else "none")
     title = overrides.get("title") or base.get("title") or _title_from_name(name)
     tagline = (
         overrides.get("tagline")
@@ -413,6 +588,13 @@ def get_domain_spec(
         chips=chips,
         ci_workflow=overrides.get("ci_workflow") or base.get("ci_workflow", "ci.yml"),
         python_version=py_version,
+        go_version=overrides.get("go_version") or base.get("go_version"),
+        node_version=overrides.get("node_version") or base.get("node_version"),
+        typescript_version=overrides.get("typescript_version") or base.get("typescript_version"),
+        powershell_version=overrides.get("powershell_version") or base.get("powershell_version"),
+        action_type=overrides.get("action_type") or base.get("action_type"),
+        protocol=overrides.get("protocol") or base.get("protocol"),
+        security_badge=overrides.get("security_badge") or base.get("security_badge"),
         license_type=overrides.get("license_type") or base.get("license_type", "MIT"),
         visibility=overrides.get("visibility") or base.get("visibility", "public"),
     )
@@ -731,6 +913,48 @@ def _render_motif_paths(motif: str, p: str, s: str, a: str) -> str:
     <path d="M 312 270 L 324 282 L 312 294" fill="none" stroke="{p}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
     <line x1="246" y1="282" x2="266" y2="282" stroke="{s}" stroke-width="3" stroke-linecap="round" />
         """
+    elif motif == "certificate":
+        # PKI X.509 Certificate and Cryptographic Seal
+        return f"""
+    <!-- X.509 Certificate & Cryptographic Seal Motif -->
+    <!-- Certificate Parchment Sheet -->
+    <rect x="176" y="145" width="160" height="210" rx="10" fill="#0B0F19" stroke="{p}" stroke-width="5" />
+    <!-- Certificate Header Bar -->
+    <line x1="200" y1="180" x2="312" y2="180" stroke="{s}" stroke-width="4" stroke-linecap="round" />
+    <!-- Subject / Public Key Details Lines -->
+    <line x1="200" y1="205" x2="280" y2="205" stroke="{p}" stroke-width="3" stroke-linecap="round" />
+    <line x1="200" y1="225" x2="295" y2="225" stroke="{s}" stroke-width="2.5" stroke-linecap="round" />
+    <line x1="200" y1="245" x2="265" y2="245" stroke="{s}" stroke-width="2.5" stroke-linecap="round" />
+    <!-- Cryptographic Wax Seal & Ribbons -->
+    <circle cx="256" cy="295" r="24" fill="#0F172A" stroke="{a}" stroke-width="4" />
+    <circle cx="256" cy="295" r="14" fill="{a}" opacity="0.85" />
+    <path d="M 246 315 L 240 345 L 252 335 L 260 345 L 256 317" fill="{a}" />
+    <!-- Keyhole / Trust Check in Seal -->
+    <circle cx="256" cy="292" r="4" fill="#FFFFFF" />
+    <line x1="256" y1="294" x2="256" y2="301" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" />
+        """
+    elif motif == "aperture":
+        # Camera Lens Aperture & Visual Viewfinder
+        return f"""
+    <!-- Camera Lens Aperture & Visual Viewfinder Motif -->
+    <circle cx="256" cy="256" r="95" fill="none" stroke="{p}" stroke-width="5" />
+    <circle cx="256" cy="256" r="82" fill="none" stroke="{s}" stroke-width="2" stroke-dasharray="16 8" opacity="0.7" />
+    <!-- Aperture Blades -->
+    <polygon points="256,180 295,230 240,225" fill="{p}" opacity="0.85" />
+    <polygon points="310,215 315,280 270,250" fill="{s}" opacity="0.85" />
+    <polygon points="305,290 260,325 255,270" fill="{a}" opacity="0.85" />
+    <polygon points="256,332 217,282 272,287" fill="{p}" opacity="0.85" />
+    <polygon points="202,297 197,232 242,262" fill="{s}" opacity="0.85" />
+    <polygon points="207,222 252,187 257,242" fill="{a}" opacity="0.85" />
+    <!-- Center Iris Opening -->
+    <circle cx="256" cy="256" r="32" fill="#0B0F19" stroke="{p}" stroke-width="3" />
+    <circle cx="256" cy="256" r="12" fill="#FFFFFF" />
+    <!-- Outer Viewfinder Corner Brackets -->
+    <path d="M 170 190 V 170 H 190" fill="none" stroke="{a}" stroke-width="3" stroke-linecap="round" />
+    <path d="M 322 170 H 342 V 190" fill="none" stroke="{a}" stroke-width="3" stroke-linecap="round" />
+    <path d="M 170 322 V 342 H 190" fill="none" stroke="{a}" stroke-width="3" stroke-linecap="round" />
+    <path d="M 322 342 H 342 V 322" fill="none" stroke="{a}" stroke-width="3" stroke-linecap="round" />
+        """
     else:
         # Default: Cybernetic routing compass & hexagram nexus
         return f"""
@@ -836,6 +1060,7 @@ def generate_vector_banner(spec: DomainBrandingSpec) -> str:
     disp_title = _xml_escape(spec.title.upper())
     escaped_category = _xml_escape(spec.category_label)
     escaped_tagline = _xml_escape(spec.tagline)
+    category_w = max(int(len(spec.category_label) * 7.8) + 36, 280)
 
     # Build chips XML
     chips_xml = []
@@ -916,7 +1141,7 @@ def generate_vector_banner(spec: DomainBrandingSpec) -> str:
   <!-- Right: Typography & Capability Badges -->
   <g transform="translate(420, 100)">
     <!-- Overline Category Capsule -->
-    <rect x="0" y="0" width="310" height="26" rx="13" fill="#1E293B" stroke="#334155" stroke-width="1" />
+    <rect x="0" y="0" width="{category_w}" height="26" rx="13" fill="#1E293B" stroke="#334155" stroke-width="1" />
     <circle cx="14" cy="13" r="5" fill="{p}" filter="url(#glow)" />
     <text x="28" y="17" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" letter-spacing="1.5">{escaped_category}</text>
 
@@ -939,7 +1164,7 @@ def generate_vector_banner(spec: DomainBrandingSpec) -> str:
 def validate_svg_xml(content: str) -> bool:
     """Empirically parse SVG content to ensure valid XML syntax."""
     try:
-        ET.fromstring(content)  # nosec B314 - purely local SVG generation
+        ET.fromstring(content)
         return True
     except ET.ParseError:
         return False
@@ -962,9 +1187,58 @@ def generate_live_badges(spec: DomainBrandingSpec) -> list[str]:
     # License Badge
     if spec.license_type.upper() == "MIT":
         badges.append("[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)")
+    elif "CC" in spec.license_type.upper():
+        badges.append("[![License: CC BY-SA 4.0](https://img.shields.io/badge/License-CC_BY--SA_4.0-lightgrey.svg)](LICENSE)")
+    elif "APACHE" in spec.license_type.upper():
+        badges.append("[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)")
     else:
         badges.append(
             f"[![License: {spec.license_type}](https://img.shields.io/badge/License-{spec.license_type}-red.svg)](LICENSE)"
+        )
+
+    # Protocol Badge (e.g. MCP)
+    if spec.protocol:
+        badges.append(
+            f"[![Protocol: {spec.protocol}](https://img.shields.io/badge/protocol-{spec.protocol}-orange.svg)](https://modelcontextprotocol.io/)"
+        )
+
+    # Node.js Badge
+    if spec.node_version:
+        badges.append(
+            f"[![Node.js {spec.node_version}](https://img.shields.io/badge/node-{spec.node_version}-green.svg)](https://nodejs.org/)"
+        )
+
+    # TypeScript Badge
+    if spec.typescript_version:
+        badges.append(
+            f"[![TypeScript {spec.typescript_version}](https://img.shields.io/badge/typescript-{spec.typescript_version}-blue.svg)](https://www.typescriptlang.org/)"
+        )
+
+    # PowerShell Runtime Badge
+    if getattr(spec, "powershell_version", None):
+        clean_ps = spec.powershell_version.replace("+", "%2B").replace(" ", "_")
+        badges.append(
+            f"[![PowerShell {spec.powershell_version}](https://img.shields.io/badge/PowerShell-{clean_ps}-5391FE.svg)](https://github.com/PowerShell/PowerShell)"
+        )
+
+    # GitHub Action Badge
+    if getattr(spec, "action_type", None):
+        clean_act = spec.action_type.replace(" ", "_")
+        badges.append(
+            f"[![GitHub Action: {spec.action_type}](https://img.shields.io/badge/GitHub_Action-{clean_act}-2088FF.svg)](action.yml)"
+        )
+
+    # Security Badge
+    if spec.security_badge:
+        badges.append(
+            f"[![Security: {spec.security_badge}](https://img.shields.io/badge/security-{spec.security_badge}-purple.svg)](#cryptographic-design)"
+        )
+
+    # Go Runtime Badge (only when go_version is set)
+    if getattr(spec, "go_version", None):
+        clean_go = spec.go_version.replace(" ", "_")
+        badges.append(
+            f"[![Go {spec.go_version}](https://img.shields.io/badge/Go-{clean_go}-00ADD8.svg)](go.mod)"
         )
 
     # Language / Python Runtime Badge (only when python_version is set)
@@ -1027,7 +1301,7 @@ def harden_pyproject_toml_content(content: str) -> str:
     This function configures `[tool.setuptools] packages = []` or explicit exclusions to
     prevent package discovery from failing pip install.
     """
-    if "[tool.setuptools]" in content:
+    if "[tool.setuptools" in content:
         # Check if packages or find is already specified
         if "packages" in content or "find" in content:
             return content
@@ -1081,6 +1355,7 @@ def beautify_repository(
     org: str = DEFAULT_ORG,
     dry_run: bool = False,
     update_readme: bool = True,
+    force: bool = False,
 ) -> dict[str, Any]:
     """Execute complete repository beautification, branding, and hardening."""
     repo_path = repo_dir.resolve()
@@ -1117,13 +1392,21 @@ def beautify_repository(
             if readme_path.exists():
                 existing_text = readme_path.read_text(encoding="utf-8")
                 # If existing README already has a hero block or title, inject hero cleanly
-                if not existing_text.startswith('<div align="center">'):
-                    # Strip leading top-level header if present
-                    clean_body = re.sub(r"^#\s+[^\n]+\n+", "", existing_text).lstrip()
-                    # Strip any immediate badge lines right below the old title
-                    clean_body = re.sub(r"^(?:\[\!\[[^\]]+\]\([^\)]+\)\]\([^\)]+\)|<a\s+href=[^>]+>.*?</a>|\s*)+\n+", "", clean_body, flags=re.MULTILINE).lstrip()
-                    # If clean_body starts with a horizontal rule, strip it
-                    clean_body = re.sub(r"^---\s*\n+", "", clean_body).lstrip()
+                if not existing_text.startswith('<div align="center">') or force:
+                    if existing_text.startswith('<div align="center">'):
+                        hero_end = re.search(r"</div>\s*\n+---\s*\n*", existing_text)
+                        clean_body = existing_text[hero_end.end():].lstrip() if hero_end else existing_text
+                    else:
+                        clean_body = re.sub(r"^#\s+[^\n]+\n+", "", existing_text).lstrip()
+                        body_lines = clean_body.splitlines()
+                        skip_idx = 0
+                        while skip_idx < len(body_lines):
+                            stripped = body_lines[skip_idx].strip()
+                            if not stripped or stripped.startswith("[![") or stripped.startswith("<a href=") or stripped.startswith("---"):
+                                skip_idx += 1
+                            else:
+                                break
+                        clean_body = "\n".join(body_lines[skip_idx:]).lstrip()
                     new_text = hero_header + "\n" + clean_body
                     readme_path.write_text(new_text, encoding="utf-8")
                     files_written.append("README.md")
@@ -1182,9 +1465,15 @@ def main() -> int:
     )
     parser.add_argument(
         "--domain",
+        "--preset",
         type=str,
         default="none",
-        help="Domain classification (legal, ui-ux, financial, game-dev, art, inventory, etc.).",
+        help="Domain classification or preset (legal, ui-ux, financial, game-dev, art, inventory, portfolio, etc.).",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Force overwrite existing branding assets and headers.",
     )
     parser.add_argument(
         "--org",
@@ -1232,6 +1521,7 @@ def main() -> int:
             domain=args.domain,
             org=args.org,
             dry_run=args.dry_run,
+            force=args.force,
         )
         if args.json:
             print(json.dumps(res, indent=2))
@@ -1250,4 +1540,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

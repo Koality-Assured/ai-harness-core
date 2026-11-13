@@ -77,7 +77,7 @@ python scripts/cost-layers/extract_ast_facts.py --target "supporting/powershell"
 ### Pattern F: Workspace vs Artifact tool boundaries (`write_to_file`)
 
 Antigravity's `write_to_file` tool strictly differentiates brain artifacts from workspace files:
-- When writing workspace code, tests, or documentation under `[REPO_ROOT]/`, **omit `ArtifactMetadata` entirely**.
+- When writing workspace code, tests, or documentation under `<repo-root>/`, **omit `ArtifactMetadata` entirely**.
 - Supplying `ArtifactMetadata` to a workspace path triggers an `invalid_args: not a valid artifact path` error because `ArtifactMetadata` is reserved exclusively for the host brain artifact directory (`<appDataDir>\brain\<conversation-id>`).
 
 ### Pattern G: CLI subcommand flags & task worktrees

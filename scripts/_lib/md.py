@@ -81,13 +81,15 @@ def parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
     if not text.startswith("---"):
         return {}, text
     rest = text[3:]
-    rest = rest.removeprefix("\n")
+    if rest.startswith("\n"):
+        rest = rest[1:]
     end = rest.find("\n---")
     if end == -1:
         return {}, text
     raw = rest[:end]
     body = rest[end + 4 :]
-    body = body.removeprefix("\n")
+    if body.startswith("\n"):
+        body = body[1:]
     if yaml is not None:
         try:
             parsed = yaml.safe_load(raw)

@@ -12,29 +12,31 @@ import re
 import shutil
 import subprocess
 import sys
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT
-from tool_output import format_tool_execution
+from paths import REPO_ROOT as ROOT  # noqa: E402
+from tool_output import format_tool_execution  # noqa: E402
 
 
-def prune_old_baselines(combined_root: Path, retain_count: int = 3) -> list[str]:
+def prune_old_baselines(combined_root: Path, retain_count: int = 3, exclude: Path | None = None) -> list[str]:
     """Prune older dated run directories under results/cost-layers/combined, retaining the most recent N."""
-    if not combined_root.is_dir() or retain_count <= 0:
+    if not combined_root.is_dir() or retain_count < 0:
         return []
     dated_dirs = []
     for d in combined_root.iterdir():
         if d.is_dir() and re.match(r"^\d{4}-\d{2}-\d{2}$", d.name):
+            if exclude and d.resolve() == exclude.resolve():
+                continue
             dated_dirs.append(d)
     dated_dirs.sort(key=lambda p: p.name)
     removed = []
-    if len(dated_dirs) > retain_count:
-        to_delete = dated_dirs[:-retain_count]
-        for d in to_delete:
-            shutil.rmtree(d, ignore_errors=True)
+    to_delete = dated_dirs if retain_count == 0 else (dated_dirs[:-retain_count] if len(dated_dirs) > retain_count else [])
+    for d in to_delete:
+        shutil.rmtree(d, ignore_errors=True)
+        if not d.exists():
             removed.append(d.name)
     return removed
 
@@ -75,6 +77,11 @@ def run_script(script: str, extra: list[str]) -> tuple[int, dict]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Run without modifying results/ or pruning historical baselines; output defaults to scratch/tmp-cost-layers-dry-run",
+    )
+    parser.add_argument(
         "--out",
         default=None,
         help=(
@@ -100,6 +107,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--hybrid", action="store_true", help="Also run slow hybrid qmd query")
     parser.add_argument("--skip-structured", action="store_true", default=True)
     parser.add_argument("--structured", action="store_true", help="Also run slow structured query")
+    parser.add_argument("--vsearch", action="store_true", help="Also run vector search (vsearch) evaluation")
     parser.add_argument("--skip-qmd", action="store_true")
     parser.add_argument("--skip-headroom", action="store_true")
     parser.add_argument("--skip-ast-grep", action="store_true")
@@ -107,17 +115,22 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--skip-webfetch", action="store_true", help="Skip local webfetch distillation benchmark")
     args = parser.parse_args(argv)
 
-    today = datetime.now(UTC).strftime("%Y-%m-%d")
-    out_rel = args.out or f"results/cost-layers/combined/{today}"
-    out = ROOT / out_rel
-    out.mkdir(parents=True, exist_ok=True)
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if args.dry_run:
+        out_rel = args.out or f"scratch/tmp-cost-layers-dry-run/{today}"
+    else:
+        out_rel = args.out or f"results/cost-layers/combined/{today}"
+    out_path = Path(out_rel)
+    out = (ROOT / out_path).resolve() if not out_path.is_absolute() else out_path.resolve()
+    # Automatically prune older baselines only when not dry-run and targeting results/cost-layers/combined
+    combined_root = (ROOT / "results" / "cost-layers" / "combined").resolve()
+    if not args.dry_run and out.parent == combined_root:
+        if combined_root.is_dir():
+            pruned = prune_old_baselines(combined_root, retain_count=args.retain_count, exclude=out)
+            if pruned:
+                print(f"Pruned {len(pruned)} older baseline run(s): {', '.join(pruned)}", flush=True)
 
-    # Automatically prune older baselines to maintain retention policy (default: 3)
-    combined_root = ROOT / "results" / "cost-layers" / "combined"
-    if combined_root.is_dir():
-        pruned = prune_old_baselines(combined_root, retain_count=args.retain_count)
-        if pruned:
-            print(f"Pruned {len(pruned)} older baseline run(s): {', '.join(pruned)}", flush=True)
+    out.mkdir(parents=True, exist_ok=True)
 
     qmd_dir = out / "qmd"
     hr_dir = out / "headroom"
@@ -126,7 +139,7 @@ def main(argv: list[str] | None = None) -> int:
     wf_dir = out / "webfetch"
 
     results: dict = {
-        "generated_at_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "trials_count": args.trials,
         "qmd": None,
         "headroom": None,
@@ -138,13 +151,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.skip_qmd:
         extra = [
-            "--out", str(qmd_dir.relative_to(ROOT)).replace("\\", "/"),
+            "--out", str(qmd_dir.relative_to(ROOT)).replace("\\", "/") if qmd_dir.is_relative_to(ROOT) else str(qmd_dir),
             "--trials", str(args.trials),
         ]
         if args.hybrid:
             extra.append("--hybrid")
         if args.structured:
             extra.append("--structured")
+        if args.vsearch:
+            extra.append("--vsearch")
         print("running qmd/validate_qmd_retrieval.py...", flush=True)
         code, payload = run_script("qmd/validate_qmd_retrieval.py", extra)
         results["qmd"] = payload
@@ -153,7 +168,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.skip_headroom:
         extra = [
-            "--out", str(hr_dir.relative_to(ROOT)).replace("\\", "/"),
+            "--out", str(hr_dir.relative_to(ROOT)).replace("\\", "/") if hr_dir.is_relative_to(ROOT) else str(hr_dir),
             "--trials", str(args.trials),
         ]
         print("running cost-layers/validate_headroom_compression.py...", flush=True)
@@ -215,8 +230,8 @@ def main(argv: list[str] | None = None) -> int:
         f"- Randomized trials per category: **{args.trials}**",
         f"- Overall Status: **{'PASS' if exit_code == 0 else 'FAIL'}**",
         f"- QMD Retrieval Fleet MRR: **{qmd_findings.get('mrr', 0.0):.4f}** (Context savings vs tree: **{qmd_findings.get('context_savings_pct', 0)}%**)",
-        f"- Headroom Mean Compression Ratio: **{hr_savings.get('mean_ratio_pct', 0)}%** (stddev: **±{hr_savings.get('stddev_ratio_pct', 0)}%**, range: [{hr_savings.get('min_ratio_pct', 0)}%, {hr_savings.get('max_ratio_pct', 0)}%])",
-        f"- Web Distillation Mean Reduction: **{wf_summary.get('mean_reduction_pct', 0)}%** (stddev: **±{wf_summary.get('stddev_reduction_pct', 0)}%**, 100% gold fact accuracy)",
+        f"- Headroom Mean Compression Ratio: **{hr_savings.get('mean_ratio_pct', 0)}%** (stddev: **\u00b1{hr_savings.get('stddev_ratio_pct', 0)}%**, range: [{hr_savings.get('min_ratio_pct', 0)}%, {hr_savings.get('max_ratio_pct', 0)}%])",
+        f"- Web Distillation Mean Reduction: **{wf_summary.get('mean_reduction_pct', 0)}%** (stddev: **\u00b1{wf_summary.get('stddev_reduction_pct', 0)}%**, 100% gold fact accuracy)",
         f"- Prompt Cache Invariance Violations: **{pc_findings.get('violations_count', 0)}**",
         "",
         "## Subsystem Results & Statistical Confidence",
@@ -231,13 +246,13 @@ def main(argv: list[str] | None = None) -> int:
         "",
         "### 2. Headroom Tool Compression",
         f"- Exit: **{results['headroom']['exit_code'] if results['headroom'] else 'skipped'}**",
-        f"- Mean reduction: **{hr_savings.get('mean_ratio_pct', 0)}%** (stddev: **±{hr_savings.get('stddev_ratio_pct', 0)}%**)",
+        f"- Mean reduction: **{hr_savings.get('mean_ratio_pct', 0)}%** (stddev: **\u00b1{hr_savings.get('stddev_ratio_pct', 0)}%**)",
         f"- Total tokens saved: **{hr_savings.get('total_tokens_saved', 0)}**",
         f"- Perfect gold accuracy: **{hr_savings.get('perfect_accuracy', 0)}/{hr_savings.get('total_trials', 0)}** ({hr_savings.get('perfect_accuracy_pct', 0)}%)",
         "",
         "### 3. Web Distillation & Sanitization (local_webfetch)",
         f"- Exit: **{results['webfetch']['exit_code'] if results['webfetch'] else 'skipped'}**",
-        f"- Mean reduction: **{wf_summary.get('mean_reduction_pct', 0)}%** (stddev: **±{wf_summary.get('stddev_reduction_pct', 0)}%**, range: [{wf_summary.get('min_reduction_pct', 0)}%, {wf_summary.get('max_reduction_pct', 0)}%])",
+        f"- Mean reduction: **{wf_summary.get('mean_reduction_pct', 0)}%** (stddev: **\u00b1{wf_summary.get('stddev_reduction_pct', 0)}%**, range: [{wf_summary.get('min_reduction_pct', 0)}%, {wf_summary.get('max_reduction_pct', 0)}%])",
         f"- Gold fact accuracy: **{wf_summary.get('gold_accuracy_pct', 0)}%**",
         f"- Prompt injection neutralization: **{wf_summary.get('perfect_neutralization_pct', 0)}%**",
         "",
@@ -263,7 +278,7 @@ def main(argv: list[str] | None = None) -> int:
         lines.append(f"- (prompt-caching) {finding}")
     if wf_summary:
         lines.append(
-            f"- (webfetch) Distillation achieved mean {wf_summary.get('mean_reduction_pct')}% token reduction (±{wf_summary.get('stddev_reduction_pct')}%) with 100% prompt injection defense."
+            f"- (webfetch) Distillation achieved mean {wf_summary.get('mean_reduction_pct')}% token reduction (\u00b1{wf_summary.get('stddev_reduction_pct')}%) with 100% prompt injection defense."
         )
 
     lines += [
@@ -276,6 +291,10 @@ def main(argv: list[str] | None = None) -> int:
     (out / "report.md").write_text("\n".join(lines), encoding="utf-8")
     (out / "summary.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
     print(json.dumps({"out": str(out), "exit_code": exit_code}, indent=2))
+    if args.dry_run:
+        tmp_dir = ROOT / "scratch" / "tmp-cost-layers-dry-run"
+        if tmp_dir.is_dir():
+            shutil.rmtree(tmp_dir, ignore_errors=True)
     return exit_code
 
 
