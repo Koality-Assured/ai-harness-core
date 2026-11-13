@@ -20,7 +20,7 @@ import yaml
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT
+from paths import REPO_ROOT as ROOT  # noqa: E402
 
 DEFAULT_EXCLUDES = frozenset({
     "scratch",
@@ -125,7 +125,8 @@ def parse_yaml_frontmatter(text: str) -> tuple[dict[str, Any] | None, str | None
         return None, "unclosed YAML frontmatter (missing closing ---)", text
     raw = text[3:end]
     body = text[end + 4 :]
-    body = body.removeprefix("\n")
+    if body.startswith("\n"):
+        body = body[1:]
     try:
         data = yaml.safe_load(raw)
         if data is None:
@@ -278,7 +279,9 @@ def validate_relative_links(
             else:
                 candidate = (path.parent / unquoted_path).resolve()
 
-            if candidate.is_file() or candidate.is_dir():
+            if candidate.is_file():
+                target_file = candidate
+            elif candidate.is_dir():
                 target_file = candidate
             else:
                 errors.append(

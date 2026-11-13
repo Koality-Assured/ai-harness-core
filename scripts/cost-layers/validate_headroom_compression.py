@@ -13,19 +13,18 @@ import random
 import statistics
 import sys
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT
-
+from paths import REPO_ROOT as ROOT  # noqa: E402
 CHARS_PER_TOKEN = 4.0
 
 
 def _ensure_headroom_import() -> None:
     try:
-        import headroom
+        import headroom  # noqa: F401
 
         return
     except ImportError:
@@ -38,7 +37,7 @@ def _ensure_headroom_import() -> None:
     for site in candidates:
         if site.is_dir():
             sys.path.insert(0, str(site))
-            import headroom
+            import headroom  # noqa: F401
 
             return
         # Linux/mac uv layout: .../headroom-ai/lib/python3.x/site-packages
@@ -404,7 +403,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     _ensure_headroom_import()
-    today = datetime.now(UTC).strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     out_rel = args.out or f"results/cost-layers/headroom/{today}"
     out_dir = ROOT / out_rel
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -431,7 +430,7 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     payload = {
-        "generated_at_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "token_method_est": "chars/4",
         "trials_count": args.trials,
         "categories": categories,

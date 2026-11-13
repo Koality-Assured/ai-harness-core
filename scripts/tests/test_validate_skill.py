@@ -25,8 +25,8 @@ sys.path.insert(0, str(_SCRIPTS))
 sys.path.insert(0, str(_SCRIPTS / "ai-tooling"))
 sys.path.insert(0, str(_SCRIPTS / "_lib"))
 
-from md import check_required_skill_v2_contracts
-from validate_skill import check_skill
+from md import check_required_skill_v2_contracts  # noqa: E402
+from validate_skill import check_skill  # noqa: E402
 
 _VALID_BODY = """# {name}
 

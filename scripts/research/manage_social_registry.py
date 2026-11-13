@@ -8,13 +8,13 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from pathlib import Path
+import sys
 from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT
+from paths import REPO_ROOT as ROOT  # noqa: E402
 
 CATALOG_PATH = ROOT / "references" / "socials" / "catalogs" / "ranked-communities.json"
 

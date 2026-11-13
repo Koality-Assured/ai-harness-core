@@ -10,37 +10,37 @@ import argparse
 import json
 import math
 import sys
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from md import agent_paths, parse_frontmatter, skill_paths
-from paths import REPO_ROOT as ROOT
+from md import agent_paths, load_agent_record, load_skill_record, parse_frontmatter, skill_paths  # noqa: E402
+from paths import REPO_ROOT as ROOT  # noqa: E402
 
 # Standard pricing models per 1M tokens (USD)
 DEFAULT_PRICING_TABLE: dict[str, dict[str, Any]] = {
     "fast": {
-        "description": "Cheapest fastest model tier (Composer 2.5 / Gemini Flash Lite / Claude 3.5 Haiku / GPT-4o mini)",
+        "description": "Cheapest fastest model tier (Composer 2.5 / Gemini 4 Hydrogen (Low) / Claude 3.5 Haiku / GPT-4o mini)",
         "input_per_m": 0.15,
         "cached_input_per_m": 0.0375,
         "output_per_m": 0.60,
     },
     "standard": {
-        "description": "Standard tier (Gemini 3.8 Flash / GPT 6.0 Luna / Claude 5.5 Sonnet / Grok 4.7 256k)",
-        "input_per_m": 1.00,
-        "cached_input_per_m": 0.20,
-        "output_per_m": 4.00,
+        "description": "Standard tier (Gemini 4 Hydrogen (Medium) / GPT 6.0 Luna / Claude 5.5 Sonnet / Grok 4.7 256k)",
+        "input_per_m": 1.50,
+        "cached_input_per_m": 0.075,
+        "output_per_m": 7.50,
     },
     "high": {
-        "description": "High reasoning tier (Claude 5.5 Sonnet Thinking / GPT Terra / Grok 4.7 500k Fast)",
+        "description": "High reasoning tier (Gemini 4 Hydrogen (High) / Claude 5.5 Sonnet Thinking / GPT Terra / Grok 4.7 500k Fast)",
         "input_per_m": 2.50,
         "cached_input_per_m": 0.25,
         "output_per_m": 10.00,
     },
     "max": {
-        "description": "Max capability tier (Gemini 3.8 Pro / GPT Sol / Claude 5.5 Opus / Grok 4.7 Extra High Fast)",
+        "description": "Max capability tier (Gemini 3.8 Pro / Gemini 4 Hydrogen (xhigh) / GPT Sol / Claude 5.5 Opus / Grok 4.7 Extra High Fast)",
         "input_per_m": 5.00,
         "cached_input_per_m": 1.25,
         "output_per_m": 25.00,
@@ -50,7 +50,7 @@ DEFAULT_PRICING_TABLE: dict[str, dict[str, Any]] = {
 # Provider-specific pricing presets
 PROVIDER_PRICING: dict[str, dict[str, dict[str, float]]] = {
     "google": {
-        "gemini-3-8-flash": {"input_per_m": 0.15, "cached_input_per_m": 0.0375, "output_per_m": 0.60},
+        "gemini-4-hydrogen": {"input_per_m": 1.50, "cached_input_per_m": 0.075, "output_per_m": 7.50},
         "gemini-3-8-pro": {"input_per_m": 1.25, "cached_input_per_m": 0.3125, "output_per_m": 5.00},
     },
     "anthropic": {
@@ -299,7 +299,7 @@ def estimate_agent_and_skill(
 
 def render_markdown_report(estimates: list[dict[str, Any]], title: str = "Agent & Paired Skill Cost Estimation") -> str:
     """Render a structured Markdown report."""
-    now_utc = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     lines = [
         "---",
         "doc_kind: result",

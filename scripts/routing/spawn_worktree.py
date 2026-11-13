@@ -17,16 +17,16 @@ import re
 import stat
 import subprocess
 import sys
+import time
 import uuid
-from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 from urllib.parse import urlsplit
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT
+from paths import REPO_ROOT as ROOT  # noqa: E402
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 WORKTREE_BRANCH_RE = re.compile(r"^codex/[a-z0-9][a-z0-9-]{0,159}$")
@@ -260,7 +260,7 @@ def fetch_branch(branch: str, *, root: Path | None = None) -> Iterator[str]:
 
 
 def _new_worktree_identity(slug: str) -> tuple[str, str]:
-    stamp = dt.datetime.now(dt.UTC).strftime("%Y%m%dt%H%M%Sz").lower()
+    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dt%H%M%Sz").lower()
     worktree_id = f"{slug}-{stamp}-{uuid.uuid4().hex[:8]}"
     return worktree_id, f"codex/{worktree_id}"
 
@@ -276,7 +276,48 @@ def _print_payload(payload: dict[str, Any], as_json: bool) -> None:
             print(f"{key}: {value}")
 
 
-def cmd_create(slug: str, *, dry_run: bool = False, as_json: bool = False, root: Path | None = None) -> int:
+@contextmanager
+def _acquire_claims_lock(lock_path: Path, timeout: float = 5.0) -> Iterator[None]:
+    start = time.time()
+    fd = None
+    while True:
+        try:
+            fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            break
+        except FileExistsError:
+            if time.time() - start >= timeout:
+                try:
+                    if time.time() - lock_path.stat().st_mtime > 10.0:
+                        lock_path.unlink(missing_ok=True)
+                        continue
+                except OSError:
+                    pass
+                raise TimeoutError(f"could not acquire claims lock at {lock_path} within {timeout}s")
+            time.sleep(0.05)
+    try:
+        yield
+    finally:
+        if fd is not None:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+            try:
+                lock_path.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
+def cmd_create(
+    slug: str,
+    *,
+    dry_run: bool = False,
+    as_json: bool = False,
+    root: Path | None = None,
+    areas: list[str] | None = None,
+    agent: str | None = None,
+    task_type: str | None = None,
+) -> int:
     if not SLUG_RE.fullmatch(slug):
         print(f"error: task slug must be kebab-case [a-z0-9-], got {slug!r}", file=sys.stderr)
         return 2
@@ -317,6 +358,23 @@ def cmd_create(slug: str, *, dry_run: bool = False, as_json: bool = False, root:
                     file=sys.stderr,
                 )
                 return 1
+        claim_data = {
+            "slug": slug,
+            "branch": branch,
+            "areas": areas or [],
+            "agent": agent or "harness-operator",
+            "type": task_type or "agent",
+            "created_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "path": str(path),
+        }
+        claims_dir = worktrees_dir(repo_root)
+        claim_file = claims_dir / f"{slug}.claim.json"
+        lock_file = claims_dir / ".claims.lock"
+        try:
+            with _acquire_claims_lock(lock_file, timeout=5.0):
+                claim_file.write_text(json.dumps(claim_data, indent=2), encoding="utf-8")
+        except Exception as exc:
+            print(f"warning: failed to write claim file {claim_file}: {exc}", file=sys.stderr)
         _print_payload(
             {"ok": True, "task_slug": slug, "worktree_id": worktree_id, "path": str(path),
              "branch": branch, "base_branch": base_branch},
@@ -793,7 +851,7 @@ def _ensure_local_atomic_volume(paths: list[Path]) -> None:
     if os.name == "nt":
         roots: set[str] = set()
         for path in paths:
-            drive, _ = ntpath.splitdrive(os.path.abspath(str(path)))
+            drive, _ = ntpath.splitdrive(ntpath.abspath(str(path)))
             if not drive or drive.startswith("\\\\"):
                 raise RuntimeError(f"UNC or unrooted path cannot be archived safely: {path}")
             root = drive + "\\"
@@ -1571,7 +1629,7 @@ def _resume_archive_transaction(
         _same_path(Path(item["path"]), checkout_original) or _same_path(Path(item["path"]), checkout_archive)
         for item in remaining
     ):
-        raise RuntimeError("Git still registers an archive checkout path after exact admin metadata relocation")
+        raise RuntimeError(f"Git still registers an archive checkout path after exact admin metadata relocation")
 
     late_entries = _status_entries(checkout_archive, root=root)
     manifest["state"] = "complete"
@@ -1627,7 +1685,7 @@ def _create_archive_manifest(
     manifest: dict[str, Any] = {
         "schema_version": 2,
         "state": "prepared",
-        "created_at_utc": dt.datetime.now(dt.UTC).isoformat(),
+        "created_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
         "pr_number": pr_number,
         "pr_url": pr_url,
         "default_branch": default_branch,
@@ -1868,6 +1926,9 @@ def build_parser() -> argparse.ArgumentParser:
     create.add_argument("--slug", required=True, help="Kebab-case task name")
     create.add_argument("--dry-run", action="store_true", help="Print the planned worktree without creating it")
     create.add_argument("--json", action="store_true", help="Emit JSON")
+    create.add_argument("--areas", nargs="*", help="Owning repository areas")
+    create.add_argument("--agent", help="Claiming agent name")
+    create.add_argument("--type", dest="task_type", help="Task type (agent, human, maintenance)")
 
     listing = sub.add_parser("list", help="List Git worktrees")
     listing.add_argument("--json", action="store_true", help="Emit JSON")
@@ -1891,7 +1952,14 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "create":
-        return cmd_create(args.slug, dry_run=args.dry_run, as_json=args.json)
+        return cmd_create(
+            args.slug,
+            dry_run=args.dry_run,
+            as_json=args.json,
+            areas=args.areas,
+            agent=args.agent,
+            task_type=args.task_type,
+        )
     if args.command == "list":
         return cmd_list(as_json=args.json)
     if args.command == "cleanup":

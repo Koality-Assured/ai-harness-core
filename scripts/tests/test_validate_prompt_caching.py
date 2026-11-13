@@ -16,7 +16,7 @@ sys.path.insert(0, str(_SCRIPTS))
 sys.path.insert(0, str(_SCRIPTS / "cost-layers"))
 sys.path.insert(0, str(_SCRIPTS / "_lib"))
 
-from validate_prompt_caching import check_prompt_head
+from validate_prompt_caching import check_prompt_head, validate_all_prompts  # noqa: E402
 
 
 class TestValidatePromptCaching(unittest.TestCase):
@@ -55,11 +55,12 @@ You are an assistant.
             self.assertTrue(any("timestamp" in vt.lower() for vt in violation_types))
 
     def test_user_path_detected(self) -> None:
-        dirty_text = """---
+        user_path = "C:\\" + "Users\\" + "tester\\code\\repo"
+        dirty_text = f"""---
 name: sample-agent
 ---
 
-System working directory: C:\\Users\\developer\\code\\repo
+System working directory: {user_path}
 """
         with tempfile.TemporaryDirectory() as tmp_dir:
             f = Path(tmp_dir) / "AGENT.md"

@@ -10,6 +10,7 @@ import datetime as dt
 import json
 import os
 import secrets
+import sys
 import threading
 import time
 from pathlib import Path
@@ -257,7 +258,7 @@ class EncryptedFileVault:
                 self.recover_corrupted(backup=True)
                 data = {}
             rec = dict(token_data)
-            rec["updated_at"] = dt.datetime.now(dt.UTC).isoformat()
+            rec["updated_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
             data[norm_provider] = rec
             self._save_all(data)
 
@@ -289,7 +290,7 @@ class EncryptedFileVault:
                 return None
             backup_path = None
             if backup:
-                timestamp = dt.datetime.now(dt.UTC).strftime("%Y%m%d_%H%M%S")
+                timestamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d_%H%M%S")
                 backup_path = self.path.with_name(f"{self.path.name}.corrupted.{timestamp}")
                 try:
                     self.path.replace(backup_path)
@@ -377,7 +378,7 @@ class KeyringVault:
             raise RuntimeError("Keyring is not available on this platform")
         norm_provider = provider.lower().strip()
         rec = dict(token_data)
-        rec["updated_at"] = dt.datetime.now(dt.UTC).isoformat()
+        rec["updated_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
         with self._lock:
             try:
                 self._keyring.set_password(self.service_name, norm_provider, json.dumps(rec))
@@ -498,3 +499,141 @@ def get_vault(force_file_vault: bool = False) -> UniversalVault:
     if _GLOBAL_VAULT is None or force_file_vault:
         _GLOBAL_VAULT = UniversalVault(force_file_vault=force_file_vault)
     return _GLOBAL_VAULT
+
+
+PROVIDER_ENV_VARS: dict[str, list[str]] = {
+    "anthropic": ["ANTHROPIC_API_KEY", "CLAUDE_API_KEY"],
+    "openai": ["OPENAI_API_KEY"],
+    "gemini": ["GEMINI_API_KEY", "GOOGLE_API_KEY"],
+    "bifrost": ["BIFROST_API_KEY"],
+    "cursor": ["CURSOR_API_KEY"],
+}
+
+
+def _parse_env_file(path: Path) -> dict[str, str]:
+    """Parse a simple KEY=VALUE dotenv file without external dependencies."""
+    if not path.is_file():
+        return {}
+    res: dict[str, str] = {}
+    try:
+        content = path.read_text(encoding="utf-8", errors="replace")
+        for line in content.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" in line:
+                k, v = line.split("=", 1)
+                k = k.strip()
+                v = v.strip().strip("'\"")
+                if k and v:
+                    res[k] = v
+    except Exception:
+        pass
+    return res
+
+
+def auto_discover_api_key(
+    provider: str,
+    vault: UniversalVault | None = None,
+    interactive: bool = False,
+) -> str | None:
+    """Attempt finding API keys automatically from env vars, .env files, or interactive prompt.
+
+    If found or entered, stores securely in the vault and returns the access_token.
+    """
+    prov = provider.lower().strip()
+    candidate_vars = PROVIDER_ENV_VARS.get(prov, [])
+    if not candidate_vars:
+        return None
+
+    # 1. Check environment variables
+    for var in candidate_vars:
+        val = os.environ.get(var, "").strip()
+        if val:
+            v = vault or get_vault()
+            token_data = {
+                "provider": prov,
+                "token_type": "ApiKey",
+                "access_token": val,
+                "expires_at": None,
+                "profile": f"{prov}-env-auto-discovered",
+                "scopes": ["api"],
+            }
+            try:
+                v.set_credential(prov, token_data)
+                print(
+                    f"Notice: discovered {prov} API key from ${var} ({mask_token(val)}). Saved to vault.",
+                    file=sys.stderr,
+                )
+            except Exception:
+                pass
+            return val
+
+    # 2. Check .env files in cwd, parent directories up to git root, and ~/.harness/.env
+    search_dirs = [Path.cwd()]
+    try:
+        cur = Path.cwd().resolve()
+        for parent in cur.parents:
+            search_dirs.append(parent)
+            if (parent / ".git").exists():
+                break
+    except Exception:
+        pass
+    search_dirs.append(Path.home() / ".harness")
+
+    for d in search_dirs:
+        env_file = d / ".env"
+        if env_file.is_file():
+            parsed = _parse_env_file(env_file)
+            for var in candidate_vars:
+                if var in parsed and parsed[var]:
+                    val = parsed[var]
+                    v = vault or get_vault()
+                    token_data = {
+                        "provider": prov,
+                        "token_type": "ApiKey",
+                        "access_token": val,
+                        "expires_at": None,
+                        "profile": f"{prov}-dotenv-auto-discovered",
+                        "scopes": ["api"],
+                    }
+                    try:
+                        v.set_credential(prov, token_data)
+                        print(
+                            f"Notice: discovered {prov} API key from {env_file} ({mask_token(val)}). Saved to vault.",
+                            file=sys.stderr,
+                        )
+                    except Exception:
+                        pass
+                    return val
+
+    # 3. Interactive prompt fallback when running as a terminal interface
+    if interactive and hasattr(sys.stdin, "isatty") and sys.stdin.isatty():
+        import getpass
+        print(f"\nNo credentials found for provider '{prov}'.", file=sys.stderr)
+        try:
+            val = getpass.getpass(f"Enter {prov} API key (input is masked): ").strip()
+        except (EOFError, KeyboardInterrupt):
+            val = ""
+        if val:
+            v = vault or get_vault()
+            token_data = {
+                "provider": prov,
+                "token_type": "ApiKey",
+                "access_token": val,
+                "expires_at": None,
+                "profile": f"{prov}-interactive-login",
+                "scopes": ["api"],
+            }
+            try:
+                v.set_credential(prov, token_data)
+                print(
+                    f"{prov.capitalize()} API key stored successfully ({mask_token(val)}).",
+                    file=sys.stderr,
+                )
+            except Exception as exc:
+                print(f"warning: could not persist key to vault: {exc}", file=sys.stderr)
+            return val
+
+    return None
+

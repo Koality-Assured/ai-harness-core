@@ -7,16 +7,17 @@ routing_hints: [provenance, scaffold]
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import sys
 from pathlib import Path
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT
+from paths import REPO_ROOT as ROOT  # noqa: E402
 
 # Reuse helpers from sibling module
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from append_change_history import current_quarter, ensure_quarter_file
+from append_change_history import current_quarter, ensure_quarter_file  # noqa: E402
 
 
 def main(argv: list[str] | None = None) -> int:

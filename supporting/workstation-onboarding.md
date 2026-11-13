@@ -37,6 +37,7 @@ Use the `Need` column to distinguish repository-wide prerequisites (`required`) 
 | Docker / Noir | optional | — | Attack-surface inventory | Wrapper only. [`noir/agent-scan.md`](./noir/agent-scan.md) |
 | Web distillation (`trafilatura`, `readability-lxml`, `markdownify`, `httpx`) | required | current | Local HTML distillation & prompt injection defense | `pip install trafilatura readability-lxml markdownify httpx`. Used by `scripts/research/local_webfetch.py`. |
 | Local AI Runtime (`ollama` / `llama-server`) | optional (local-ai) | current | Zero-cost local model serving & frontier deferral | Optional; MUST be explicitly approved by human. See [Local AI section](#local-ai-runtime--model-serving-optional). |
+| Maxim Bifrost (`bifrost`) | optional (ai-gateway) | 2.3+ | AI gateway, fallback routing, virtual key governance | Native binary or Docker Compose. [`bifrost/architecture-and-inference.md`](./bifrost/architecture-and-inference.md) |
 
 Use each vendor’s installer for required tools. The commands below cover uv and Headroom.
 
@@ -102,7 +103,7 @@ These fail silently if omitted. The linked page has the recipe when one is neede
 | qmd execution policy / cache access | Windows PowerShell defaults to `Restricted` script execution, blocking npm-installed `qmd.ps1` with `PSSecurityException`. Fix for current user (no admin rights needed): `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force`. Alternatively call `qmd.cmd` (or `node`). Before any setup, run the qmd preflight; a present-but-inaccessible index is a sandbox or permissions issue, not a reason to rebuild. [`qmd/query-pattern.md`](./qmd/query-pattern.md). |
 | Headroom bind and extras | Bind `127.0.0.1`; do not pass `--host 0.0.0.0`. Install `headroom-ai[proxy,mcp]`. Do not install `[all]` (local PyTorch/ML). [`headroom/proxy-mcp.md`](./headroom/proxy-mcp.md). |
 | Cloud & LLM credentials | Never store static keys in config files. Use AWS CLI SSO (`aws configure sso`), GCP Application Default Credentials (`gcloud auth application-default login`), Azure Entra login (`az login`), and ephemeral environment variables for LLM APIs. |
-| Google Workspace OAuth | Use ADC or Workload Identity Federation. Dedicated test folder IDs ([REDACTED_GOOGLE_DRIVE_TEST_FOLDER]) are scrubbed upon sync export. [`google/google-suite-patterns.md`](./google/google-suite-patterns.md). |
+| Google Workspace OAuth | Use ADC or Workload Identity Federation. Dedicated test folder IDs (<DRIVE_FOLDER_ID>) are scrubbed upon sync export. [`google/google-suite-patterns.md`](./google/google-suite-patterns.md). |
 | Noir | Agents MUST call `python scripts/results/run_noir_scan.py`. Never invoke raw `noir` or pass `--ai-provider` / `--ai-context` / `--ai-model`. [`noir/agent-scan.md`](./noir/agent-scan.md). |
 | User memory | Create `ai-tooling/memory/user/<git-identity>/` (lowercase GitHub login or other stable id). [`../ai-tooling/memory/user/AGENTS.md`](../ai-tooling/memory/user/AGENTS.md). |
 | Windows Smart App Control | Unsigned or untrusted binaries may fail to start. Run the read-only preflight; do not disable SAC. [`powershell/windows-execution-control.md`](./powershell/windows-execution-control.md). |
@@ -139,6 +140,16 @@ For advanced model catalog management, standalone benchmarking, custom Modelfile
 - Research Dossier: [`../research/local-models/`](../research/local-models/)
 - Project Spec: [`../projects/local-models/README.md`](../projects/local-models/README.md)
 
+### Maxim Bifrost AI Gateway (Optional)
+
+Maxim Bifrost acts as a unified AI gateway proxying OpenAI and Anthropic requests on `127.0.0.1:8080` with automatic fallback routing.
+
+- **Native Binary Installation**: `npx @maximhq/bifrost install`
+- **Gateway Management**: `python supporting/bifrost/bifrost_manager.py {status|health|validate-config|start|stop}`
+- **Docker Deployment**: `docker compose -f supporting/bifrost/docker-compose.yml up -d`
+- **CLI Secret Auto-Discovery**: When launched as a terminal interface, `harness chat` automatically searches for `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, and `BIFROST_API_KEY` across host environment variables, project `.env` files (up to `.git` root), and interactive masked terminal prompts, persisting them to the OS Keyring / encrypted vault.
+- **Reference**: [`bifrost/architecture-and-inference.md`](./bifrost/architecture-and-inference.md)
+
 ## Verify
 
 Confirm each required tool is on `PATH`. If you use `gh`, it should already be authenticated. Before qmd setup, run `python scripts/qmd/qmd_preflight.py --inspect-hooks`. Reuse a healthy existing index; never recreate one by default. Only when preflight reports a missing index and the user explicitly approves the mutation, run `python scripts/qmd/setup_qmd_collections.py --apply --approved-by-user --create-missing` (add `--embed` only when embedding is also approved). After later add/remove/rename, use `python scripts/qmd/refresh_qmd_index.py --approved-by-user` only as the approved session-end mutation.
@@ -155,6 +166,7 @@ Repo validators exist; run them when you need a check:
 | [`qmd/query-pattern.md`](./qmd/query-pattern.md) | qmd search / get |
 | [`ast-grep/precision-retrieval.md`](./ast-grep/precision-retrieval.md) | ast-grep CLI |
 | [`headroom/proxy-mcp.md`](./headroom/proxy-mcp.md) | Headroom proxy / MCP |
+| [`bifrost/architecture-and-inference.md`](./bifrost/architecture-and-inference.md) | Bifrost gateway architecture and routing |
 | [`github/gh-workflow-notes.md`](./github/gh-workflow-notes.md) | `gh` and PRs |
 | [`google/google-suite-patterns.md`](./google/google-suite-patterns.md) | Google Workspace operations & auth |
 | [`mermaid/agent-diagram-notes.md`](./mermaid/agent-diagram-notes.md) | `mmdc` |

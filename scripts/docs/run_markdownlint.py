@@ -18,7 +18,7 @@ from pathlib import Path
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT
+from paths import REPO_ROOT as ROOT  # noqa: E402
 
 CLI2_PACKAGE = "markdownlint-cli2@0.23.2"
 DEFAULT_CONFIG_NAME = ".markdownlint-cli2.jsonc"

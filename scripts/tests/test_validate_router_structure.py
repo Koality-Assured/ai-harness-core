@@ -17,9 +17,10 @@ _SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_SCRIPTS / "docs"))
 sys.path.insert(0, str(_SCRIPTS / "_lib"))
 
-from validate_router_structure import (
+from validate_router_structure import (  # noqa: E402
     ALLOWED_RESULTS_FAMILIES,
     check_results_layout,
+    check_supporting_subfolders,
 )
 
 
@@ -109,6 +110,54 @@ class ResultsLayoutTests(unittest.TestCase):
             errors: list[str] = []
             check_results_layout(errors, root=root)
             self.assertEqual(errors, [])
+
+
+class SupportingSubfoldersTests(unittest.TestCase):
+    def test_supporting_subfolders_ok(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            supp = root / "supporting"
+            supp.mkdir()
+            sub1 = supp / "ast-grep"
+            sub1.mkdir()
+            (sub1 / "AGENTS.md").write_text("# AGENTS\n", encoding="utf-8")
+            (sub1 / "README.md").write_text("# README\n", encoding="utf-8")
+
+            # Hidden or underscore ignored
+            hidden = supp / ".hidden"
+            hidden.mkdir()
+            underscore = supp / "_temp"
+            underscore.mkdir()
+
+            errors: list[str] = []
+            check_supporting_subfolders(errors, root=root)
+            self.assertEqual(errors, [])
+
+    def test_missing_agents_md_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            supp = root / "supporting"
+            supp.mkdir()
+            sub = supp / "my-tool"
+            sub.mkdir()
+            (sub / "README.md").write_text("# README\n", encoding="utf-8")
+
+            errors: list[str] = []
+            check_supporting_subfolders(errors, root=root)
+            self.assertTrue(any("my-tool/: missing required AGENTS.md" in e for e in errors), errors)
+
+    def test_missing_readme_md_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            supp = root / "supporting"
+            supp.mkdir()
+            sub = supp / "my-tool"
+            sub.mkdir()
+            (sub / "AGENTS.md").write_text("# AGENTS\n", encoding="utf-8")
+
+            errors: list[str] = []
+            check_supporting_subfolders(errors, root=root)
+            self.assertTrue(any("my-tool/: missing required README.md" in e for e in errors), errors)
 
 
 if __name__ == "__main__":

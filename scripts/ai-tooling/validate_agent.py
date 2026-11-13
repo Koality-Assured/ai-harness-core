@@ -15,7 +15,7 @@ from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from md import (
+from md import (  # noqa: E402
     ISOLATION,
     MODEL_TIERS,
     agent_ids,
@@ -23,7 +23,7 @@ from md import (
     heading_titles,
     parse_frontmatter,
 )
-from paths import REPO_ROOT as ROOT
+from paths import REPO_ROOT as ROOT  # noqa: E402
 
 NAME_MAX = 128
 ID_MAX = 64

@@ -26,16 +26,20 @@ for _p in (str(_LIB_DIR), str(_SCRIPTS_DIR)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from areas import load_area_records
-from md import agent_paths, load_agent_record
+from areas import load_area_records  # noqa: E402
+from md import agent_paths, load_agent_record  # noqa: E402
+from paths import REPO_ROOT  # noqa: E402
 
-from cli.provider_client import (
+from cli.provider_client import (  # noqa: E402
     ANTHROPIC_DEFAULT_MODEL,
+    BIFROST_DEFAULT_MODEL,
     LOCAL_DEFAULT_MODEL,
-    SUPPORTED_PROVIDERS,
+    PROVIDER_ALIASES,
     ProviderError,
+    SUPPORTED_PROVIDERS,
     normalize_provider,
 )
+from cli.permissions import PermissionPolicy  # noqa: E402
 
 SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 CONVENTIONAL_COMMIT_PATTERN = re.compile(
@@ -192,7 +196,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 
     # Worktrees are reported from Git's registration database, without area metadata.
     try:
-        from routing.spawn_worktree import parse_worktrees
+        from routing.spawn_worktree import parse_worktrees  # noqa: E402
 
         worktree_proc = run_git(["worktree", "list", "--porcelain"], cwd=primary_root, check=False)
         if worktree_proc.returncode != 0:
@@ -270,13 +274,33 @@ def cmd_branch(args: argparse.Namespace) -> int:
     else:
         primary_root = get_primary_repo_root()
 
-    from routing.spawn_worktree import cmd_create
+    allow_dirty = getattr(args, "allow_dirty", False)
+    force = getattr(args, "force", False)
+    if not allow_dirty and not force:
+        status_proc = run_git(["status", "--porcelain"], cwd=primary_root, check=False)
+        dirty_lines = [ln.rstrip() for ln in status_proc.stdout.splitlines() if ln.strip()]
+        if dirty_lines:
+            print(
+                "error: primary repository has uncommitted changes. Stash or commit before branching (or pass --allow-dirty / --force)",
+                file=sys.stderr,
+            )
+            return 1
+
+    areas_raw = getattr(args, "areas", "") or ""
+    areas_list = [p.strip() for p in areas_raw.split(",") if p.strip()] if areas_raw else []
+    agent_id = getattr(args, "agent", "harness-operator") or "harness-operator"
+    task_type = getattr(args, "type", "agent") or "agent"
+
+    from routing.spawn_worktree import cmd_create  # noqa: E402
 
     return cmd_create(
         slug,
         dry_run=getattr(args, "dry_run", False),
         as_json=getattr(args, "json", False),
         root=primary_root,
+        areas=areas_list,
+        agent=agent_id,
+        task_type=task_type,
     )
 
 def cmd_agent(args: argparse.Namespace) -> int:
@@ -393,7 +417,7 @@ def cmd_pr(args: argparse.Namespace) -> int:
         print("error: cannot create PR from detached HEAD. Please checkout a named branch first.", file=sys.stderr)
         return 1
 
-    from routing.spawn_worktree import default_branch_name
+    from routing.spawn_worktree import default_branch_name  # noqa: E402
 
     try:
         base_branch = args.base or default_branch_name(primary_root)
@@ -489,6 +513,53 @@ def cmd_pr(args: argparse.Namespace) -> int:
     return 0
 
 
+def _sync_and_refresh_qmd(primary_root: Path, *, as_json: bool = False) -> None:
+    """Pair worktree archive with QMD freshness sync on scratch/qmd-main."""
+    qmd_main = primary_root / "scratch" / "qmd-main"
+    if not (qmd_main.is_dir() and (qmd_main / ".qmd" / "index.sqlite").exists()):
+        return
+
+    qmd_bin = shutil.which("qmd.cmd") if sys.platform == "win32" else shutil.which("qmd")
+    if not qmd_bin:
+        qmd_bin = shutil.which("qmd")
+    if not qmd_bin:
+        return
+
+    try:
+        subprocess.run(
+            ["git", "-C", str(qmd_main), "fetch", "--no-tags", "origin", "refs/heads/main:refs/remotes/origin/main"],
+            capture_output=True,
+            timeout=15,
+            check=False,
+        )
+        subprocess.run(
+            ["git", "-C", str(qmd_main), "merge", "--ff-only", "origin/main"],
+            capture_output=True,
+            timeout=15,
+            check=False,
+        )
+        refresh_script = primary_root / "scripts" / "qmd" / "refresh_qmd_index.py"
+        if refresh_script.is_file():
+            proc = subprocess.run(
+                [
+                    sys.executable,
+                    str(refresh_script),
+                    "--approved-by-user",
+                    "--cleanup",
+                    "--repo-root",
+                    str(qmd_main),
+                ],
+                capture_output=True,
+                text=True,
+                timeout=60,
+                check=False,
+            )
+            if not as_json and proc.returncode == 0:
+                print("✓ Synchronized and refreshed QMD index on scratch/qmd-main (with cleanup)")
+    except Exception:
+        pass
+
+
 def cmd_clean(args: argparse.Namespace) -> int:
     apply_cleanup = getattr(args, "apply", False)
     dry_run = getattr(args, "dry_run", False)
@@ -497,15 +568,18 @@ def cmd_clean(args: argparse.Namespace) -> int:
         return 2
 
     primary_root = get_primary_repo_root()
-    from routing.spawn_worktree import cmd_cleanup
+    from routing.spawn_worktree import cmd_cleanup  # noqa: E402
 
-    return cmd_cleanup(
+    rc = cmd_cleanup(
         args.branch,
         args.pr,
         dry_run=not apply_cleanup,
         as_json=getattr(args, "json", False),
         root=primary_root,
     )
+    if rc == 0 and apply_cleanup and not getattr(args, "skip_qmd_refresh", False):
+        _sync_and_refresh_qmd(primary_root, as_json=getattr(args, "json", False))
+    return rc
 
 def cmd_auth(args: argparse.Namespace) -> int:
     if args.auth_cmd == "login":
@@ -555,6 +629,33 @@ def cmd_auth_login(args: argparse.Namespace) -> int:
             GeminiOAuthFlow.login(no_browser=no_browser, device_code=device_code, api_key=api_key)
         elif provider == "openai":
             OpenAIAuthFlow.login(api_key=api_key, no_browser=no_browser, device_code=device_code)
+        elif provider == "bifrost":
+            from cli.auth.keyring_vault import get_vault, mask_token
+            vault = get_vault()
+            if not api_key:
+                import getpass
+                print("\n=== Maxim Bifrost Authentication ===")
+                print("Enter Virtual Key (sk-bf-...) or management key (or press Enter for unauthenticated local gateway):")
+                try:
+                    clean_key = getpass.getpass("Key: ").strip()
+                except (EOFError, KeyboardInterrupt):
+                    clean_key = ""
+            else:
+                clean_key = api_key.strip()
+            if clean_key:
+                token_data = {
+                    "provider": "bifrost",
+                    "token_type": "VirtualKey" if clean_key.startswith("sk-bf-") else "ApiKey",
+                    "access_token": clean_key,
+                    "expires_at": None,
+                    "profile": "bifrost-custom-key",
+                    "scopes": ["inference"],
+                }
+                vault.set_credential("bifrost", token_data)
+                print(f"Bifrost credential stored successfully ({mask_token(clean_key)}).")
+            else:
+                print("Notice: Bifrost configured for unauthenticated local gateway access.")
+            return 0
         return 0
     except (KeyboardInterrupt, SystemExit, EOFError):
         print("\nAuthentication aborted.", file=sys.stderr)
@@ -584,13 +685,24 @@ def cmd_auth_status(args: argparse.Namespace) -> int:
             })
             continue
         cred = vault.get_credential(prov)
+        if prov == "bifrost" and not cred:
+            statuses.append({
+                "provider": "bifrost",
+                "authenticated": True,
+                "status": "OPTIONAL_KEY",
+                "profile": "Bifrost Gateway (Local Default: http://127.0.0.1:8080/v1)",
+                "expires": "Never (Gateway Default)",
+                "token_masked": "bifrost-local",
+                "token_type": "None",
+            })
+            continue
         if cred:
             expired = is_token_expired(cred)
             exp_val = cred.get("expires_at")
             if exp_val is None:
                 exp_str = "Never (API Key)"
             elif isinstance(exp_val, (int, float)):
-                exp_str = dt.datetime.fromtimestamp(exp_val, dt.UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+                exp_str = dt.datetime.fromtimestamp(exp_val, dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
             else:
                 exp_str = str(exp_val)
 
@@ -833,22 +945,62 @@ def cmd_tui(args: argparse.Namespace) -> int:
     return run_switcher_tui(reg)
 
 
-def _resolve_chat_credential(provider: str) -> tuple[str | None, int]:
+def _resolve_chat_credential(
+    provider: str,
+    explicit_api_key: str | None = None,
+    interactive: bool = False,
+) -> tuple[str | None, int]:
     """Return (access_token, exit_code). Never prints raw tokens."""
     if provider == "local":
         return "local", 0
-    from cli.auth.keyring_vault import get_vault
+    if provider == "bifrost":
+        if explicit_api_key and explicit_api_key.strip():
+            return explicit_api_key.strip(), 0
+        from cli.auth.keyring_vault import auto_discover_api_key, get_vault
+
+        vault = get_vault()
+        cred = vault.get_credential("bifrost")
+        if cred and cred.get("access_token"):
+            return str(cred["access_token"]), 0
+        discovered = auto_discover_api_key("bifrost", vault=vault, interactive=False)
+        if discovered:
+            return discovered, 0
+        return "bifrost-local", 0
+
+    from cli.auth.keyring_vault import auto_discover_api_key, get_vault
     from cli.auth.oauth_flows import ensure_fresh_token
 
     vault = get_vault()
+
+    if explicit_api_key and explicit_api_key.strip():
+        clean_key = explicit_api_key.strip()
+        token_data = {
+            "provider": provider,
+            "token_type": "ApiKey",
+            "access_token": clean_key,
+            "expires_at": None,
+            "profile": f"{provider}-cli-flag",
+            "scopes": ["api"],
+        }
+        try:
+            vault.set_credential(provider, token_data)
+        except Exception:
+            pass
+        return clean_key, 0
+
     cred = ensure_fresh_token(provider, vault=vault)
-    if not cred or not cred.get("access_token"):
-        print(
-            f"error: no credentials for '{provider}'. Run: harness auth login {provider}",
-            file=sys.stderr,
-        )
-        return None, 1
-    return str(cred["access_token"]), 0
+    if cred and cred.get("access_token"):
+        return str(cred["access_token"]), 0
+
+    discovered = auto_discover_api_key(provider, vault=vault, interactive=interactive)
+    if discovered:
+        return discovered, 0
+
+    print(
+        f"error: no credentials for '{provider}'. Run: harness auth login {provider}",
+        file=sys.stderr,
+    )
+    return None, 1
 
 
 def _resolve_system_prompt(args: argparse.Namespace) -> tuple[str | None, int]:
@@ -1000,6 +1152,8 @@ def _open_or_resume_session(args: argparse.Namespace, store: Any) -> tuple[dict[
         model = ANTHROPIC_DEFAULT_MODEL
     elif provider == "local" and not model:
         model = LOCAL_DEFAULT_MODEL
+    elif provider == "bifrost" and not model:
+        model = BIFROST_DEFAULT_MODEL
     title = getattr(args, "title", None) or ""
     session = store.create_session(
         title=title,
@@ -1019,6 +1173,13 @@ def _handle_slash(
     session: dict[str, Any],
     model_holder: list[str],
     compact_session_handler: Any = None,
+    mcp_holder: list[Any] | None = None,
+    mcp_client: Any = None,
+    mcp_reload_handler: Any = None,
+    thinking_holder: list[Any] | None = None,
+    effort_holder: list[Any] | None = None,
+    auto_compact_holder: list[Any] | None = None,
+    permission_policy: Any = None,
 ) -> tuple[bool, int | None]:
     """Handle a slash line. Returns (handled, exit_code_or_None)."""
     from cli.command_registry import list_commands, parse_slash
@@ -1037,6 +1198,38 @@ def _handle_slash(
     if name == "status":
         payload = session_status_payload(store, session["id"])
         print(_format_chat_status(payload, model=model_holder[0]))
+        input_tokens = payload.get("input_tokens") or 0
+        output_tokens = payload.get("output_tokens") or 0
+        total_tokens = input_tokens + output_tokens
+        context_window = payload.get("context_window") or 128000
+        context_pct = payload.get("context_pct") or 0.0
+        cost = payload.get("cost")
+        cost_str = f"${cost:.4f}" if isinstance(cost, (int, float)) else "$0.0000"
+        print(
+            f"tokens: input={input_tokens} output={output_tokens} "
+            f"total={total_tokens} / {context_window} ({context_pct}%) cost={cost_str}"
+        )
+        policy = (
+            permission_policy[0]
+            if isinstance(permission_policy, list) and permission_policy
+            else permission_policy
+        )
+        curr_mode = (
+            policy.mode
+            if policy is not None and hasattr(policy, "mode")
+            else session.get("permission_mode", "ask")
+        )
+        print(f"permissions={curr_mode}")
+        auto_compact_pct = (
+            auto_compact_holder[0]
+            if auto_compact_holder is not None
+            else session.get("auto_compact_pct")
+        )
+        if auto_compact_pct is not None and context_pct >= auto_compact_pct:
+            print(
+                f"warning: context usage ({context_pct}%) reached auto-compact threshold ({auto_compact_pct}%); "
+                "run /compact to summarize middle turns"
+            )
         return True, None
     if name == "model":
         if arg:
@@ -1049,6 +1242,137 @@ def _handle_slash(
     if name == "sessions":
         for s in store.list_sessions(limit=20):
             print(f"  {s['id']}  {s.get('updated_at', '')}  {s.get('title') or '(untitled)'}")
+        return True, None
+    if name == "context":
+        auto_compact_pct = (
+            auto_compact_holder[0]
+            if auto_compact_holder is not None
+            else session.get("auto_compact_pct")
+        )
+        if not arg:
+            payload = session_status_payload(store, session["id"])
+            input_tokens = payload.get("input_tokens") or 0
+            output_tokens = payload.get("output_tokens") or 0
+            total_tokens = input_tokens + output_tokens
+            context_window = payload.get("context_window") or 128000
+            context_pct = payload.get("context_pct") or 0.0
+            cost = payload.get("cost")
+            cost_str = f"${cost:.4f}" if isinstance(cost, (int, float)) else "$0.0000"
+            ac_str = f"{auto_compact_pct}%" if auto_compact_pct is not None else "disabled"
+            print(
+                f"tokens: input={input_tokens} output={output_tokens} "
+                f"total={total_tokens} / {context_window} ({context_pct}%) "
+                f"cost={cost_str} auto_compact={ac_str}"
+            )
+            if auto_compact_pct is not None and context_pct >= auto_compact_pct:
+                print(
+                    f"warning: context usage ({context_pct}%) reached auto-compact threshold ({auto_compact_pct}%); "
+                    "run /compact to summarize middle turns"
+                )
+            return True, None
+
+        parts = arg.strip().split()
+        if parts[0].lower() == "auto-compact":
+            if len(parts) == 1:
+                ac_str = f"{auto_compact_pct}%" if auto_compact_pct is not None else "disabled"
+                print(f"auto_compact={ac_str}")
+                return True, None
+            if len(parts) > 2:
+                print("usage: /context [auto-compact <pct>]", file=sys.stderr)
+                return True, None
+            pct_val = parts[1].rstrip("%")
+            if pct_val.lower() in ("off", "none", "0", "disable", "disabled"):
+                if auto_compact_holder is not None:
+                    auto_compact_holder[0] = None
+                session["auto_compact_pct"] = None
+                print("auto-compact disabled")
+                return True, None
+            try:
+                parsed_pct = float(pct_val)
+                if not (0.0 < parsed_pct <= 100.0):
+                    raise ValueError("percentage must be between 0 and 100")
+                if auto_compact_holder is not None:
+                    auto_compact_holder[0] = parsed_pct
+                session["auto_compact_pct"] = parsed_pct
+                print(f"auto-compact threshold set to {parsed_pct}%")
+                return True, None
+            except ValueError:
+                print("usage: /context [auto-compact <pct>]", file=sys.stderr)
+                return True, None
+        print("usage: /context [auto-compact <pct>]", file=sys.stderr)
+        return True, None
+    if name == "thinking":
+        current = (
+            thinking_holder[0]
+            if thinking_holder is not None
+            else session.get("thinking")
+        )
+        if not arg:
+            print(f"thinking={current if current is not None else 'off'}")
+            return True, None
+        val = arg.strip().lower()
+        if val in ("off", "none", "0"):
+            if thinking_holder is not None:
+                thinking_holder[0] = None
+            if effort_holder is not None:
+                effort_holder[0] = None
+            session["thinking"] = None
+            session["effort"] = None
+            print("thinking set to off")
+            return True, None
+        if val in ("low", "medium", "high", "xhigh"):
+            if thinking_holder is not None:
+                thinking_holder[0] = val
+            if effort_holder is not None:
+                effort_holder[0] = val
+            session["thinking"] = val
+            session["effort"] = val
+            print(f"thinking set to {val}")
+            return True, None
+        if val.isdigit():
+            budget = int(val)
+            if thinking_holder is not None:
+                thinking_holder[0] = budget
+            if effort_holder is not None:
+                effort_holder[0] = (
+                    "low" if budget <= 2048 else ("medium" if budget <= 8192 else ("high" if budget <= 16384 else "xhigh"))
+                )
+            session["thinking"] = budget
+            session["effort"] = effort_holder[0] if effort_holder is not None else None
+            print(f"thinking set to {budget}")
+            return True, None
+        print("usage: /thinking off|low|medium|high|xhigh|<budget>", file=sys.stderr)
+        return True, None
+    if name == "effort":
+        current = (
+            effort_holder[0]
+            if effort_holder is not None
+            else session.get("effort")
+        )
+        if not arg:
+            print(f"effort={current if current is not None else '(unset)'}")
+            return True, None
+        val = arg.strip().lower()
+        if val in ("low", "medium", "high", "xhigh"):
+            effort_map = {"low": 2048, "medium": 8192, "high": 16384, "xhigh": 32768}
+            if effort_holder is not None:
+                effort_holder[0] = val
+            if thinking_holder is not None:
+                thinking_holder[0] = effort_map[val]
+            session["effort"] = val
+            session["thinking"] = effort_map[val]
+            print(f"effort set to {val}")
+            return True, None
+        if val in ("off", "none"):
+            if effort_holder is not None:
+                effort_holder[0] = None
+            if thinking_holder is not None:
+                thinking_holder[0] = None
+            session["effort"] = None
+            session["thinking"] = None
+            print("effort set to off")
+            return True, None
+        print("usage: /effort low|medium|high|xhigh", file=sys.stderr)
         return True, None
     if name == "compact":
         if arg:
@@ -1137,6 +1461,59 @@ def _handle_slash(
             store.append_message(session["id"], "system", arg)
         print("system prompt updated")
         return True, None
+    if name == "mcp":
+        active_mcp = mcp_holder[0] if mcp_holder is not None and mcp_holder else mcp_client
+        subcommand = (arg or "").strip().lower()
+        if subcommand in ("", "list"):
+            servers = active_mcp.list_servers() if active_mcp is not None else []
+            if not servers:
+                print("no MCP servers configured")
+            else:
+                for s in servers:
+                    cmd_str = s.get("command") or ""
+                    status_str = s.get("status") or "unknown"
+                    print(f"  {s['name']}: {cmd_str} ({status_str})")
+            return True, None
+        if subcommand == "tools":
+            tools = active_mcp.list_tools() if active_mcp is not None else []
+            if not tools:
+                print("no active MCP tools")
+            else:
+                for t in tools:
+                    desc = t.get("description") or ""
+                    print(f"  {t['name']}: {desc}")
+            return True, None
+        if subcommand == "reload":
+            if mcp_reload_handler is not None:
+                mcp_reload_handler()
+            else:
+                print("error: MCP reload handler unavailable", file=sys.stderr)
+            return True, None
+        print("usage: /mcp [list|tools|reload]", file=sys.stderr)
+        return True, None
+    if name == "permissions":
+        policy = (
+            permission_policy[0]
+            if isinstance(permission_policy, list) and permission_policy
+            else permission_policy
+        )
+        curr = (
+            policy.mode
+            if policy is not None and hasattr(policy, "mode")
+            else session.get("permission_mode", "ask")
+        )
+        if not arg:
+            print(f"permissions={curr}")
+            return True, None
+        val = arg.strip().lower()
+        if val in ("ask", "auto-edit", "yolo"):
+            if policy is not None and hasattr(policy, "mode"):
+                policy.mode = val
+            session["permission_mode"] = val
+            print(f"permissions set to {val}")
+            return True, None
+        print("usage: /permissions ask|auto-edit|yolo", file=sys.stderr)
+        return True, None
     print(f"unknown command: /{name} (try /help)", file=sys.stderr)
     return True, None
 
@@ -1154,10 +1531,12 @@ def _format_chat_status(payload: dict[str, Any], *, model: str = "") -> str:
     output_tokens = payload.get("output_tokens")
     input_display = "n/a" if input_tokens is None else str(input_tokens)
     output_display = "n/a" if output_tokens is None else str(output_tokens)
+    cost = payload.get("cost")
+    cost_display = f"${cost:.4f}" if isinstance(cost, (int, float)) else "n/a"
     return (
         f"session={payload.get('session_id')} provider={payload.get('provider')} "
         f"model={model or payload.get('model')} messages={payload.get('message_count')} "
-        f"input_tokens={input_display} output_tokens={output_display} cost=n/a"
+        f"input_tokens={input_display} output_tokens={output_display} cost={cost_display}"
     )
 
 
@@ -1214,6 +1593,7 @@ def cmd_chat(
     from cli.conversation import compact_session, run_turn
     from cli.session_store import SessionStore
 
+    mcp_holder: list[Any] = [None]
     store = SessionStore()
     try:
         session, code = _open_or_resume_session(args, store)
@@ -1236,6 +1616,8 @@ def cmd_chat(
             model_holder[0] = ANTHROPIC_DEFAULT_MODEL
         elif provider == "local" and not model_holder[0]:
             model_holder[0] = LOCAL_DEFAULT_MODEL
+        elif provider == "bifrost" and not model_holder[0]:
+            model_holder[0] = BIFROST_DEFAULT_MODEL
         if provider in ("openai", "gemini") and not model_holder[0]:
             print(
                 f"error: provider '{provider}' requires --model "
@@ -1243,13 +1625,6 @@ def cmd_chat(
                 file=sys.stderr,
             )
             return 1
-
-        api_key, cred_code = _resolve_chat_credential(provider)
-        if api_key is None:
-            return cred_code
-
-        if getattr(args, "title", None) and session.get("title") != args.title:
-            store.rename_session(session["id"], args.title)
 
         query = _load_query_text(args)
         if query is None and (
@@ -1259,7 +1634,126 @@ def cmd_chat(
         ):
             return 1
 
+        is_interactive = query is None and hasattr(sys.stdin, "isatty") and sys.stdin.isatty()
+        explicit_api_key = getattr(args, "api_key", None)
+
+        api_key, cred_code = _resolve_chat_credential(
+            provider,
+            explicit_api_key=explicit_api_key,
+            interactive=is_interactive,
+        )
+        if api_key is None:
+            return cred_code
+
+        if getattr(args, "title", None) and session.get("title") != args.title:
+            store.rename_session(session["id"], args.title)
+
+        from cli.mcp_stdio import ACPSessionMCP, discover_mcp_config
+        from cli.tool_registry import ToolDefinition, ToolRegistry
+        from cli.interactive_choice import handle_ask_question
+
+        repl_input_fn: list[Callable[[str], str] | None] = [None]
+
+        def repl_input_dispatcher(prompt_label: str = "") -> str:
+            if repl_input_fn[0] is not None:
+                return repl_input_fn[0](prompt_label)
+            return input(prompt_label)
+
+        target_harness = getattr(args, "harness", None)
+        if target_harness:
+            from cli.schema_adapter import resolve_harness_root
+            try:
+                target_root = resolve_harness_root(target_harness)
+                workspace_root = str(target_root)
+            except Exception as exc:
+                print(f"error: failed to resolve target harness '{target_harness}': {exc}", file=sys.stderr)
+                return 1
+        else:
+            workspace_root = os.getcwd()
+
+        if tool_registry is not None:
+            base_tool_registry = tool_registry
+        elif not getattr(args, "no_tools", False):
+            from cli.workspace_tools import build_workspace_tool_registry
+
+            base_tool_registry = build_workspace_tool_registry(
+                workspace_root=workspace_root,
+                is_interactive=is_interactive,
+                input_fn=repl_input_dispatcher if is_interactive else None,
+            )
+        else:
+            base_tool_registry = ToolRegistry()
+
+        active_tool_registry = base_tool_registry
+        mcp_config_path = getattr(args, "mcp_config", None)
+
+        def _configure_ask_question_runtime(registry: Any, interactive: bool, input_fn: Callable[[str], str]) -> None:
+            target = getattr(registry, "base", registry)
+            if hasattr(target, "_tools") and "ask_question" in target._tools:
+                orig_tool = target._tools["ask_question"]
+                target._tools["ask_question"] = ToolDefinition(
+                    orig_tool.name,
+                    orig_tool.description,
+                    orig_tool.input_schema,
+                    lambda args: handle_ask_question(args, input_fn=input_fn, is_interactive=interactive),
+                )
+
+        def _init_mcp(explicit_path: str | None = None) -> None:
+            nonlocal active_tool_registry
+            if getattr(args, "no_mcp", False):
+                return
+            servers = discover_mcp_config(workspace_root=workspace_root, explicit_path=explicit_path)
+            if servers:
+                try:
+                    client = ACPSessionMCP(servers, cwd=workspace_root)
+                    active_tool_registry = client.tool_registry(base_tool_registry, threading.Event())
+                    mcp_holder[0] = client
+                except Exception as exc:
+                    print(f"warning: failed to start MCP servers: {exc}", file=sys.stderr)
+
+        def _reload_mcp() -> None:
+            nonlocal active_tool_registry
+            if getattr(args, "no_mcp", False):
+                print("error: MCP is disabled via --no-mcp", file=sys.stderr)
+                return
+            servers = discover_mcp_config(workspace_root=None, explicit_path=mcp_config_path)
+            if not servers:
+                old_client = mcp_holder[0]
+                mcp_holder[0] = None
+                active_tool_registry = base_tool_registry
+                if old_client is not None:
+                    try:
+                        old_client.close()
+                    except Exception:
+                        pass
+                print("reloaded MCP configuration: no servers configured")
+                return
+            try:
+                new_client = ACPSessionMCP(servers, cwd=os.getcwd())
+                new_registry = new_client.tool_registry(base_tool_registry, threading.Event())
+            except Exception as exc:
+                print(f"error: failed to reload MCP servers: {exc}", file=sys.stderr)
+                return
+
+            old_client = mcp_holder[0]
+            mcp_holder[0] = new_client
+            active_tool_registry = new_registry
+            if old_client is not None:
+                try:
+                    old_client.close()
+                except Exception:
+                    pass
+            s_count = len(new_client.list_servers())
+            t_count = len(new_client.list_tools())
+            print(f"reloaded MCP configuration: {s_count} server(s) active, {t_count} tool(s) discovered")
+
+        _init_mcp(mcp_config_path)
+
+        permissions_mode = getattr(args, "permissions", "ask")
+
         if query is not None:
+            _configure_ask_question_runtime(active_tool_registry, interactive=False, input_fn=input)
+            permission_policy = PermissionPolicy(mode=permissions_mode, is_interactive=False)
             stream_enabled = not getattr(args, "no_stream", False)
             active_stream_transport = stream_transport or (transport if stream_enabled else None)
             try:
@@ -1274,9 +1768,14 @@ def cmd_chat(
                     stream=stream_enabled,
                     stream_transport=active_stream_transport,
                     on_delta=lambda delta: print(delta, end="", flush=True),
-                    tool_registry=tool_registry,
+                    tool_registry=active_tool_registry,
+                    thinking=getattr(args, "thinking", None),
+                    reasoning_effort=getattr(args, "effort", None),
+                    permission_policy=permission_policy,
                 )
             except KeyboardInterrupt:
+                if mcp_holder[0] is not None:
+                    mcp_holder[0].cancel()
                 print("\ninterrupted", file=sys.stderr)
                 return 130
             except ProviderError as exc:
@@ -1308,8 +1807,14 @@ def cmd_chat(
 
         from cli.conversation import session_status_payload
 
+        cached_toolbar: list[str] = [""]
+        toolbar_dirty: list[bool] = [True]
+
+        def mark_toolbar_dirty() -> None:
+            toolbar_dirty[0] = True
+
         def compact_active_session() -> dict[str, Any] | None:
-            return compact_session(
+            res = compact_session(
                 store,
                 session["id"],
                 provider,
@@ -1317,23 +1822,206 @@ def cmd_chat(
                 api_key,
                 transport,
             )
+            mark_toolbar_dirty()
+            return res
+
+        session_permission_mode = session.get("permission_mode")
+        initial_mode = session_permission_mode or permissions_mode
+        repl_permission_policy = PermissionPolicy(mode=initial_mode, is_interactive=True)
+        session["permission_mode"] = repl_permission_policy.mode
 
         print(_format_chat_status(session_status_payload(store, session["id"]), model=model_holder[0]))
         print("Type /help for commands, /quit to exit.")
-        line_pump = _LinePump(sys.stdin)
-        line_pump.start()
+        thinking_holder = [getattr(args, "thinking", None)]
+        effort_holder = [getattr(args, "effort", None)]
+        auto_compact_holder = [None]
+
+        use_plain = getattr(args, "plain", False)
+        tui_session = None
+
+        def get_toolbar_text() -> str:
+            if not toolbar_dirty[0] and cached_toolbar[0]:
+                return cached_toolbar[0]
+            payload = session_status_payload(store, session["id"])
+            mcp_count = (
+                len(mcp_holder[0].list_servers()) if mcp_holder[0] is not None else 0
+            )
+            th = thinking_holder[0] if thinking_holder[0] is not None else effort_holder[0]
+            bar = format_status_bar(
+                provider=provider,
+                model=model_holder[0],
+                thinking=th,
+                context_pct=payload.get("context_pct"),
+                cost=payload.get("cost"),
+                mcp_count=mcp_count,
+                permission_mode=repl_permission_policy.mode,
+            )
+            cached_toolbar[0] = bar
+            toolbar_dirty[0] = False
+            return bar
+
+        if not use_plain:
+            try:
+                from cli.chat_tui import (
+                    ChatTUISession,
+                    format_status_bar,
+                    render_diff,
+                    render_markdown,
+                    render_tool_call,
+                    render_tool_outcome,
+                )
+
+                session_candidate = ChatTUISession(
+                    workspace_root=os.getcwd(),
+                    status_callback=get_toolbar_text,
+                )
+                if session_candidate.is_active:
+                    tui_session = session_candidate
+            except Exception:
+                tui_session = None
+
+        def is_tui_active() -> bool:
+            return bool(tui_session is not None and tui_session.is_active)
+
+        if not is_tui_active():
+            line_pump = _LinePump(sys.stdin)
+            line_pump.start()
+        else:
+            line_pump = None
+
         pending_lines: list[str] = []
+
+        def repl_input(prompt_label: str = "") -> str:
+            try:
+                if is_tui_active() and tui_session is not None:
+                    return tui_session.prompt(prompt_label, store_history=False)
+                if prompt_label:
+                    print(prompt_label, end="", flush=True)
+                if line_pump is not None:
+                    line = line_pump.get()
+                else:
+                    line = sys.stdin.readline()
+                    if line:
+                        line = line.rstrip("\r\n")
+                if line is None:
+                    raise EOFError("stream ended")
+                return line
+            except (EOFError, KeyboardInterrupt):
+                raise EOFError("user input cancelled")
+
+        repl_input_fn[0] = repl_input
+        _configure_ask_question_runtime(active_tool_registry, interactive=True, input_fn=repl_input)
+
+        def repl_prompt_callback(name: str, arguments: dict[str, Any]) -> tuple[str, str | None]:
+            if line_pump is not None:
+                stale = line_pump.take_available()
+                if stale:
+                    pending_lines.extend(stale)
+
+            print(f"\n[Tool Execution Permission Required]")
+            print(f"Tool: {name}")
+            if arguments:
+                try:
+                    args_text = json.dumps(arguments, indent=2, ensure_ascii=False)
+                except Exception:
+                    args_text = str(arguments)
+                if len(args_text) > 400:
+                    args_text = args_text[:400] + "\n... (truncated)"
+                print(f"Arguments:\n{args_text}")
+            print("Action:")
+            print("  [1] Allow once (y)")
+            print("  [2] Allow for session (s)")
+            print("  [3] Deny (d)")
+            while True:
+                try:
+                    if is_tui_active() and tui_session is not None:
+                        choice_raw = tui_session.prompt("Permission choice [1/2/3]: ", store_history=False)
+                    else:
+                        print("Permission choice [1/2/3]: ", end="", flush=True)
+                        choice_raw = line_pump.get() if line_pump is not None else sys.stdin.readline().rstrip("\r\n")
+                except (EOFError, KeyboardInterrupt):
+                    print("\nDenied (user cancelled).")
+                    return ("deny", "User cancelled permission prompt.")
+
+                if choice_raw is None:
+                    print("\nDenied (stream ended).")
+                    return ("deny", "User closed terminal or input ended.")
+                choice = choice_raw.strip().lower()
+                if choice in ("1", "y", "yes", "allow"):
+                    return ("allow_once", None)
+                if choice in ("2", "s", "session", "always"):
+                    return ("allow_session", None)
+                if choice in ("3", "d", "deny", "n", "no"):
+                    try:
+                        if is_tui_active() and tui_session is not None:
+                            feedback_raw = tui_session.prompt("Optional denial feedback (Enter to skip): ", store_history=False)
+                        else:
+                            print("Optional denial feedback (Enter to skip): ", end="", flush=True)
+                            feedback_raw = line_pump.get() if line_pump is not None else sys.stdin.readline().rstrip("\r\n")
+                    except (EOFError, KeyboardInterrupt):
+                        return ("deny", None)
+                    feedback = (feedback_raw or "").strip()
+                    return ("deny", feedback or None)
+                print("Invalid choice. Please enter 1, 2, or 3.")
+
+        def on_tool_start_banner(call_id: str | None, name: str, arguments: dict[str, Any] | None) -> None:
+            if is_tui_active():
+                render_tool_call(name, arguments or {})
+
+        def on_tool_complete_banner(
+            call_id: str | None,
+            name: str,
+            arguments: dict[str, Any] | None,
+            outcome: Any,
+        ) -> None:
+            if is_tui_active():
+                is_error = outcome.error is not None
+                if is_error:
+                    summary = outcome.error
+                else:
+                    res = outcome.result
+                    if isinstance(res, dict):
+                        if "diff" in res and isinstance(res["diff"], str):
+                            render_diff(res["diff"])
+                        summary = res.get("status") or res.get("message") or f"{len(res)} result field(s)"
+                    elif isinstance(res, str):
+                        summary = res if len(res) <= 100 else res[:97] + "..."
+                    else:
+                        summary = "completed successfully"
+                render_tool_outcome(name, str(summary), is_error=is_error)
+
         while True:
             try:
                 if pending_lines:
                     line = pending_lines.pop(0)
                 else:
-                    print("> ", end="", flush=True)
-                    line = line_pump.get()
+                    if is_tui_active() and tui_session is not None:
+                        try:
+                            raw_line = tui_session.prompt("> ", store_history=True)
+                        except EOFError:
+                            print()
+                            return 0
+                        except KeyboardInterrupt:
+                            print()
+                            return 0
+                        if raw_line is None:
+                            print()
+                            return 0
+                        pasted_lines = raw_line.splitlines()
+                        if not pasted_lines:
+                            continue
+                        line = pasted_lines[0]
+                        if len(pasted_lines) > 1:
+                            pending_lines.extend(pasted_lines[1:])
+                    else:
+                        print("> ", end="", flush=True)
+                        line = line_pump.get() if line_pump is not None else sys.stdin.readline().rstrip("\r\n")
                 if line is None:
                     print()
                     return 0
             except KeyboardInterrupt:
+                if mcp_holder[0] is not None:
+                    mcp_holder[0].cancel()
                 print()
                 return 0
             if not line.strip():
@@ -1344,8 +2032,17 @@ def cmd_chat(
                 session=session,
                 model_holder=model_holder,
                 compact_session_handler=compact_active_session,
+                mcp_holder=mcp_holder,
+                mcp_reload_handler=_reload_mcp,
+                thinking_holder=thinking_holder,
+                effort_holder=effort_holder,
+                auto_compact_holder=auto_compact_holder,
+                permission_policy=repl_permission_policy,
             )
             if handled:
+                mark_toolbar_dirty()
+                if is_tui_active() and session.get("busy_mode") in ("steer", "queue"):
+                    print("note: background steer/queue during generation requires --plain / --no-tui mode.")
                 if exit_code is not None:
                     return exit_code
                 continue
@@ -1354,6 +2051,8 @@ def cmd_chat(
 
                 def steer_after_tool_batch() -> str | None:
                     if (session.get("busy_mode") or "interrupt") != "steer" or steered_during_turn:
+                        return None
+                    if line_pump is None:
                         return None
                     waiting = line_pump.take_available(limit=1)
                     if waiting and waiting[0].strip():
@@ -1372,10 +2071,18 @@ def cmd_chat(
                     stream=not getattr(args, "no_stream", False),
                     stream_transport=stream_transport or transport,
                     on_delta=lambda delta: print(delta, end="", flush=True),
-                    tool_registry=tool_registry,
-                    on_tool_batch=steer_after_tool_batch,
+                    tool_registry=active_tool_registry,
+                    on_tool_batch=steer_after_tool_batch if line_pump is not None else None,
+                    on_tool_start=on_tool_start_banner if is_tui_active() else None,
+                    on_tool_complete=on_tool_complete_banner if is_tui_active() else None,
+                    thinking=thinking_holder[0],
+                    reasoning_effort=effort_holder[0],
+                    permission_policy=repl_permission_policy,
+                    prompt_callback=repl_prompt_callback,
                 )
             except KeyboardInterrupt:
+                if mcp_holder[0] is not None:
+                    mcp_holder[0].cancel()
                 if "steered_during_turn" in locals() and steered_during_turn:
                     pending_lines[0:0] = steered_during_turn
                 print("\nTurn interrupted.")
@@ -1391,15 +2098,39 @@ def cmd_chat(
             if not getattr(args, "no_stream", False):
                 print()
             else:
-                print(assistant)
+                if is_tui_active():
+                    render_markdown(assistant)
+                else:
+                    print(assistant)
+            mark_toolbar_dirty()
+            auto_compact_pct = (
+                auto_compact_holder[0]
+                if auto_compact_holder is not None
+                else session.get("auto_compact_pct")
+            )
+            if auto_compact_pct is not None:
+                payload = session_status_payload(store, session["id"])
+                context_pct = payload.get("context_pct") or 0.0
+                if context_pct >= auto_compact_pct:
+                    print(
+                        f"warning: context usage ({context_pct}%) reached auto-compact threshold ({auto_compact_pct}%); "
+                        "run /compact to summarize middle turns",
+                        file=sys.stderr,
+                    )
             busy_mode = session.get("busy_mode") or "interrupt"
-            if busy_mode == "queue":
-                pending_lines.extend(line_pump.take_available())
-            elif busy_mode == "steer":
-                if not steered_during_turn:
-                    pending_lines.extend(line_pump.take_available(limit=1))
+            if line_pump is not None:
+                if busy_mode == "queue":
+                    pending_lines.extend(line_pump.take_available())
+                elif busy_mode == "steer":
+                    if not steered_during_turn:
+                        pending_lines.extend(line_pump.take_available(limit=1))
         return 0
     finally:
+        if mcp_holder[0] is not None:
+            try:
+                mcp_holder[0].close()
+            except Exception:
+                pass
         store.close()
 
 
@@ -1507,6 +2238,7 @@ def cmd_commands(args: argparse.Namespace) -> int:
 
 def cmd_deferral(args: argparse.Namespace) -> int:
     from pacing import (
+        check_secondary_availability,
         classify_deferral_eligibility,
         clear_secondary_exhaustion,
         format_deferral_notice,
@@ -1646,7 +2378,6 @@ def probe_local_hardware() -> dict[str, Any]:
 def cmd_local(args: argparse.Namespace) -> int:
     import urllib.parse
     import urllib.request
-
     from cli.provider_client import DEFAULT_LOCAL_BASE_URL, HARNESS_LOCAL_BASE_URL_ENV
 
     base_url = os.environ.get(HARNESS_LOCAL_BASE_URL_ENV, "").strip() or DEFAULT_LOCAL_BASE_URL
@@ -1681,7 +2412,7 @@ def cmd_local(args: argparse.Namespace) -> int:
         loaded_models: list[str] = []
         try:
             req = urllib.request.Request(models_url, headers={"User-Agent": "ai-router-harness"})
-            with urllib.request.urlopen(req, timeout=2) as resp:  # nosec B310 - internal harness gateway URL
+            with urllib.request.urlopen(req, timeout=2) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 endpoint_online = True
                 raw_models = data.get("data") or data.get("models") or []
@@ -1770,7 +2501,7 @@ def cmd_local(args: argparse.Namespace) -> int:
     if action == "status":
         req = urllib.request.Request(models_url, headers={"User-Agent": "ai-router-harness"})
         try:
-            with urllib.request.urlopen(req, timeout=3) as resp:  # nosec B310 - internal URL known safe
+            with urllib.request.urlopen(req, timeout=3) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
         except Exception as exc:
             if getattr(args, "json", False):
@@ -1801,6 +2532,478 @@ def cmd_local(args: argparse.Namespace) -> int:
     return 0
 
 
+def _delegate_to_art_router(subcommand: str, custom_argv: list[str] | None = None) -> int:
+    """Delegate domain commands (video, prompt) to registered art-router domain harness."""
+    from cli.registry import get_registry
+    reg = get_registry()
+    art_harness = reg.get_harness("art-router")
+    if isinstance(art_harness, dict) and "path" in art_harness:
+        art_path = Path(art_harness["path"])
+    elif hasattr(art_harness, "path"):
+        art_path = Path(art_harness.path)
+    else:
+        art_path = Path(r"C:\Code\KA\art-router")
+    art_script = art_path / "scripts" / "cli" / "harness.py"
+    if not art_script.exists():
+        print(f"error: art-router harness script not found at {art_script}", file=sys.stderr)
+        return 1
+
+    # Preserve all arguments (including preceding global flags like --json, --dry-run)
+    if custom_argv is not None:
+        forward_args = custom_argv
+    else:
+        raw_args = list(sys.argv[1:]) if len(sys.argv) > 1 else []
+        if subcommand in raw_args:
+            forward_args = raw_args
+        else:
+            forward_args = [subcommand]
+
+    cmd = [sys.executable, str(art_script)] + forward_args
+    proc = subprocess.run(cmd)
+    return proc.returncode
+
+
+def cmd_video(args: argparse.Namespace) -> int:
+    return _delegate_to_art_router("video")
+
+
+def cmd_prompt(args: argparse.Namespace) -> int:
+    return _delegate_to_art_router("prompt")
+
+def cmd_preflight(args: argparse.Namespace) -> int:
+    from onboarding.verify_workstation import main as verify_main
+    forward_args = []
+    if getattr(args, "json", False):
+        forward_args.append("--json")
+    if getattr(args, "strict", False):
+        forward_args.append("--strict")
+    if getattr(args, "fix", False):
+        forward_args.append("--fix")
+    if getattr(args, "include_optional", False):
+        forward_args.append("--include-optional")
+    return verify_main(forward_args)
+
+
+
+def cmd_exec(args: argparse.Namespace) -> int:
+    raw_args = list(getattr(args, "exec_args", []) or [])
+    if raw_args and raw_args[0] == "--":
+        raw_args = raw_args[1:]
+    if not raw_args:
+        print("error: no command provided to exec. Usage: harness exec [flags] -- <command> [args...]", file=sys.stderr)
+        return 1
+
+    target_harness = getattr(args, "harness", None)
+    work_dir = None
+    if target_harness:
+        from cli.schema_adapter import resolve_harness_root
+        try:
+            work_dir = Path(resolve_harness_root(target_harness)).resolve()
+        except Exception as exc:
+            print(f"error: failed to resolve target harness '{target_harness}': {exc}", file=sys.stderr)
+            return 1
+
+    from cli.auth import get_vault
+    from cli.auth.oauth_flows import ensure_fresh_token
+
+    vault = get_vault()
+    child_env = os.environ.copy()
+    injected_count = 0
+    provider_env_map = {
+        "anthropic": "ANTHROPIC_API_KEY",
+        "openai": "OPENAI_API_KEY",
+        "gemini": "GEMINI_API_KEY",
+        "cursor": "CURSOR_API_KEY",
+    }
+    for prov, env_var in provider_env_map.items():
+        try:
+            cred = ensure_fresh_token(prov, vault=vault)
+            if not cred:
+                cred = vault.get_credential(prov)
+            if cred and cred.get("access_token"):
+                child_env[env_var] = str(cred["access_token"])
+                injected_count += 1
+        except Exception:
+            pass
+
+    agent_id = getattr(args, "agent", None)
+    if agent_id:
+        child_env["HARNESS_AGENT_ID"] = str(agent_id)
+
+    dry_run = getattr(args, "dry_run", False)
+    force = getattr(args, "force", False)
+
+    if dry_run:
+        print(f"[dry-run] Would exec: {' '.join(raw_args)}")
+        if work_dir:
+            print(f"[dry-run] Working directory: {work_dir}")
+        print(f"[dry-run] Would inject {injected_count} provider credential(s)")
+        if injected_count == 0 and not force:
+            print("[dry-run] Would refuse: no vault credentials (pass --force to override)")
+        elif injected_count == 0 and force:
+            print("[dry-run] Would run with --force and zero injected vault credentials")
+        return 0
+
+    if injected_count == 0 and not force:
+        print(
+            "error: no vault credentials available for provider injection; "
+            "authenticate first or pass --force to run without injected credentials",
+            file=sys.stderr,
+        )
+        return 1
+
+    if injected_count == 0 and force:
+        print("warning: running exec with --force and zero injected vault credentials", file=sys.stderr)
+
+    cwd = str(work_dir) if work_dir else None
+    try:
+        proc = subprocess.run(raw_args, env=child_env, cwd=cwd)
+        return proc.returncode
+    except FileNotFoundError:
+        cmd_name = raw_args[0] if raw_args else ""
+        print(f"error: command not found: {cmd_name}", file=sys.stderr)
+        return 127
+    except OSError as exc:
+        cmd_name = raw_args[0] if raw_args else ""
+        print(f"error: failed to execute {cmd_name}: {exc}", file=sys.stderr)
+        return 1
+
+
+def _format_claim_duration(seconds: float) -> str:
+    if seconds < 60:
+        return f"{int(seconds)}s"
+    if seconds < 3600:
+        return f"{int(seconds // 60)}m"
+    hours = int(seconds // 3600)
+    if hours < 24:
+        mins = int((seconds % 3600) // 60)
+        return f"{hours}h{mins}m"
+    days = hours // 24
+    rem_hours = hours % 24
+    return f"{days}d{rem_hours}h"
+
+
+def load_claims_for_root(primary_root: Path, stale_threshold_hours: float = 24.0) -> list[dict[str, Any]]:
+    wt_dir = primary_root / "scratch" / "worktrees"
+    git_claims_dir = primary_root / ".git" / "worktree-claims"
+    now = dt.datetime.now(dt.timezone.utc)
+    claims: list[dict[str, Any]] = []
+    seen_slugs: set[str] = set()
+
+    for d, is_git in ((wt_dir, False), (git_claims_dir, True)):
+        if not d.is_dir():
+            continue
+        try:
+            entries = sorted(d.iterdir())
+        except OSError:
+            continue
+        for entry in entries:
+            if entry.is_dir() or entry.suffix != ".json":
+                continue
+            if not is_git and not entry.name.endswith(".claim.json") and not entry.name.endswith(".json"):
+                continue
+
+            name = entry.name
+            if name.endswith(".claim.json"):
+                slug_candidate = name[:-len(".claim.json")]
+            elif name.endswith(".json"):
+                slug_candidate = name[:-len(".json")]
+            else:
+                slug_candidate = name
+
+            try:
+                data = json.loads(entry.read_text(encoding="utf-8"))
+            except Exception:
+                if slug_candidate in seen_slugs:
+                    continue
+                seen_slugs.add(slug_candidate)
+                claims.append({
+                    "slug": slug_candidate,
+                    "branch": "",
+                    "areas": [],
+                    "agent": "unknown",
+                    "created_at": "",
+                    "age_human": "-",
+                    "age_hours": 0.0,
+                    "exists_on_disk": False,
+                    "is_stale": True,
+                    "stale_reason": "corrupted claim file",
+                })
+                continue
+
+            slug = data.get("slug") or slug_candidate
+            if slug in seen_slugs:
+                continue
+            seen_slugs.add(slug)
+
+            branch = data.get("branch") or ""
+            areas = data.get("areas") or []
+            agent = data.get("agent") or "unknown"
+            created_at = data.get("created_at") or data.get("created") or ""
+            path_str = data.get("path") or str(wt_dir / slug)
+            exists_on_disk = Path(path_str).exists()
+
+            age_hours = 0.0
+            age_human = "-"
+            if created_at:
+                try:
+                    clean_ts = created_at.replace("Z", "+00:00")
+                    t = dt.datetime.fromisoformat(clean_ts)
+                    if t.tzinfo is None:
+                        t = t.replace(tzinfo=dt.timezone.utc)
+                    delta_sec = max(0.0, (now - t).total_seconds())
+                    age_hours = delta_sec / 3600.0
+                    age_human = _format_claim_duration(delta_sec)
+                except Exception:
+                    pass
+
+            is_stale = False
+            stale_reason = ""
+            if not exists_on_disk:
+                is_stale = True
+                stale_reason = "worktree directory does not exist on disk"
+            elif stale_threshold_hours > 0 and age_hours >= stale_threshold_hours:
+                is_stale = True
+                stale_reason = "claim lock duration exceeds threshold"
+
+            claims.append({
+                "slug": slug,
+                "branch": branch,
+                "areas": areas,
+                "agent": agent,
+                "created_at": created_at,
+                "age_human": age_human,
+                "age_hours": age_hours,
+                "exists_on_disk": exists_on_disk,
+                "is_stale": is_stale,
+                "stale_reason": stale_reason,
+            })
+    return claims
+
+
+def cmd_claim_inspect(args: argparse.Namespace) -> int:
+    from cli.registry import get_registry
+    reg = get_registry()
+
+    claim_all = getattr(args, "all", False)
+    target_harness = getattr(args, "harness", None)
+    threshold = getattr(args, "stale_hours", 24.0) or 24.0
+
+    targets = []
+    if claim_all:
+        for rec in reg.list_harnesses():
+            targets.append({"id": rec["id"], "path": rec["path"]})
+    elif target_harness:
+        from cli.schema_adapter import resolve_harness_root
+        try:
+            target_path = resolve_harness_root(target_harness)
+            hrec = reg.get_harness(target_harness)
+            hid = hrec["id"] if hrec else target_harness
+            targets.append({"id": hid, "path": target_path})
+        except Exception as exc:
+            print(f"error: failed to resolve target harness '{target_harness}': {exc}", file=sys.stderr)
+            return 1
+    else:
+        active = reg.get_active_harness()
+        primary_root = get_primary_repo_root()
+        if active and Path(active["path"]).resolve() == primary_root.resolve():
+            targets.append({"id": active["id"], "path": active["path"]})
+        else:
+            targets.append({"id": "current", "path": str(primary_root)})
+
+    report_items = []
+    warnings = []
+    stale_count = 0
+
+    for t in targets:
+        try:
+            proot = get_primary_repo_root(Path(t["path"]))
+        except Exception:
+            proot = Path(t["path"])
+
+        claims = load_claims_for_root(proot, stale_threshold_hours=threshold)
+        for c in claims:
+            item = {
+                "harness_id": t["id"],
+                "harness_path": str(t["path"]),
+                "slug": c["slug"],
+                "branch": c["branch"],
+                "areas": c["areas"],
+                "agent": c["agent"],
+                "created_at": c["created_at"],
+                "age_human": c["age_human"],
+                "age_hours": c["age_hours"],
+                "exists_on_disk": c["exists_on_disk"],
+                "is_stale": c["is_stale"],
+            }
+            if c["stale_reason"]:
+                item["stale_reason"] = c["stale_reason"]
+
+            if c["is_stale"]:
+                stale_count += 1
+                if c.get("stale_reason") == "corrupted claim file":
+                    warn = f"Corrupted worktree claim detected: '{c['slug']}' in {t['id']}"
+                else:
+                    warn = (
+                        f"Stale worktree claim detected (> {threshold:.0f}h old): "
+                        f"'{c['slug']}' in {t['id']} (created {c['age_human']} ago by agent '{c['agent']}')"
+                    )
+                warnings.append(warn)
+
+            report_items.append(item)
+
+    report = {
+        "total_claims": len(report_items),
+        "stale_claims": stale_count,
+        "stale_threshold_hours": threshold,
+        "claims": report_items,
+        "warnings": warnings,
+    }
+
+    if getattr(args, "json", False):
+        print(json.dumps(report, indent=2))
+        return 0
+
+    print("=== Active Worktree Claims & Lock Inspector ===")
+    print(f"Stale Threshold: {threshold:.0f} hours | Total Claims: {len(report_items)} | Stale Claims: {stale_count}\n")
+
+    if warnings:
+        for w in warnings:
+            print(f"[WARNING] {w}", file=sys.stderr)
+        print()
+
+    if not report_items:
+        print("  (no active claims or concurrency locks found)")
+        return 0
+
+    print(f"{'Harness':<14} {'Slug':<20} {'Branch':<20} {'Agent':<12} {'Age':<12} {'Disk?':<8} Status")
+    print("-" * 96)
+    for it in report_items:
+        disk_str = "yes" if it["exists_on_disk"] else "MISSING"
+        status_str = f"STALE ({it.get('stale_reason', '')})" if it["is_stale"] else "ACTIVE"
+        print(f"{it['harness_id']:<14} {it['slug']:<20} {it['branch']:<20} {it['agent']:<12} {it['age_human']:<12} {disk_str:<8} {status_str}")
+    return 0
+
+
+def cmd_claim_watch(args: argparse.Namespace) -> int:
+    return cmd_claim_inspect(args)
+
+
+def cmd_spoke_sync(args: argparse.Namespace) -> int:
+    from cli.registry import get_registry
+    from sync.pull_harness_core import pull_harness_core
+
+    reg = get_registry()
+    sync_all = getattr(args, "all", False)
+    ref = getattr(args, "ref", "main") or "main"
+    no_fetch = getattr(args, "no_fetch", False)
+    dry_run = getattr(args, "dry_run", False)
+
+    targets = []
+    if sync_all:
+        for rec in reg.list_harnesses():
+            targets.append({"id": rec["id"], "path": rec["path"]})
+    else:
+        target_harness = getattr(args, "harness", None)
+        if target_harness:
+            from cli.schema_adapter import resolve_harness_root
+            try:
+                target_path = resolve_harness_root(target_harness)
+                targets.append({"id": target_harness, "path": target_path})
+            except Exception as exc:
+                print(f"error: failed to resolve target harness '{target_harness}': {exc}", file=sys.stderr)
+                return 1
+        else:
+            active = reg.get_active_harness()
+            if active:
+                targets.append({"id": active["id"], "path": active["path"]})
+            else:
+                primary_root = get_primary_repo_root()
+                targets.append({"id": "current", "path": str(primary_root)})
+
+    results = []
+    for t in targets:
+        spoke_path = Path(t["path"]).resolve()
+        try:
+            payload = pull_harness_core(
+                spoke=spoke_path,
+                ref=ref,
+                dry_run=dry_run,
+                fetch=False if dry_run else (not no_fetch),
+            )
+            payload["spoke_id"] = t["id"]
+            results.append(payload)
+        except Exception as exc:
+            results.append({
+                "ok": False,
+                "spoke": str(spoke_path),
+                "spoke_id": t["id"],
+                "ref": ref,
+                "dry_run": dry_run,
+                "error": str(exc),
+                "updates": [],
+                "skipped_domain": [],
+                "regenerated_indexes": [],
+            })
+
+    if getattr(args, "json", False):
+        if len(results) == 1 and not sync_all:
+            print(json.dumps(results[0], indent=2))
+        else:
+            print(json.dumps(results, indent=2))
+        return 0 if all(r.get("ok", False) for r in results) else 1
+
+    mode = "DRY-RUN" if dry_run else "LIVE"
+    for r in results:
+        print(f"\nPull harness core ({mode}) for {r.get('spoke_id', '')}")
+        print(f"  spoke:   {r['spoke']}")
+        print(f"  ref:     {r['ref']}")
+        if r.get("error"):
+            print(f"  error:   {r['error']}")
+            continue
+        if r.get("branch"):
+            print(f"  branch:  {r['branch']}")
+        for u in r.get("updates", []):
+            print(f"  update:  {u}")
+        for s in r.get("skipped_domain", []):
+            print(f"  skip:    {s}")
+        for idx in r.get("regenerated_indexes", []):
+            print(f"  reindex: {idx}")
+        if not r.get("updates"):
+            print("  no allowlisted core updates")
+
+    return 0 if all(r.get("ok", False) for r in results) else 1
+
+
+
+def cmd_rot(args: argparse.Namespace) -> int:
+    primary_root = get_primary_repo_root()
+    from routing.audit_harness_rot import fix_merged_branches, format_report, run_audit
+    from dataclasses import asdict
+
+    if getattr(args, "fix_branches", False):
+        dry_run = getattr(args, "dry_run", False)
+        pruned, skipped = fix_merged_branches(primary_root, dry_run=dry_run)
+        if getattr(args, "json", False):
+            print(json.dumps({"pruned_branches": pruned, "skipped_branches": skipped, "dry_run": dry_run}, indent=2))
+        else:
+            action = "Would prune" if dry_run else "Pruned"
+            print(f"{action} {len(pruned)} merged branch(es): {', '.join(pruned) if pruned else 'none'}")
+            if skipped:
+                print(f"Skipped {len(skipped)} active worktree branch(es): {', '.join(skipped)}")
+        return 0
+
+    report = run_audit(primary_root)
+    if getattr(args, "json", False):
+        print(json.dumps(asdict(report), indent=2))
+    else:
+        print(format_report(report))
+
+    if getattr(args, "check", False) and not report.ok:
+        return 1
+    return 0
+
+
 class HarnessArgumentParser(argparse.ArgumentParser):
     """ArgumentParser ensuring shared flags retain default values across subparsers."""
 
@@ -1812,6 +3015,8 @@ class HarnessArgumentParser(argparse.ArgumentParser):
             ns.dry_run = False
         if not hasattr(ns, "harness"):
             ns.harness = None
+        if not hasattr(ns, "force"):
+            ns.force = False
         return ns
 
 
@@ -1828,12 +3033,27 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="cmd")
 
+    # preflight
+    p_preflight = sub.add_parser(
+        "preflight",
+        help="Verify workstation onboarding prerequisites and host readiness",
+        parents=[shared],
+    )
+    p_preflight.add_argument("--strict", action="store_true", help="Fail if any warning exists")
+    p_preflight.add_argument("--fix", action="store_true", help="Display copy-paste remediation commands")
+    p_preflight.add_argument("--include-optional", action="store_true", help="Probe optional extensions (Cloudflare, Ollama)")
+
     # status
     sub.add_parser("status", help="Inspect git branch, cleanliness, and registered worktrees", parents=[shared])
 
     # branch
     p_branch = sub.add_parser("branch", help="Create a unique task worktree and branch", parents=[shared])
     p_branch.add_argument("slug", help="Kebab-case task name")
+    p_branch.add_argument("--areas", default="", help="Comma-separated area names (e.g. docs,scripts)")
+    p_branch.add_argument("--agent", default="harness-operator", help="Agent identifier claiming the worktree (e.g. harness-operator)")
+    p_branch.add_argument("--type", default="agent", choices=["agent", "feat", "feature", "bugfix", "refactor"], help="Task type (e.g. feature, bugfix, refactor)")
+    p_branch.add_argument("--allow-dirty", action="store_true", default=False, help="Allow branching from a dirty working tree")
+    p_branch.add_argument("--force", action="store_true", default=False, help="Force worktree creation bypassing dirty checks")
 
     # agent
     p_agent = sub.add_parser("agent", help="Inspect available agents or view detailed agent spec", parents=[shared])
@@ -1859,6 +3079,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Archive checkout and Git metadata, then unregister; the archive remains on disk",
     )
+    p_clean.add_argument(
+        "--skip-qmd-refresh",
+        action="store_true",
+        help="Skip automatic QMD index refresh after clean --apply",
+    )
 
     # auth
     p_auth = sub.add_parser("auth", help="Manage authentication and secure credential vaults", parents=[shared])
@@ -1866,7 +3091,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # auth login
     p_login = auth_sub.add_parser("login", help="Authenticate with an AI model provider", parents=[shared])
-    p_login.add_argument("provider", choices=["anthropic", "claude", "cursor", "gemini", "google", "openai", "gpt", "local", "ollama", "llamacpp", "llama-server"], help="Target model provider")
+    p_login.add_argument("provider", choices=["anthropic", "claude", "cursor", "gemini", "google", "openai", "gpt", "local", "ollama", "llamacpp", "llama-server", "bifrost"], help="Target model provider")
     p_login.add_argument("--no-browser", action="store_true", help="Use terminal/manual code entry instead of launching browser")
     p_login.add_argument("--device-code", action="store_true", help="Use RFC 8628 Device Authorization Grant")
     p_login.add_argument("--api-key", help="Direct API key onboarding into secure vault")
@@ -1936,8 +3161,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_chat.add_argument(
         "--provider",
         default=None,
-        choices=["anthropic", "claude", "cursor", "gemini", "google", "openai", "gpt", "local", "ollama", "llamacpp", "llama-server"],
+        choices=["anthropic", "claude", "cursor", "gemini", "google", "openai", "gpt", "local", "ollama", "llamacpp", "llama-server", "bifrost"],
         help="Model provider (default: anthropic)",
+    )
+    p_chat.add_argument(
+        "--api-key",
+        dest="api_key",
+        default=None,
+        help="Provider API key or virtual key (stored in vault if new)",
     )
     p_chat.add_argument("--title", default=None, help="Session title")
     p_chat.add_argument(
@@ -1960,6 +3191,49 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_chat.add_argument("--system", default=None, help="Custom system prompt string")
     p_chat.add_argument("--system-file", default=None, help="Path to custom system prompt file")
+    p_chat.add_argument(
+        "--mcp-config",
+        dest="mcp_config",
+        default=None,
+        metavar="PATH",
+        help="Path to MCP server configuration JSON",
+    )
+    p_chat.add_argument(
+        "--no-mcp",
+        dest="no_mcp",
+        action="store_true",
+        help="Disable MCP server discovery and integration for this chat session",
+    )
+    p_chat.add_argument(
+        "--thinking",
+        default=None,
+        help="Thinking budget in tokens (integer) or effort level ('off', 'low', 'medium', 'high', 'xhigh')",
+    )
+    p_chat.add_argument(
+        "--effort",
+        default=None,
+        choices=["low", "medium", "high", "xhigh"],
+        help="Reasoning effort level ('low', 'medium', 'high', 'xhigh')",
+    )
+    p_chat.add_argument(
+        "--permissions",
+        choices=["ask", "auto-edit", "yolo"],
+        default="ask",
+        help="Tool execution permission mode (default: ask)",
+    )
+    p_chat.add_argument(
+        "--no-tools",
+        dest="no_tools",
+        action="store_true",
+        help="Disable default workspace coding tools in chat",
+    )
+    p_chat.add_argument(
+        "--plain",
+        "--no-tui",
+        dest="plain",
+        action="store_true",
+        help="Disable rich anchored TUI and use plain text line prompts",
+    )
 
     # Gateway: documented OpenAI-compatible Chat Completions HTTP/SSE route.
     gateway_help = (
@@ -1969,12 +3243,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_gateway = sub.add_parser("gateway", help=gateway_help, description=gateway_help, parents=[shared])
     p_gateway.add_argument("--host", default="127.0.0.1", help="Bind address (default: loopback only)")
     p_gateway.add_argument("--port", type=int, default=8642, help="Listen port (default: 8642)")
-    p_gateway.add_argument("--provider", default="anthropic", choices=["anthropic", "gemini", "openai"], help="Provider used by the shared conversation loop")
+    p_gateway.add_argument("--provider", default="anthropic", choices=["anthropic", "gemini", "openai", "local", "bifrost"], help="Provider used by the shared conversation loop")
     p_gateway.add_argument("--model", default=None, help="Default model for the configured provider")
 
     # ACP v1 stdio JSON-RPC adapter.
     p_acp = sub.add_parser("acp", help="Run the ACP v1 stdio JSON-RPC adapter", parents=[shared])
-    p_acp.add_argument("--provider", default="anthropic", choices=["anthropic", "gemini", "openai"], help="Provider used by the shared conversation loop")
+    p_acp.add_argument("--provider", default="anthropic", choices=["anthropic", "gemini", "openai", "local", "bifrost"], help="Provider used by the shared conversation loop")
     p_acp.add_argument("--model", default=None, help="Model for the configured provider")
 
     # sessions
@@ -1997,6 +3271,44 @@ def build_parser() -> argparse.ArgumentParser:
     p_deferral.add_argument("--record-429", type=int, default=None, metavar="SECONDS", help="Record secondary 429 lockout window in seconds")
     p_deferral.add_argument("--clear-429", action="store_true", help="Clear secondary 429 lockout cooldown")
 
+    # video
+    p_video = sub.add_parser("video", help="Interact with local ComfyUI Wan 2.1/2.2 video generation (delegates to art-router)", parents=[shared])
+    p_video.add_argument("video_args", nargs=argparse.REMAINDER, help="Arguments passed to art-router video harness")
+
+    # prompt
+    p_prompt = sub.add_parser("prompt", help="Compile and evaluate Danbooru tag prompts (delegates to art-router)", parents=[shared])
+    p_prompt.add_argument("prompt_args", nargs=argparse.REMAINDER, help="Arguments passed to art-router prompt harness")
+
+    # exec
+    p_exec = sub.add_parser("exec", help="Execute command with provider API keys injected from secure vault", parents=[shared])
+    p_exec.add_argument("--agent", default=None, help="Agent identity for profile tracking")
+    p_exec.add_argument("--force", action="store_true", default=False, help="Run command even if no vault credentials exist")
+    p_exec.add_argument("exec_args", nargs=argparse.REMAINDER, help="Command and arguments to execute")
+
+    # claim
+    p_claim = sub.add_parser("claim", help="Inspect and manage active worktree claims and concurrency locks", parents=[shared])
+    claim_sub = p_claim.add_subparsers(dest="claim_cmd")
+    p_claim_inspect = claim_sub.add_parser("inspect", help="Inspect active worktree claims and detect stale concurrency locks", parents=[shared])
+    p_claim_inspect.add_argument("--all", action="store_true", help="Inspect claims across all registered harnesses")
+    p_claim_inspect.add_argument("--stale-hours", type=float, default=24.0, help="Threshold in hours to mark claims stale (default: 24.0)")
+
+    p_claim_watch = claim_sub.add_parser("watch", help="Watch active worktree claims", parents=[shared])
+    p_claim_watch.add_argument("--interval", default="5s", help="Polling interval (default: 5s)")
+    p_claim_watch.add_argument("--stale-hours", type=float, default=24.0, help="Threshold in hours to mark claims stale")
+
+    # spoke
+    p_spoke = sub.add_parser("spoke", help="Coordinate domain spoke harnesses and synchronize baseline core updates", parents=[shared])
+    spoke_sub = p_spoke.add_subparsers(dest="spoke_cmd")
+    p_spoke_sync = spoke_sub.add_parser("sync", help="Synchronize baseline core updates into spoke harness checkout", parents=[shared])
+    p_spoke_sync.add_argument("--all", action="store_true", help="Sync all registered spoke harnesses")
+    p_spoke_sync.add_argument("--ref", default="main", help="harness-core ref to pull (default: main)")
+    p_spoke_sync.add_argument("--no-fetch", action="store_true", help="Do not git fetch; use existing remote-tracking ref")
+
+    # rot / audit-rot
+    p_rot = sub.add_parser("rot", aliases=["audit-rot"], help="Audit harness for rot, dead code, stale worktrees, and deprecations", parents=[shared])
+    p_rot.add_argument("--check", action="store_true", help="Exit code 1 if actionable rot is detected")
+    p_rot.add_argument("--fix-branches", action="store_true", help="Prune local branches already merged to main")
+
     return parser
 
 
@@ -2006,6 +3318,11 @@ def main(
     stream_transport: Any = None,
     tool_registry: Any = None,
 ) -> int:
+    target_argv = list(argv) if argv is not None else sys.argv[1:]
+    for spoke_cmd in ("video", "prompt"):
+        if spoke_cmd in target_argv:
+            return _delegate_to_art_router(spoke_cmd, target_argv)
+
     parser = build_parser()
     args = parser.parse_args(argv)
 
@@ -2061,10 +3378,25 @@ def main(
         return cmd_commands(args)
     if args.cmd == "deferral":
         return cmd_deferral(args)
+    if args.cmd == "exec":
+        return cmd_exec(args)
+    if args.cmd == "claim":
+        if getattr(args, "claim_cmd", None) == "watch":
+            return cmd_claim_watch(args)
+        return cmd_claim_inspect(args)
+    if args.cmd == "spoke":
+        return cmd_spoke_sync(args)
+    if args.cmd == "video":
+        return cmd_video(args)
+    if args.cmd == "prompt":
+        return cmd_prompt(args)
+    if args.cmd == "preflight":
+        return cmd_preflight(args)
+    if args.cmd in ("rot", "audit-rot"):
+        return cmd_rot(args)
 
     return 2
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

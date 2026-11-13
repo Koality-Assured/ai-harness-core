@@ -2,7 +2,7 @@
 
 Portable checkpoints for cold resumption. Split into **user** (human/workstation), **agent** (per-specialist threads), and **model** (model-family capability outcomes).
 
-Ingest simply; do not duplicate skills or paste root Critical — link [`../../AGENTS.md`](../../AGENTS.md). Session-end memory checkpoints are a parent gate — do not mint specialists for them. Spawn `ai-tooling-ops` when `memory-create`, `memory-adjust`, or `memory-cleanup` *is* the material task. Spawn `memory-operator` when `model-memory-operate` *is* the material task — not `ai-tooling-ops`.
+Ingest simply; do not duplicate skills or paste root Critical — link [`../../AGENTS.md`](../../AGENTS.md). Session-end memory checkpoints are a parent gate — do not mint specialists for them. Spawn `harness-operator` when `memory-create`, `memory-adjust`, `memory-cleanup`, or `model-memory-operate` *is* the material task.
 
 ## Layout
 
@@ -35,4 +35,4 @@ Ingest simply; do not duplicate skills or paste root Critical — link [`../../A
 
 ## Ownership note (skill-agent-dispatch)
 
-The isolation + dispatch orchestration operational memory lives under [`agent/router/`](./agent/router/) (`skill-agent-dispatch.md`). Router owns spawn/isolation/dispatch orchestration and writes session-end checkpoints here. `ai-tooling-ops` owns skill/agent body authoring; spawn it for user/agent `memory-*` only when that skill is the material user task. `memory-operator` owns `model-memory-operate` (model-family capability outcomes under [`model/`](./model/)).
+The isolation + dispatch orchestration operational memory lives under [`agent/router/`](./agent/router/) (`skill-agent-dispatch.md`). Router owns spawn/isolation/dispatch orchestration and writes session-end checkpoints here. `harness-operator` owns skill/agent authoring and memory maintenance (`memory-*`, `model-memory-operate`).

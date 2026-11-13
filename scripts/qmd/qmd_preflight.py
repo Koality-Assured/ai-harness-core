@@ -19,6 +19,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 if str(_LIB) not in sys.path:
     sys.path.insert(0, str(_LIB))
@@ -182,12 +183,18 @@ def classify(
     return "inaccessible_or_unhealthy"
 
 
-def build_report(*, probe_cli: bool, inspect_hooks: bool, timeout: int) -> dict[str, Any]:
+def build_report(
+    *,
+    probe_cli: bool = False,
+    inspect_hooks: bool = False,
+    repo_root: Path | None = None,
+    timeout: int = 15,
+) -> dict[str, Any]:
     """Build a no-mutation preflight report."""
-    indexes = index_observations(candidate_index_paths())
+    indexes = index_observations(candidate_index_paths(repo_root=repo_root))
     qmd = resolve_qmd()
     probe = probe_status(qmd, timeout=timeout) if probe_cli and qmd else None
-    hooks = inspect_qmd_hooks() if inspect_hooks else None
+    hooks = inspect_qmd_hooks(paths=config_candidates(repo_root=repo_root)) if inspect_hooks else None
     state = classify(
         indexes=indexes,
         qmd=qmd,

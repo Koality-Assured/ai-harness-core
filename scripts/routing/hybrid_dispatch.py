@@ -22,9 +22,9 @@ from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from areas import load_area_records
-from md import load_skill_record, skill_paths
-from paths import REPO_ROOT as DEFAULT_ROOT
+from areas import load_area_records, load_nested_defaults  # noqa: E402
+from md import heading_titles, load_skill_record, parse_frontmatter, skill_paths  # noqa: E402
+from paths import REPO_ROOT as DEFAULT_ROOT  # noqa: E402
 
 STOP_WORDS = {
     "a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are",
@@ -175,7 +175,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     # QMD operations
     {
         "skill": "qmd-usage",
-        "owner_agent": "qmd-ops",
+        "owner_agent": "harness-operator",
         "patterns": [
             r"\bqmd\s+(?:search|get|query)\b",
             r"\bqmd\s+retrieval\b",
@@ -185,7 +185,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "qmd-efficiency",
-        "owner_agent": "qmd-ops",
+        "owner_agent": "harness-operator",
         "patterns": [
             r"\bqmd\s+efficiency\b",
             r"\bqmd\s+token\s+(?:report|savings)\b",
@@ -196,7 +196,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     # AST-grep and Cost Layers
     {
         "skill": "ast-grep",
-        "owner_agent": "router-maintenance",
+        "owner_agent": "harness-operator",
         "patterns": [
             r"\bast-grep\b",
             r"\bastgrep\b",
@@ -208,7 +208,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "headroom",
-        "owner_agent": "router-maintenance",
+        "owner_agent": "harness-operator",
         "patterns": [
             r"\bheadroom\b",
             r"\bcontext\s+compression\b",
@@ -218,7 +218,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "cost-layer-dry-run",
-        "owner_agent": "router-maintenance",
+        "owner_agent": "harness-operator",
         "patterns": [
             r"\bcost\s+layer\s+dry\s*run\b",
             r"\bcost-layer-dry-run\b",
@@ -249,7 +249,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     # Security & Assessment
     {
         "skill": "noir-scan",
-        "owner_agent": "artifact-agent",
+        "owner_agent": "security-tooling-operator",
         "patterns": [
             r"\b(?:run\s+)?noir\s+scan\b",
             r"\bnoir-scan\b",
@@ -262,7 +262,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "threat-model",
-        "owner_agent": "assessment-agent",
+        "owner_agent": "security-tooling-operator",
         "patterns": [
             r"\bstride\s+threat\s+model\b",
             r"\bthreat\s+model(?:ing)?\b",
@@ -294,7 +294,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     # Content & Prose Quality
     {
         "skill": "anti-slop",
-        "owner_agent": "artifact-agent",
+        "owner_agent": "document-operator",
         "patterns": [
             r"\banti-slop\b",
             r"\banti\s+slop\b",
@@ -306,7 +306,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "humanizer",
-        "owner_agent": "artifact-agent",
+        "owner_agent": "document-operator",
         "patterns": [
             r"\bhumanizer\b",
             r"\bhumanize\s+(?:prose|writing|text)\b",
@@ -316,7 +316,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     # Documentation & Maintenance
     {
         "skill": "markdownlint",
-        "owner_agent": "documentation-ops",
+        "owner_agent": "document-operator",
         "patterns": [
             r"\bmarkdownlint\b",
             r"\blint\s+markdown\b",
@@ -327,7 +327,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "doc-builder",
-        "owner_agent": "documentation-ops",
+        "owner_agent": "document-operator",
         "patterns": [
             r"\bdoc-builder\b",
             r"\bauthor\s+(?:durable\s+)?docs\b",
@@ -338,7 +338,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "router-structure",
-        "owner_agent": "documentation-ops",
+        "owner_agent": "document-operator",
         "patterns": [
             r"\brouter-structure\b",
             r"\bvalidate\s+router\s+structure\b",
@@ -349,7 +349,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "scratch-cleanup",
-        "owner_agent": "router-maintenance",
+        "owner_agent": "harness-operator",
         "patterns": [
             r"\bscratch-cleanup\b",
             r"\bclean(?:up)?\s+scratch\b",
@@ -359,7 +359,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     # Builders & Tooling
     {
         "skill": "skill-builder",
-        "owner_agent": "ai-tooling-ops",
+        "owner_agent": "harness-operator",
         "patterns": [
             r"\bskill-builder\b",
             r"\bauthor\s+(?:new\s+)?skill\b",
@@ -368,7 +368,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "agent-builder",
-        "owner_agent": "ai-tooling-ops",
+        "owner_agent": "harness-operator",
         "patterns": [
             r"\bagent-builder\b",
             r"\bcreate\s+specialist\s+agent\b",
@@ -377,7 +377,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "skill-dry-run",
-        "owner_agent": "ai-tooling-ops",
+        "owner_agent": "harness-operator",
         "patterns": [
             r"\bskill-dry-run\b",
             r"\bdry\s*run\s+skill\b",
@@ -397,7 +397,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     # Research & Deliverables
     {
         "skill": "deep-research",
-        "owner_agent": "detailed-activity",
+        "owner_agent": "research-operator",
         "patterns": [
             r"\bdeep-research\b",
             r"\bdeep\s+research\b",
@@ -406,7 +406,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "executive-report",
-        "owner_agent": "artifact-agent",
+        "owner_agent": "document-operator",
         "patterns": [
             r"\bexecutive-report\b",
             r"\bexecutive\s+report\b",
@@ -415,7 +415,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "proposal-report",
-        "owner_agent": "artifact-agent",
+        "owner_agent": "document-operator",
         "patterns": [
             r"\bproposal-report\b",
             r"\bproposal\s+report\b",
@@ -423,7 +423,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "tabler-dashboard",
-        "owner_agent": "artifact-agent",
+        "owner_agent": "document-operator",
         "patterns": [
             r"\btabler-dashboard\b",
             r"\btabler\s+dashboard\b",
@@ -432,7 +432,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "foundation-site",
-        "owner_agent": "artifact-agent",
+        "owner_agent": "document-operator",
         "patterns": [
             r"\bfoundation-site\b",
             r"\bfoundation\s+sites?\s+html\b",
@@ -442,7 +442,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     # Memory
     {
         "skill": "memory-create",
-        "owner_agent": "ai-tooling-ops",
+        "owner_agent": "harness-operator",
         "patterns": [
             r"\bmemory-create\b",
             r"\bcreate\s+memory\s+checkpoint\b",
@@ -450,7 +450,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "memory-adjust",
-        "owner_agent": "ai-tooling-ops",
+        "owner_agent": "harness-operator",
         "patterns": [
             r"\bmemory-adjust\b",
             r"\bupdate\s+memory\s+checkpoint\b",
@@ -458,7 +458,7 @@ FAST_PATH_RULES: list[dict[str, Any]] = [
     },
     {
         "skill": "memory-cleanup",
-        "owner_agent": "ai-tooling-ops",
+        "owner_agent": "harness-operator",
         "patterns": [
             r"\bmemory-cleanup\b",
             r"\barchive\s+memory\s+checkpoint\b",
@@ -519,12 +519,23 @@ class Tier1FastPath:
     Sub-millisecond matcher with strict MED-02 multi-intent collision handling.
     """
 
-    def __init__(self, rules: list[dict[str, Any]] | None = None) -> None:
+    def __init__(self, rules: list[dict[str, Any]] | None = None, root: Path | None = None) -> None:
+        self.root = root or DEFAULT_ROOT
         self.rules = rules or FAST_PATH_RULES
+
+        # Sync/override owner_agent from loaded SKILL.md catalog if present
+        skill_owners: dict[str, str] = {}
+        for path in skill_paths(self.root):
+            try:
+                rec = load_skill_record(path)
+                skill_owners[rec["name"]] = rec["owner_agent"]
+            except Exception:
+                continue
+
         self._compiled: list[tuple[str, str, list[re.Pattern]]] = []
         for r in self.rules:
             skill = r["skill"]
-            owner = r["owner_agent"]
+            owner = skill_owners.get(skill) or r["owner_agent"]
             patterns = [re.compile(p, re.IGNORECASE) for p in r["patterns"]]
             self._compiled.append((skill, owner, patterns))
 
@@ -862,7 +873,7 @@ class HybridDispatcher:
 
     def __init__(self, root: Path | None = None) -> None:
         self.root = root or DEFAULT_ROOT
-        self.tier1 = Tier1FastPath()
+        self.tier1 = Tier1FastPath(root=self.root)
         self.tier2 = Tier2BM25(root=self.root)
         self.tier3 = Tier3AmbiguityGate()
 

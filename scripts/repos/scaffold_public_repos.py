@@ -7,34 +7,36 @@ routing_hints: [scaffold, public-repos, agent-skills, agent-standards, ai-resear
 from __future__ import annotations
 
 import argparse
+import ast
 import json
+import os
 import re
 import subprocess
 import sys
-from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Dict, List, Optional
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 _SYNC = Path(__file__).resolve().parents[1] / "sync"
 sys.path.insert(0, str(_LIB))
 if str(_SYNC) not in sys.path:
     sys.path.insert(0, str(_SYNC))
-from _harness_template import (
+from paths import REPO_ROOT, resolve_repo_root  # noqa: E402
+from _harness_template import (  # noqa: E402
     GENERIC_TEMPLATE_CI,
     GENERIC_TEMPLATE_README,
     GENERIC_TEMPLATE_REFERENCES_AGENTS,
     GENERIC_TEMPLATE_STUB_AGENTS,
 )
-from beautify_repo import (
+from beautify_repo import (  # noqa: E402
     generate_readme_hero,
     generate_vector_banner,
     generate_vector_logo,
     get_domain_spec,
     harden_pyproject_toml_content,
 )
-from paths import resolve_repo_root
+
 
 MIT_LICENSE_TEMPLATE = """MIT License
 
@@ -159,8 +161,8 @@ indent_style = tab
 # Repo 1: agent-skills-and-tools
 # -----------------------------------------------------------------------------
 
-def _build_agent_skills_files() -> dict[str, str]:
-    files: dict[str, str] = {}
+def _build_agent_skills_files() -> Dict[str, str]:
+    files: Dict[str, str] = {}
 
     files["LICENSE"] = MIT_LICENSE_TEMPLATE
     files[".gitignore"] = COMMON_GITIGNORE
@@ -807,8 +809,8 @@ if __name__ == "__main__":
 # Repo 2: agent-standards
 # -----------------------------------------------------------------------------
 
-def _build_agent_standards_files() -> dict[str, str]:
-    files: dict[str, str] = {}
+def _build_agent_standards_files() -> Dict[str, str]:
+    files: Dict[str, str] = {}
 
     files["LICENSE"] = MIT_LICENSE_TEMPLATE
     files[".gitignore"] = COMMON_GITIGNORE
@@ -1408,8 +1410,8 @@ if __name__ == "__main__":
 # Repo 3: ai-research-and-benchmarks
 # -----------------------------------------------------------------------------
 
-def _build_ai_research_files() -> dict[str, str]:
-    files: dict[str, str] = {}
+def _build_ai_research_files() -> Dict[str, str]:
+    files: Dict[str, str] = {}
 
     files["LICENSE"] = MIT_LICENSE_TEMPLATE
     files[".gitignore"] = COMMON_GITIGNORE + """
@@ -1776,6 +1778,11 @@ MODEL_PRICING: Dict[str, Dict[str, float]] = {
         "output_per_m": 15.00,
         "cache_read_per_m": 0.30,
     },
+    "gemini-4-hydrogen": {
+        "input_per_m": 1.50,
+        "output_per_m": 7.50,
+        "cache_read_per_m": 0.075,
+    },
     "gemini-1.5-pro": {
         "input_per_m": 3.50,
         "output_per_m": 10.50,
@@ -1973,8 +1980,8 @@ if __name__ == "__main__":
 # Repo 4: security-standards
 # -----------------------------------------------------------------------------
 
-def _build_security_standards_files() -> dict[str, str]:
-    files: dict[str, str] = {}
+def _build_security_standards_files() -> Dict[str, str]:
+    files: Dict[str, str] = {}
 
     files["LICENSE"] = MIT_LICENSE_TEMPLATE
     files[".gitignore"] = COMMON_GITIGNORE
@@ -2175,8 +2182,8 @@ if __name__ == "__main__":
 # Repo 5: industry-references
 # -----------------------------------------------------------------------------
 
-def _build_industry_references_files() -> dict[str, str]:
-    files: dict[str, str] = {}
+def _build_industry_references_files() -> Dict[str, str]:
+    files: Dict[str, str] = {}
 
     files["LICENSE"] = MIT_LICENSE_TEMPLATE
     files[".gitignore"] = COMMON_GITIGNORE
@@ -2360,8 +2367,8 @@ if __name__ == "__main__":
 # Repo 6: ai-harness-core (generic wiki harness template)
 # -----------------------------------------------------------------------------
 
-def _build_ai_harness_core_files() -> dict[str, str]:
-    files: dict[str, str] = {}
+def _build_ai_harness_core_files() -> Dict[str, str]:
+    files: Dict[str, str] = {}
 
     files["LICENSE"] = MIT_LICENSE_TEMPLATE
     files[".gitignore"] = COMMON_GITIGNORE
@@ -2441,10 +2448,10 @@ def _build_ai_harness_core_files() -> dict[str, str]:
 class RepoDefinition:
     name: str
     description: str
-    builder: Callable[[], dict[str, str]]
+    builder: Callable[[], Dict[str, str]]
 
 
-REPO_REGISTRY: dict[str, RepoDefinition] = {
+REPO_REGISTRY: Dict[str, RepoDefinition] = {
     "agent-skills-and-tools": RepoDefinition(
         name="agent-skills-and-tools",
         description="Public repository of reusable agent skills, schemas, and supporting tool integrations.",
@@ -2478,7 +2485,7 @@ REPO_REGISTRY: dict[str, RepoDefinition] = {
 }
 
 
-def get_repo_definitions() -> dict[str, RepoDefinition]:
+def get_repo_definitions() -> Dict[str, RepoDefinition]:
     """Return all available repository definitions."""
     return dict(REPO_REGISTRY)
 
@@ -2489,7 +2496,7 @@ def scaffold_repo(
     overwrite: bool = False,
     dry_run: bool = False,
     init_git: bool = False,
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     """Scaffold a single repository into target_dir / repo_name."""
     if repo_name not in REPO_REGISTRY:
         raise ValueError(f"Unknown repository '{repo_name}'. Available: {list(REPO_REGISTRY.keys())}")
@@ -2521,7 +2528,7 @@ def scaffold_repo(
                 f"Destination directory '{repo_root}' already exists and contains files. Use --overwrite to replace."
             )
 
-    created_files: list[str] = []
+    created_files: List[str] = []
     total_bytes = 0
 
     if not dry_run:
@@ -2563,9 +2570,9 @@ def scaffold_all_repos(
     overwrite: bool = False,
     dry_run: bool = False,
     init_git: bool = False,
-) -> list[dict[str, Any]]:
+) -> List[Dict[str, Any]]:
     """Scaffold all 3 ecosystem repositories."""
-    results: list[dict[str, Any]] = []
+    results: List[Dict[str, Any]] = []
     for repo_name in REPO_REGISTRY:
         res = scaffold_repo(
             repo_name=repo_name,
@@ -2578,7 +2585,7 @@ def scaffold_all_repos(
     return results
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: List[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,

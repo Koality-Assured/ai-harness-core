@@ -137,7 +137,9 @@ def format_table_cell(cell: str) -> str:
     if sev:
         token = sev.group(1)
         key = token.lower()
-        if key in {"critical", "c", "fail", "f"} or key in {"high", "h", "open"}:
+        if key in {"critical", "c", "fail", "f"}:
+            tone = "alert"
+        elif key in {"high", "h", "open"}:
             tone = "alert"
         elif key in {"medium", "m", "warn", "warning"}:
             tone = "warning"
@@ -157,8 +159,10 @@ def format_table_cell(cell: str) -> str:
 
 def _split_table_row(line: str) -> list[str]:
     inner = line.strip()
-    inner = inner.removeprefix("|")
-    inner = inner.removesuffix("|")
+    if inner.startswith("|"):
+        inner = inner[1:]
+    if inner.endswith("|"):
+        inner = inner[:-1]
     return [c.strip() for c in inner.split("|")]
 
 

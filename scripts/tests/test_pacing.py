@@ -16,7 +16,7 @@ _SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_SCRIPTS))
 sys.path.insert(0, str(_SCRIPTS / "_lib"))
 
-from pacing import (
+from pacing import (  # noqa: E402
     check_secondary_availability,
     chunk_tasks,
     clear_secondary_exhaustion,
@@ -82,11 +82,15 @@ class PacingUnitTests(unittest.TestCase):
 
     def test_resolve_quota_profile_native_antigravity(self) -> None:
         self.assertEqual(
-            resolve_quota_profile(host="antigravity", model_name="Gemini 3.8 Flash"),
+            resolve_quota_profile(host="antigravity", model_name="Gemini 4 Hydrogen (Low)"),
             "standard",
         )
         self.assertEqual(
-            resolve_quota_profile(host="antigravity", model_name="Gemini 3.8 Flash (High)"),
+            resolve_quota_profile(host="antigravity", model_name="Gemini 4 Hydrogen (Medium)"),
+            "standard",
+        )
+        self.assertEqual(
+            resolve_quota_profile(host="antigravity", model_name="Gemini 4 Hydrogen (High)"),
             "standard",
         )
         self.assertEqual(

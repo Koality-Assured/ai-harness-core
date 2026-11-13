@@ -8,15 +8,15 @@
    - Supply only the explicit `Prompt`, `Role`, `TypeName`, `Model` tier, and `Workspace` mode.
    - Do NOT pass parent conversation transcripts or prior turn logs into child prompts.
 3. **Progressive Disclosure**: Only skill names and descriptions are visible initially. Full skill bodies (`SKILL.md`) and target folder rules are loaded strictly Just-In-Time (JIT) when needed.
-4. **Cost Layers**: Leverage `qmd search`/`qmd get` for Markdown discovery, `ast-grep` for AST symbol exploration, and Headroom for bulky outputs.
+4. **Cost Layers**: Leverage QMD retrieval primitives (`qmd search` for lexical, `qmd vsearch` for dense semantic vectors, structured `qmd query`, and `qmd multi-get` for batch retrieval) for Markdown discovery from `scratch/qmd-main`, `ast-grep` for AST symbol exploration, and Headroom for bulky outputs. Never fall back to recursive shell greps unless QMD returns zero candidates.
 5. **Durable Write-Back**: Record lessons and recovery strategies in `ai-tooling/memory/` and update owning source areas upon completion.
 6. **Worktree file-tool access**: Mutating specialists work in `scratch/worktrees/<slug>/`. Do not deny Read/Write on that path. Indexing ignores (`.gitignore`, `.cursorindexingignore`) are not the same as agent-access denies.
 
 ## Antigravity Ultra: Model Tiering & Secondary Deferral Rules
 
-1. **Native Model Tiering (Gemini 3.8 Series)**:
-   - Antigravity standard / high default is **Gemini 3.8 Flash** (`standard`) and **Gemini 3.8 Flash (High)** (`high`).
-   - Max reasoning tier is **Gemini 3.8 Pro** (`max`). Older 3.7 / 3.6 / 3.1 models are retired.
+1. **Native Model Tiering (Gemini 4 Hydrogen & 3.8 Series)**:
+   - Antigravity native defaults are **Gemini 4 Hydrogen (Low)** (`fast`), **Gemini 4 Hydrogen (Medium)** (`standard`), and **Gemini 4 Hydrogen (High)** (`high`; Hydrogen's default thinking level).
+   - Max reasoning tier is **Gemini 3.8 Pro** (`max`, alongside **Gemini 4 Hydrogen (xhigh)**). Older 3.8 Flash, 3.7, 3.6, and 3.1 models are retired/superseded.
    - Gemini Ultra subscription provides virtually unconstrained capacity for first-party Gemini models; Gemini remains the daily driver for exploration, repo ingestion, tool chaining, test execution, and bulk coding.
 
 2. **Dedicated Secondary (Claude) Allocation & Utilization Policy**:
@@ -30,14 +30,14 @@
      - *Dense Technical Specifications*: Architectural RFCs, formal API schemas, and specification drafts requiring high logical density and zero corporate filler.
 
 3. **Anti-Waste Guardrails & Subagent Down-Tiering**:
-   - Leaf exploration, documentation lookups, AST symbol searches, grep, and routine tool chaining MUST remain on Gemini `flash` or `flash_lite`.
-   - When the parent or session is running under a secondary model (Claude), child subagents (`TypeName: "research"`) **MUST NOT** inherit the secondary model. Subagents MUST explicitly specify `Model: "flash"` or `Model: "flash_lite"`.
+   - Leaf exploration, documentation lookups, AST symbol searches, grep, and routine tool chaining MUST remain on fast native Gemini (`fast` / `Gemini 4 Hydrogen (Low)`, invoked via the host `invoke_subagent` `Model` enum tokens `"flash"` or `"flash_lite"`).
+   - When the parent or session is running under a secondary model (Claude), child subagents (`TypeName: "research"`) **MUST NOT** inherit the secondary model. Subagents MUST explicitly specify `Model: "flash"` or `Model: "flash_lite"` (host tool-schema enum tokens).
    - Max active concurrency for secondary subagents is bounded at $N \le 2$.
 
 4. **Allocation Check & Graceful Circuit Breaker**:
    - **Exhaustion Detection**: When a secondary model returns `RESOURCE_EXHAUSTED` (HTTP 429) or is within an active lockout countdown window (`reset_at`), the secondary circuit is considered open.
-   - **Zero-Stall Fallback**: Rather than blocking progress or locking the session for 5 hours, the agent MUST immediately fall back to **Gemini 3.8 Flash (High)** or **Gemini 3.8 Pro**.
-   - **Transparent Human Notice**: The agent MUST NOT silently downgrade. The agent must notify the human: `⚠️ Secondary Claude allocation exhausted (resets in Xm). Executing via Gemini 3.8 Flash (High) with enhanced reasoning prompts instead.`
+   - **Zero-Stall Fallback**: Rather than blocking progress or locking the session for 5 hours, the agent MUST immediately fall back to **Gemini 4 Hydrogen (High)** or **Gemini 3.8 Pro**.
+   - **Transparent Human Notice**: The agent MUST NOT silently downgrade. The agent must notify the human: `⚠️ Secondary Claude allocation exhausted (resets in Xm). Executing via Gemini 4 Hydrogen (High) with enhanced reasoning prompts instead.`
    - **Window Re-Entry**: Once the reset timer expires, deferral to Claude re-opens automatically for the fresh rolling window.
 
 ## Cloudflare Interaction Protocol

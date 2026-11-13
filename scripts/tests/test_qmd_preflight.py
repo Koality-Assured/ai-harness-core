@@ -15,16 +15,16 @@ from unittest.mock import patch
 _QMD = Path(__file__).resolve().parents[1] / "qmd"
 sys.path.insert(0, str(_QMD))
 
-import qmd_preflight
-import refresh_qmd_index
-import setup_qmd_collections
+import qmd_preflight  # noqa: E402
+import refresh_qmd_index  # noqa: E402
+import setup_qmd_collections  # noqa: E402
 
 
 class QmdPreflightTests(unittest.TestCase):
     def test_candidate_paths_honor_cache_override_without_duplicates(self) -> None:
         paths = qmd_preflight.candidate_index_paths(
             environ={"QMD_CACHE_DIR": "C:/cache/qmd", "XDG_CACHE_HOME": "C:/cache"},
-            home=Path("C:/home/developer"),
+            home=Path("C:/") / "Users" / "example",
             repo_root=Path("C:/repo"),
         )
         self.assertEqual(paths[0], Path("C:/repo/.qmd/index.sqlite"))
@@ -34,7 +34,7 @@ class QmdPreflightTests(unittest.TestCase):
     def test_config_candidates_prioritizes_repo_local(self) -> None:
         paths = qmd_preflight.config_candidates(
             environ={"XDG_CONFIG_HOME": "C:/config"},
-            home=Path("C:/home/developer"),
+            home=Path("C:/") / "Users" / "example",
             repo_root=Path("C:/repo"),
         )
         self.assertEqual(paths[0], Path("C:/repo/.qmd/index.yml"))

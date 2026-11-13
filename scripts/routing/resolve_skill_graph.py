@@ -10,7 +10,7 @@ import argparse
 import json
 import shutil
 import sys
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +26,7 @@ except ImportError:
     DEFAULT_ROOT = Path(__file__).resolve().parents[2]
     from md import parse_frontmatter
 
-from md import REQUIRED_SKILL_SCHEMA_VERSION, check_required_skill_v2_contracts
+from md import REQUIRED_SKILL_SCHEMA_VERSION, check_required_skill_v2_contracts  # noqa: E402
 
 ALLOWED_RANKS = {"critical", "high", "medium", "low"}
 ALLOWED_ISOLATION = {"mutate", "read-only"}

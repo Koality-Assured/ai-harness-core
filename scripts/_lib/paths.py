@@ -1,14 +1,7 @@
 """Shared repo/script root paths. Not indexed (_lib).
 
-REPO_ROOT is the git repository root resolved from the process **cwd** via
-``git rev-parse --show-toplevel``, falling back to the parent of ``scripts/``
-(from ``__file__``) when git is unavailable. That way an absolute-path invoke
-of a script that lives in another worktree still writes into the checkout you
-are standing in.
-
-SCRIPTS_ROOT is always this checkout's ``scripts/`` directory (from ``__file__``).
-Pass ``--repo-root`` (where supported) or call ``resolve_repo_root(override)``
-to force a specific root.
+REPO_ROOT is the git repository root of the checkout containing this module,
+falling back to git rev-parse or Path.cwd() when appropriate.
 """
 
 from __future__ import annotations
@@ -23,15 +16,17 @@ _FILE_REPO_ROOT = Path(__file__).resolve().parents[2]
 def resolve_repo_root(override: str | Path | None = None) -> Path:
     """Return the repo root to read/write against.
 
-    Order: explicit override → ``git rev-parse --show-toplevel`` from cwd →
-    checkout that contains this ``_lib`` module.
+    Order: explicit override -> checkout containing this _lib module ->
+    git rev-parse --show-toplevel -> _FILE_REPO_ROOT.
     """
     if override is not None:
         return Path(override).expanduser().resolve()
+    if (_FILE_REPO_ROOT / ".git").exists() or (_FILE_REPO_ROOT / "routing").is_dir():
+        return _FILE_REPO_ROOT
     try:
         proc = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
-            cwd=Path.cwd(),
+            cwd=_FILE_REPO_ROOT,
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -48,4 +43,5 @@ def resolve_repo_root(override: str | Path | None = None) -> Path:
     return _FILE_REPO_ROOT
 
 
+repo_root = resolve_repo_root
 REPO_ROOT = resolve_repo_root()

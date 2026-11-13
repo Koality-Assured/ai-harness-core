@@ -20,7 +20,7 @@ _ROUTING = Path(__file__).resolve().parents[1] / "routing"
 sys.path.insert(0, str(_LIB))
 sys.path.insert(0, str(_ROUTING))
 
-from hybrid_dispatch import (
+from hybrid_dispatch import (  # noqa: E402
     BM25Candidate,
     HybridDispatcher,
     Tier1FastPath,
@@ -29,8 +29,8 @@ from hybrid_dispatch import (
     dispatch_query,
     tokenize,
 )
-from md import load_skill_record, parse_frontmatter, skill_paths
-from paths import REPO_ROOT as ROOT
+from md import load_skill_record, parse_frontmatter, skill_paths  # noqa: E402
+from paths import REPO_ROOT as ROOT  # noqa: E402
 
 
 def _skill_md(name: str) -> Path:
@@ -55,15 +55,15 @@ class TestTier1FastPath(unittest.TestCase):
             ("isolate-work", "isolate-work", "router"),
             ("isolate this mutating work in a worktree", "isolate-work", "router"),
             ("isolate the worktree", "isolate-work", "router"),
-            ("qmd search docs", "qmd-usage", "qmd-ops"),
-            ("qmd commands and retrieval", "qmd-usage", "qmd-ops"),
-            ("run noir scan on api", "noir-scan", "artifact-agent"),
+            ("qmd search docs", "qmd-usage", "harness-operator"),
+            ("qmd commands and retrieval", "qmd-usage", "harness-operator"),
+            ("run noir scan on api", "noir-scan", "security-tooling-operator"),
             ("render mermaid diagram", "mermaid-diagram", "artifact-agent"),
-            ("ast-grep precision retrieval", "ast-grep", "router-maintenance"),
-            ("headroom context compression", "headroom", "router-maintenance"),
-            ("markdownlint fix md001", "markdownlint", "documentation-ops"),
-            ("deep research into cloud models", "deep-research", "detailed-activity"),
-            ("create memory checkpoint", "memory-create", "ai-tooling-ops"),
+            ("ast-grep precision retrieval", "ast-grep", "harness-operator"),
+            ("headroom context compression", "headroom", "harness-operator"),
+            ("markdownlint fix md001", "markdownlint", "document-operator"),
+            ("deep research into cloud models", "deep-research", "research-operator"),
+            ("create memory checkpoint", "memory-create", "harness-operator"),
         ]
         for query, expected_skill, expected_owner in test_cases:
             res = self.tier1.evaluate(query)
@@ -280,7 +280,7 @@ class TestSchemaV2SkillParsing(unittest.TestCase):
 schema_version: "2.0.0"
 name: custom-composite
 description: Third person WHAT. Use when testing DAGs.
-owner_agent: router-maintenance
+owner_agent: harness-operator
 rank: high
 isolation: mutate
 on_failure: fallback_degrade

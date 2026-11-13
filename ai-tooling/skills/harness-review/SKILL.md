@@ -57,7 +57,7 @@ High: distinguish an observed host symptom from a portable harness defect before
 
 Standalone dispatch: Follow the destination's isolation and dispatch rules. Use a registered local operator or continue in-session when those rules permit; report a capability gap if no local path supports the work.
 
-`mutate`. In ai-router, the parent runs `isolate-work` first for every area that may change, then spawns `ai-tooling-ops`. The specialist fixes only its owned area; it returns cross-area findings to the parent for the owning specialist. Remote downstream publication needs explicit human authorization and the downstream sync skill.
+`mutate`. In ai-router, the parent runs `isolate-work` first for every area that may change, then spawns `harness-operator`. The specialist fixes only its owned area; it returns cross-area findings to the parent for the owning specialist. Remote downstream publication needs explicit human authorization and the downstream sync skill.
 
 ## How to use
 

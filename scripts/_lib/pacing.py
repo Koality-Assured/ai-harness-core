@@ -16,6 +16,7 @@ from typing import Any
 
 from paths import REPO_ROOT
 
+
 DEFAULT_QUOTA_PROFILES: dict[str, dict[str, Any]] = {
     "unmetered": {
         "max_concurrent_subagents": 8,
@@ -29,7 +30,7 @@ DEFAULT_QUOTA_PROFILES: dict[str, dict[str, Any]] = {
         "research_subagent_tier": "flash",
         "pacing_delay_sec": 1,
         "auto_schedule_on_429": True,
-        "description": "Platform-native models with standard quotas (Gemini 3.8 Flash).",
+        "description": "Platform-native models with standard quotas (Gemini 4 Hydrogen (Medium)).",
     },
     "metered_secondary": {
         "max_concurrent_subagents": 2,
@@ -299,7 +300,7 @@ def classify_deferral_eligibility(
       1. Anti-waste guardrails: Subagent leaf workers and operational tasks stay on Gemini.
       2. Material pillar matching: Concurrency, invariant refactoring, security audits,
          grammars/parsers, and dense RFCs qualify.
-      3. Zero-stall circuit-breaker: Automatically pivots to Gemini 3.8 Flash (High) on 429 lockout.
+      3. Zero-stall circuit-breaker: Automatically pivots to Gemini 4 Hydrogen (High) on 429 lockout.
     """
     prompt_clean = (prompt or "").strip()
     host_norm = (host or "").strip().lower()
@@ -334,7 +335,7 @@ def classify_deferral_eligibility(
         if re.search(pattern, prompt_clean, re.IGNORECASE):
             return {
                 "should_defer": False,
-                "recommended_model": "Gemini 3.8 Flash",
+                "recommended_model": "Gemini 4 Hydrogen (Medium)",
                 "trigger": None,
                 "reason": "Operational plumbing task reserved for Gemini Ultra high-throughput capacity.",
                 "quota_profile": "standard",
@@ -355,7 +356,7 @@ def classify_deferral_eligibility(
     if not matched_trigger:
         return {
             "should_defer": False,
-            "recommended_model": "Gemini 3.8 Flash",
+            "recommended_model": "Gemini 4 Hydrogen (Medium)",
             "trigger": None,
             "reason": "Task does not meet material secondary deferral criteria; default to Gemini Ultra.",
             "quota_profile": "standard",
@@ -368,9 +369,9 @@ def classify_deferral_eligibility(
     if not is_available:
         return {
             "should_defer": False,
-            "recommended_model": "Gemini 3.8 Flash (High)",
+            "recommended_model": "Gemini 4 Hydrogen (High)",
             "trigger": matched_trigger,
-            "reason": f"Matches trigger '{matched_trigger}', but secondary quota is exhausted ({rem}s remaining). Zero-stall circuit-breaker fallback to Gemini 3.8 Flash (High).",
+            "reason": f"Matches trigger '{matched_trigger}', but secondary quota is exhausted ({rem}s remaining). Zero-stall circuit-breaker fallback to Gemini 4 Hydrogen (High).",
             "quota_profile": "metered_secondary",
             "fallback_active": True,
             "remaining_cooldown_sec": rem,
@@ -395,7 +396,7 @@ def format_deferral_notice(deferral_info: dict[str, Any]) -> str | None:
         rem_min = max(1, round(rem_sec / 60))
         return (
             f"⚠️ Secondary Claude allocation exhausted (resets in {rem_min}m). "
-            "Executing via Gemini 3.8 Flash (High) with enhanced reasoning prompts instead."
+            "Executing via Gemini 4 Hydrogen (High) with enhanced reasoning prompts instead."
         )
     if deferral_info.get("should_defer"):
         trigger = deferral_info.get("trigger", "high-leverage reasoning")

@@ -9,21 +9,21 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from ast_grep import AstGrepError, find_ast_grep, run_ast_grep
-from paths import REPO_ROOT as ROOT
+from ast_grep import AstGrepError, find_ast_grep, run_ast_grep  # noqa: E402
+from paths import REPO_ROOT as ROOT  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from extract_ast_facts import (
+from extract_ast_facts import (  # noqa: E402
     extract_agent_cards,
     extract_scripts,
     extract_skills_frontmatter,
 )
-from validate_headroom_compression import (
+from validate_headroom_compression import (  # noqa: E402
     CHARS_PER_TOKEN,
     _ensure_headroom_import,
     est_tokens,
@@ -40,7 +40,7 @@ SAMPLES = [
     {
         "id": "agent-card-yaml",
         "area": "agent-cards",
-        "path": "ai-tooling/agents/ai-tooling-ops/AGENT.md",
+        "path": "ai-tooling/agents/harness-operator/AGENT.md",
     },
     {
         "id": "skill-frontmatter",
@@ -53,7 +53,7 @@ MAX_GOLD_FACTS = 8
 
 
 def utc_now() -> str:
-    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def facts_for_file(all_facts: list[dict], rel: str) -> list[dict]:
@@ -305,7 +305,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    today = datetime.now(UTC).strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     out_rel = args.out or f"results/cost-layers/ast-grep/{today}"
     out_dir = ROOT / out_rel
     out_dir.mkdir(parents=True, exist_ok=True)

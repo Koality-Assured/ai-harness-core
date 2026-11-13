@@ -1,7 +1,7 @@
 """Refresh an existing local qmd index after explicit user approval.
 
 tags: [qmd]
-routing_hints: [index, embed, session-end, completion-gate]
+routing_hints: [index, embed, cleanup, session-end, completion-gate]
 """
 
 from __future__ import annotations
@@ -14,8 +14,8 @@ from pathlib import Path
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT
-from qmd_preflight import build_report
+from paths import REPO_ROOT as ROOT, resolve_repo_root  # noqa: E402
+from qmd_preflight import build_report  # noqa: E402
 
 
 def resolve_qmd() -> str | None:
@@ -24,12 +24,12 @@ def resolve_qmd() -> str | None:
     return shutil.which("qmd")
 
 
-def run(qmd: str, args: list[str], *, dry_run: bool) -> None:
+def run(qmd: str, args: list[str], *, cwd: Path, dry_run: bool) -> None:
     cmd = [qmd, *args]
     print("+", " ".join(cmd))
     if dry_run:
         return
-    subprocess.run(cmd, check=True, cwd=ROOT)
+    subprocess.run(cmd, check=True, cwd=cwd)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -45,7 +45,31 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Acknowledge inspected qmd configuration hook directives",
     )
+    parser.add_argument(
+        "--cleanup",
+        action="store_true",
+        help="Run qmd cleanup to purge orphaned chunks and inactive documents",
+    )
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Full refresh: runs update, cleanup, and embed",
+    )
+    parser.add_argument(
+        "--skip-embed",
+        action="store_true",
+        help="Skip vector embedding generation (qmd embed)",
+    )
+    parser.add_argument(
+        "--repo-root",
+        type=Path,
+        default=None,
+        help="Explicit repository or detached worktree root (default: resolved cwd/main)",
+    )
     args = parser.parse_args(argv)
+
+    target_root = resolve_repo_root(args.repo_root)
+
     if not args.dry_run:
         if not args.approved_by_user:
             print(
@@ -54,7 +78,7 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 1
-        preflight = build_report(probe_cli=False, inspect_hooks=True, timeout=15)
+        preflight = build_report(probe_cli=False, inspect_hooks=True, repo_root=target_root, timeout=15)
         if preflight["state"] == "missing":
             print(
                 "error: qmd index is missing; do not let refresh initialize it. Use the explicit setup "
@@ -88,8 +112,11 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
     try:
-        run(qmd, ["update"], dry_run=args.dry_run)
-        run(qmd, ["embed"], dry_run=args.dry_run)
+        run(qmd, ["update"], cwd=target_root, dry_run=args.dry_run)
+        if args.cleanup or args.full:
+            run(qmd, ["cleanup"], cwd=target_root, dry_run=args.dry_run)
+        if not args.skip_embed:
+            run(qmd, ["embed"], cwd=target_root, dry_run=args.dry_run)
     except subprocess.CalledProcessError as exc:
         print(exc.stderr or exc.stdout or str(exc), file=sys.stderr)
         return 1

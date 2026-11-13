@@ -32,15 +32,15 @@ areas:
     load: via qmd
     write_back: Capture or normalization lessons
   - id: research
-    purpose: Topic deep-dives
+    purpose: Topic deep-dives and investigative notes
     default_agent: research-operator
     load: one topic folder
-    write_back: Findings for that topic
+    write_back: Working findings for that topic (finished dossiers route to results/research/)
   - id: results
-    purpose: Generated artifacts from agent runs
+    purpose: Universal landing zone for all generated artifacts, reports, dashboards, and measurements
     default_agent: document-operator
     load: the run you need
-    write_back: Pointers from projects, not policy
+    write_back: Dated run deliverables; expand family/topic when domain requires
   - id: routing
     purpose: Generated next-step index after root AGENTS.md
     default_agent: harness-operator
@@ -57,10 +57,10 @@ areas:
     load: the script plus script-index
     write_back: New or changed tagged scripts
   - id: supporting
-    purpose: Tool patterns, onboarding, retrieval writing
+    purpose: Accelerators and foundations (tool patterns, rubrics, mappings, structural examples, reference datasets, onboarding)
     default_agent: harness-operator
-    load: via qmd for the tool in use
-    write_back: Confirmed tool or onboarding patterns
+    load: via qmd for the resource in use
+    write_back: Confirmed reusable patterns, rubrics, or setups (never run output)
 nested_defaults:
   - path: docs/guidance
     default_agent: document-operator

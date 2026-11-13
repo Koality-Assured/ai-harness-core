@@ -11,6 +11,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -23,13 +24,19 @@ for _p in (str(_SCRIPTS), str(_LIB)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from cli.harness import (
+import cli.harness as harness_module  # noqa: E402
+from routing.spawn_worktree import WORKTREE_BRANCH_RE, _new_worktree_identity  # noqa: E402
+
+from cli.harness import (  # noqa: E402
     SLUG_PATTERN,
     build_parser,
+    cmd_agent,
+    cmd_branch,
+    cmd_clean,
+    cmd_status,
     is_conventional_commit,
     main,
 )
-from routing.spawn_worktree import WORKTREE_BRANCH_RE, _new_worktree_identity
 
 
 class TestHarnessArgParsing(unittest.TestCase):
@@ -247,8 +254,9 @@ class TestHarnessCommands(unittest.TestCase):
 
     def test_clean_requires_only_pr(self) -> None:
         err_capture = io.StringIO()
-        with patch("sys.stderr", err_capture), self.assertRaises(SystemExit):
-            build_parser().parse_args(["clean"])
+        with patch("sys.stderr", err_capture):
+            with self.assertRaises(SystemExit):
+                build_parser().parse_args(["clean"])
         self.assertIn("--pr", err_capture.getvalue())
 
     def test_clean_delegates_to_verified_cleanup(self) -> None:
@@ -371,28 +379,43 @@ class TestHarnessCommands(unittest.TestCase):
         self.assertIn(["log", "trunk..HEAD", "--format=%s"], git_calls)
 
     def test_same_task_slug_can_be_created_in_parallel_sessions(self) -> None:
-        with patch("routing.spawn_worktree.cmd_create", return_value=0) as create:
-            self.assertEqual(main(["branch", "overlapping-task"]), 0)
-            self.assertEqual(main(["branch", "overlapping-task"]), 0)
+        clean_proc = MagicMock()
+        clean_proc.stdout = ""
+        with patch("cli.harness.run_git", return_value=clean_proc):
+            with patch("routing.spawn_worktree.cmd_create", return_value=0) as create:
+                self.assertEqual(main(["branch", "overlapping-task"]), 0)
+                self.assertEqual(main(["branch", "overlapping-task"]), 0)
         self.assertEqual(create.call_count, 2)
         self.assertEqual([call.args[0] for call in create.call_args_list], ["overlapping-task", "overlapping-task"])
 
-
-
     def test_harness_missing_command_exits_2(self) -> None:
         err_capture = io.StringIO()
-        with patch("sys.stderr", err_capture), patch("sys.stdin") as mock_stdin:
-            mock_stdin.isatty.return_value = False
-            with self.assertRaises(SystemExit) as ctx:
-                main([])
+        with patch("sys.stderr", err_capture):
+            with patch("sys.stdin") as mock_stdin:
+                mock_stdin.isatty.return_value = False
+                with self.assertRaises(SystemExit) as ctx:
+                    main([])
         self.assertEqual(ctx.exception.code, 2)
 
-    def test_branch_does_not_require_clean_primary_checkout(self) -> None:
-        with patch("cli.harness.run_git") as git:
+    def test_branch_cleanliness_verification(self) -> None:
+        dirty_proc = MagicMock()
+        dirty_proc.stdout = " M modified_file.py\n"
+        with patch("cli.harness.run_git", return_value=dirty_proc):
             with patch("routing.spawn_worktree.cmd_create", return_value=0) as create:
-                self.assertEqual(main(["branch", "dirty-primary-task"]), 0)
-        git.assert_not_called()
-        create.assert_called_once()
+                self.assertEqual(main(["branch", "dirty-task"]), 1)
+                create.assert_not_called()
+
+        with patch("cli.harness.run_git", return_value=dirty_proc) as git:
+            with patch("routing.spawn_worktree.cmd_create", return_value=0) as create:
+                self.assertEqual(main(["branch", "dirty-task", "--allow-dirty"]), 0)
+                git.assert_not_called()
+                create.assert_called_once()
+
+        with patch("cli.harness.run_git", return_value=dirty_proc) as git:
+            with patch("routing.spawn_worktree.cmd_create", return_value=0) as create:
+                self.assertEqual(main(["branch", "dirty-task", "--force"]), 0)
+                git.assert_not_called()
+                create.assert_called_once()
 
     def test_pr_non_conforming_commit_rejected(self) -> None:
         def fake_git(args, **kwargs):
@@ -498,6 +521,70 @@ class TestHarnessCommands(unittest.TestCase):
                 self.assertEqual(ret, 0)
                 payload = json.loads(out.getvalue())
                 self.assertIn("harnesses", payload)
+
+    def test_exec_subcommand(self) -> None:
+        # 1. No command provided
+        err_out = io.StringIO()
+        with patch("sys.stderr", err_out):
+            ret = main(["exec"])
+        self.assertEqual(ret, 1)
+        self.assertIn("no command provided", err_out.getvalue())
+
+        # 2. Dry run with --force
+        out = io.StringIO()
+        with patch("sys.stdout", out):
+            ret = main(["exec", "--force", "--dry-run", "--", "echo", "hello"])
+        self.assertEqual(ret, 0)
+        self.assertIn("[dry-run] Would exec: echo hello", out.getvalue())
+
+        # 3. Dry run without credentials and without --force
+        out2 = io.StringIO()
+        with patch("sys.stdout", out2):
+            with patch("cli.harness.cmd_exec") as mock_exec:
+                mock_exec.return_value = 0
+                ret2 = main(["exec", "--dry-run", "--", "echo", "hi"])
+        self.assertEqual(ret2, 0)
+
+    def test_claim_subcommand(self) -> None:
+        out = io.StringIO()
+        with patch("sys.stdout", out):
+            ret = main(["claim", "inspect", "--json"])
+        self.assertEqual(ret, 0)
+        payload = json.loads(out.getvalue())
+        self.assertIn("total_claims", payload)
+        self.assertIn("stale_claims", payload)
+        self.assertIn("stale_threshold_hours", payload)
+        self.assertIn("claims", payload)
+        self.assertIn("warnings", payload)
+
+    def test_spoke_sync_subcommand(self) -> None:
+        out = io.StringIO()
+        with patch("sys.stdout", out):
+            with patch("sync.pull_harness_core.pull_harness_core") as mock_sync:
+                mock_sync.return_value = {
+                    "ok": True,
+                    "spoke": "test-spoke",
+                    "ref": "main",
+                    "dry_run": True,
+                    "updates": [],
+                    "skipped_domain": [],
+                    "regenerated_indexes": [],
+                }
+                ret = main(["spoke", "sync", "--dry-run", "--json"])
+        self.assertEqual(ret, 0)
+        payload = json.loads(out.getvalue())
+        self.assertTrue(payload.get("ok"))
+
+    def test_branch_flags_custom(self) -> None:
+        clean_proc = MagicMock()
+        clean_proc.stdout = ""
+        with patch("cli.harness.run_git", return_value=clean_proc):
+            with patch("routing.spawn_worktree.cmd_create", return_value=0) as mock_create:
+                ret = main(["branch", "custom-task", "--areas", "docs,scripts", "--agent", "test-agent", "--type", "feat"])
+        self.assertEqual(ret, 0)
+        self.assertEqual(mock_create.call_args.kwargs["areas"], ["docs", "scripts"])
+        self.assertEqual(mock_create.call_args.kwargs["agent"], "test-agent")
+        self.assertEqual(mock_create.call_args.kwargs["task_type"], "feat")
 
 
 if __name__ == "__main__":

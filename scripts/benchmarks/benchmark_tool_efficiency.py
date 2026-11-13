@@ -11,14 +11,14 @@ import json
 import math
 import sys
 import time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT
-from tool_output import format_tool_execution
+from paths import REPO_ROOT as ROOT  # noqa: E402
+from tool_output import format_tool_execution  # noqa: E402
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
     try:
@@ -147,7 +147,7 @@ def benchmark_fixture(fixture: dict[str, Any]) -> dict[str, Any]:
 
 def render_efficiency_report(results: list[dict[str, Any]], summary_stats: dict[str, Any]) -> str:
     """Render structured Markdown tool efficiency report."""
-    now_utc = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     lines = [
         "---",
         "doc_kind: result",
@@ -218,7 +218,7 @@ def main(argv: list[str] | None = None) -> int:
 
     report_md = render_efficiency_report(results, summary_stats)
 
-    today = datetime.now(UTC).strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     out_rel = args.out or f"results/benchmarks/tool-efficiency/{today}"
     out_dir = ROOT / out_rel
 

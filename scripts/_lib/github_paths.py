@@ -74,7 +74,8 @@ def parse_github_origin(remote_url: str) -> tuple[str, str]:
         match = pattern.match(url)
         if match:
             owner, repo = match.group(1), match.group(2)
-            repo = repo.removesuffix(".git")
+            if repo.endswith(".git"):
+                repo = repo[:-4]
             return owner, repo
     raise GithubPathError(
         f"origin is not a github.com remote (got {url!r}); "

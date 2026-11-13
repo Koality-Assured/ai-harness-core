@@ -1,5 +1,7 @@
 """Append a change-history entry for the active year/quarter.
 
+Companion helper: scripts/change-history/ensure_change_history_quarter.py pre-creates quarter entry files.
+
 tags: [change-history]
 routing_hints: [provenance, session-end, completion-gate]
 """
@@ -14,7 +16,7 @@ from pathlib import Path
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from paths import REPO_ROOT as ROOT
+from paths import REPO_ROOT as ROOT  # noqa: E402
 
 CH_ROOT = ROOT / "change-history"
 

@@ -25,14 +25,14 @@ from pathlib import Path
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from github_paths import (
+from github_paths import (  # noqa: E402
     DEFAULT_REF,
     GithubPathError,
     discover_github_repo,
     github_https_url,
     validate_ref,
 )
-from paths import resolve_repo_root
+from paths import resolve_repo_root  # noqa: E402
 
 
 def main(argv: list[str] | None = None) -> int:

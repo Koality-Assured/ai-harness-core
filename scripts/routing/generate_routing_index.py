@@ -6,26 +6,23 @@ routing_hints: [area-map, skill-dispatch, areas.yaml, index]
 
 from __future__ import annotations
 
+import argparse
 import datetime as dt
+import re
 import sys
 from pathlib import Path
 from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from areas import (
+from areas import (  # noqa: E402
     AreasYamlError,
     check_areas_consistency,
     load_area_records,
     load_nested_defaults,
 )
-from md import (
-    agent_paths,
-    load_agent_record,
-    load_skill_record,
-    skill_paths,
-)
-from paths import REPO_ROOT as ROOT
+from md import agent_paths, load_agent_record, load_skill_record, parse_frontmatter, skill_paths  # noqa: E402
+from paths import REPO_ROOT as ROOT  # noqa: E402
 
 GENERATOR = "scripts/routing/generate_routing_index.py"
 AREA_MAP = ROOT / "routing" / "area-map.md"
@@ -34,11 +31,12 @@ AGENT_DISPATCH = ROOT / "routing" / "agent-dispatch.md"
 
 
 def _utc_now() -> str:
-    return dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _md_cell(value: str) -> str:
-    return value.replace("|", "\\|")
+    cleaned = value.replace("\r\n", " ").replace("\r", " ").replace("\n", " ")
+    return cleaned.replace("|", "\\|").strip()
 
 
 def _agent_cell(owner: str) -> str:
@@ -282,7 +280,85 @@ def write_agent_dispatch(*, now: str, rows: list[dict[str, Any]] | None = None) 
     return len(rows)
 
 
-def main() -> int:
+def _normalize_for_diff(content: str) -> str:
+    return re.sub(r"^generated_at_utc:\s*.*$", "", content, flags=re.MULTILINE)
+
+
+def _write_idempotent(path: Path, new_content: str, dry_run: bool = False) -> tuple[bool, str]:
+    if path.is_file():
+        existing = path.read_text(encoding="utf-8")
+        if _normalize_for_diff(existing) == _normalize_for_diff(new_content):
+            m = re.search(r"^generated_at_utc:\s*(.+)$", existing, re.MULTILINE)
+            if m:
+                existing_utc = m.group(1).strip()
+                preserved = re.sub(
+                    r"^generated_at_utc:\s*.*$",
+                    f"generated_at_utc: {existing_utc}",
+                    new_content,
+                    flags=re.MULTILINE,
+                )
+                if preserved == existing:
+                    return False, f"unchanged {path.relative_to(ROOT).as_posix()}"
+                new_content = preserved
+        action = f"would update {path.relative_to(ROOT).as_posix()}" if dry_run else f"wrote {path.relative_to(ROOT).as_posix()}"
+        if not dry_run:
+            with path.open("w", encoding="utf-8", newline="\n") as f:
+                f.write(new_content)
+        return True, action
+
+    action = f"would create {path.relative_to(ROOT).as_posix()}" if dry_run else f"wrote {path.relative_to(ROOT).as_posix()}"
+    if not dry_run:
+        with path.open("w", encoding="utf-8", newline="\n") as f:
+            f.write(new_content)
+    return True, action
+
+
+def render_skill_dispatch(repo_root: Path, *, now: str, rows: list[dict[str, Any]]) -> str:
+    skill_link_map = {}
+    for r in rows:
+        p = r.get("path")
+        if isinstance(p, Path):
+            skill_link_map[r["name"]] = (Path("..") / p.relative_to(repo_root)).as_posix()
+        else:
+            skill_link_map[r["name"]] = f"../ai-tooling/skills/{r['name']}/SKILL.md"
+
+    lines = [
+        "---",
+        "doc_kind: routing_map",
+        "canonical_id: skill-dispatch",
+        "topics: [routing, skills, agents]",
+        f"generated_at_utc: {now}",
+        f"generator: {GENERATOR}",
+        "---",
+        "",
+        "# Skill dispatch",
+        "",
+        "Generated from `ai-tooling/skills/**/SKILL.md` frontmatter. Do not hand-edit — run "
+        f"`python {GENERATOR}`.",
+        "",
+        "Match by task: [`by-task.md`](./by-task.md). If no skill matches, fall back to "
+        "[`area-map.md`](./area-map.md).",
+        "",
+        "| Skill | Agent | Isolation | Description |",
+        "| --- | --- | --- | --- |",
+    ]
+    for row in rows:
+        name = row["name"]
+        skill_link = f"[`{name}`]({skill_link_map[name]})"
+        lines.append(
+            f"| {skill_link} | {_agent_cell(row['owner_agent'])} | "
+            f"`{row['isolation']}` | {_md_cell(row['description'])} |"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--check", action="store_true", help="Exit 1 if on-disk files differ from generated content (ignoring generated_at_utc)")
+    parser.add_argument("--dry-run", action="store_true", help="Simulate generation and report differences without writing files")
+    args = parser.parse_args(argv)
+
     try:
         mismatches = check_areas_consistency(ROOT)
     except AreasYamlError as exc:
@@ -295,17 +371,41 @@ def main() -> int:
         return 2
 
     now = _utc_now()
-    write_area_map(now=now)
-    n_skills = write_skill_dispatch(now=now)
-    n_agents = write_agent_dispatch(now=now)
-    n_areas = len(load_area_records(ROOT))
-    n_nested = len(load_nested_defaults(ROOT))
-    print(f"wrote {AREA_MAP.relative_to(ROOT).as_posix()} ({n_areas} areas, {n_nested} nested defaults)")
-    print(f"wrote {SKILL_DISPATCH.relative_to(ROOT).as_posix()} ({n_skills} skills)")
-    print(f"wrote {AGENT_DISPATCH.relative_to(ROOT).as_posix()} ({n_agents} agents)")
+    area_content = render_area_map(ROOT, now=now)
+    skill_rows = collect_skill_rows()
+    skill_content = render_skill_dispatch(ROOT, now=now, rows=skill_rows)
+    agent_rows = collect_agent_rows()
+    agent_content = render_agent_dispatch(ROOT, now=now, rows=agent_rows)
+
+    targets = [
+        (AREA_MAP, area_content, f"{len(load_area_records(ROOT))} areas, {len(load_nested_defaults(ROOT))} nested defaults"),
+        (SKILL_DISPATCH, skill_content, f"{len(skill_rows)} skills"),
+        (AGENT_DISPATCH, agent_content, f"{len(agent_rows)} agents"),
+    ]
+
+    if args.check:
+        differing = []
+        for path, content, meta in targets:
+            if not path.is_file():
+                differing.append(f"{path.relative_to(ROOT).as_posix()} (missing)")
+                continue
+            existing = path.read_text(encoding="utf-8")
+            if _normalize_for_diff(existing) != _normalize_for_diff(content):
+                differing.append(path.relative_to(ROOT).as_posix())
+        if differing:
+            print(f"CHECK FAILED: {len(differing)} file(s) differ from generated content:", file=sys.stderr)
+            for d in differing:
+                print(f"  - {d}", file=sys.stderr)
+            return 1
+        print(f"OK: All {len(targets)} routing index files are up to date.")
+        return 0
+
+    for path, content, meta in targets:
+        changed, msg = _write_idempotent(path, content, dry_run=args.dry_run)
+        print(f"{msg} ({meta})")
+
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     raise SystemExit(main())
-

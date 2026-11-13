@@ -15,9 +15,9 @@ from typing import Any
 
 _LIB = Path(__file__).resolve().parents[1] / "_lib"
 sys.path.insert(0, str(_LIB))
-from areas import AreasYamlError, load_area_records
-from md import parse_frontmatter
-from paths import resolve_repo_root
+from areas import AreasYamlError, load_area_records  # noqa: E402
+from md import parse_frontmatter  # noqa: E402
+from paths import resolve_repo_root  # noqa: E402
 
 MODEL_FAMILIES = ("cursor", "gpt", "claude", "gemini")
 MODEL_MEMORY_REL = Path("ai-tooling") / "memory" / "model"

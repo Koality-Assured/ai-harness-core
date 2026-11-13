@@ -10,4 +10,4 @@ Record only a proven model-family capability, the minimal reproducible method, e
 
 Record only a proven unavailable or failed model-family capability, the failure boundary, evidence command or artifact, recovery or fallback, and a link to the relevant user or agent memory when host context mattered.
 
-Do not add other durable categories, session logs, credentials, personal paths, model-picker IDs, or copied user/agent memory. Spawn `memory-operator` for `model-memory-operate` (retrieval, deduplication, and promotion after validation) — not `ai-tooling-ops`.
+Do not add other durable categories, session logs, credentials, personal paths, model-picker IDs, or copied user/agent memory. Use `harness-operator` for `model-memory-operate` (retrieval, deduplication, and promotion after validation).

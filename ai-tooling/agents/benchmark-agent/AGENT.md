@@ -40,8 +40,7 @@ allowed_tools:
   - "find_by_name"
 delegation_targets:
   - "artifact-agent"
-  - "router-maintenance"
-  - "script-ops"
+  - "harness-operator"
 prohibitions:
   - "guess cost or performance without running empirical calculation scripts"
   - "skip prompt cache hit ratio modeling in multi-turn cost estimates"
